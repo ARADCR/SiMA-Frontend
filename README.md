@@ -49,7 +49,7 @@ El proyecto se organiza en los siguientes componentes:
 - **Procesamiento auxiliar / reglas:** Python
 - **Dispositivo IoT:** ESP32
 - **Notificaciones:** WeChat
-- **Persistencia:** Base de datos relacional
+- **Persistencia:** MySQL
 
 ### Flujo general
 1. El usuario o familiar interactúa con el sistema mediante el chatbot o la interfaz web.
