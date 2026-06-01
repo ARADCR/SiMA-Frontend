@@ -67,7 +67,7 @@ El proyecto se organiza en los siguientes componentes:
 - **Lenguaje auxiliar:** Python
 - **Hardware IoT:** ESP32
 - **Mensajería / integración:** WeChat
-- **Base de datos:** PostgreSQL
+- **Base de datos:** MySQL
 
 ---
 
