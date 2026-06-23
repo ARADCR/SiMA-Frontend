@@ -1,0 +1,192 @@
+@use '../../../../assets/styles/variables' as v;
+@use '../../../../assets/styles/mixins' as m;
+
+.sidebar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: v.$sidebar-width;
+  height: 100vh;
+  background: v.$color-bg-card;
+  border-right: 1px solid v.$color-border;
+  @include m.flex-col;
+  transition: width v.$transition-base;
+  z-index: 99;
+  overflow: hidden;
+  box-shadow: v.$shadow;
+
+  &.collapsed {
+    width: v.$sidebar-collapsed;
+
+    .nav-item {
+      justify-content: center;
+      padding: v.$space-3;
+    }
+  }
+}
+
+.sidebar-header {
+  padding: v.$space-4;
+  border-bottom: 1px solid v.$color-border;
+  flex-shrink: 0;
+}
+
+.logo {
+  @include m.flex-center;
+  justify-content: flex-start;
+  gap: v.$space-3;
+}
+
+.logo-icon {
+  @include m.flex-center;
+  width: 38px;
+  height: 38px;
+  border-radius: v.$border-radius;
+  background: v.$gradient-primary;
+  color: white;
+  font-family: v.$font-family-heading;
+  font-size: v.$font-size-base;
+  font-weight: 800;
+  flex-shrink: 0;
+  box-shadow: 0 2px 8px rgba(8, 145, 178, 0.3);
+}
+
+.logo-text {
+  @include m.flex-col;
+  overflow: hidden;
+}
+
+.logo-name {
+  font-family: v.$font-family-heading;
+  font-size: v.$font-size-lg;
+  font-weight: 800;
+  color: v.$color-primary;
+  line-height: 1.2;
+  letter-spacing: -0.2px;
+}
+
+.logo-sub {
+  font-size: v.$font-size-xs;
+  color: v.$color-text-subtle;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sidebar-nav {
+  @include m.flex-col;
+  flex: 1;
+  padding: v.$space-4 v.$space-3;
+  gap: 2px;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.nav-section-label {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: v.$color-text-subtle;
+  padding: v.$space-3 v.$space-4 v.$space-2;
+}
+
+.nav-item {
+  @include m.flex-center;
+  justify-content: flex-start;
+  gap: v.$space-3;
+  padding: 10px v.$space-4;
+  border-radius: v.$border-radius;
+  color: v.$color-text-muted;
+  font-size: v.$font-size-sm;
+  font-weight: 500;
+  transition: v.$transition-fast;
+  white-space: nowrap;
+  overflow: hidden;
+  position: relative;
+  cursor: pointer;
+  touch-action: manipulation;
+
+  &:hover {
+    background: v.$color-bg-surface;
+    color: v.$color-text;
+
+    .nav-icon { color: v.$color-primary; }
+  }
+
+  &.active {
+    background: rgba(8, 145, 178, 0.08);
+    color: v.$color-primary;
+    font-weight: 600;
+
+    .nav-icon { color: v.$color-primary; }
+
+    &::before {
+      content: '';
+      position: absolute;
+      left: 0; top: 4px; bottom: 4px;
+      width: 3px;
+      background: v.$color-primary;
+      border-radius: 0 3px 3px 0;
+    }
+  }
+}
+
+.nav-icon {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  transition: v.$transition-fast;
+  color: v.$color-text-subtle;
+}
+
+.nav-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sidebar-footer {
+  padding: v.$space-3 v.$space-4;
+  border-top: 1px solid v.$color-border;
+  flex-shrink: 0;
+}
+
+.user-card {
+  @include m.flex-center;
+  justify-content: flex-start;
+  gap: v.$space-3;
+  padding: v.$space-3;
+  border-radius: v.$border-radius;
+  background: v.$color-bg-surface;
+  border: 1px solid v.$color-border;
+}
+
+.user-avatar {
+  @include m.flex-center;
+  width: 34px;
+  height: 34px;
+  border-radius: v.$border-radius-full;
+  background: v.$gradient-primary;
+  color: white;
+  font-weight: 700;
+  font-size: v.$font-size-sm;
+  flex-shrink: 0;
+}
+
+.user-details {
+  @include m.flex-col;
+  overflow: hidden;
+}
+
+.user-name {
+  font-size: v.$font-size-sm;
+  font-weight: 600;
+  color: v.$color-text;
+  @include m.truncate;
+}
+
+.user-role {
+  font-size: v.$font-size-xs;
+  color: v.$color-primary;
+  font-weight: 500;
+}

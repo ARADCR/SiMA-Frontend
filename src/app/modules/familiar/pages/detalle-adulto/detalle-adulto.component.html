@@ -1,0 +1,190 @@
+<div class="page-container">
+
+  @if (loading()) {
+    <div class="loading-full">
+      <div class="spinner"></div>
+      <span>Cargando perfil…</span>
+    </div>
+  } @else if (error()) {
+    <div class="error-full sima-card">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
+      <p>{{ error() }}</p>
+    </div>
+  } @else if (adulto()) {
+
+    <!-- ══ HEADER ══ -->
+    <div class="profile-header">
+      <div class="profile-back">
+        <a routerLink="/familiar/adultos" class="back-link">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
+          Mis adultos
+        </a>
+      </div>
+
+      <div class="profile-hero">
+        <div class="profile-avatar">{{ iniciales(adulto()!) }}</div>
+        <div class="profile-info">
+          <h1>{{ adulto()!.nombre }} {{ adulto()!.apellido }}</h1>
+          <div class="profile-meta">
+            <span class="meta-chip">
+              <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17h-2v-2h2v2zm2.07-7.75l-.9.92C13.45 12.9 13 13.5 13 15h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H8c0-2.21 1.79-4 4-4s4 1.79 4 4c0 .88-.36 1.68-.93 2.25z"/></svg>
+              {{ calcEdad(adulto()!.fechaNacimiento) }} años
+            </span>
+
+            <span class="badge" [class.badge-success]="adulto()!.activo" [class.badge-danger]="!adulto()!.activo">
+              {{ adulto()!.activo ? 'Activo' : 'Inactivo' }}
+            </span>
+          </div>
+        </div>
+        <div class="profile-actions">
+          @if (!editMode()) {
+            <button class="btn-primary" (click)="toggleEdit()">
+              <svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
+              Editar perfil
+            </button>
+          } @else {
+            <button class="btn-secondary" (click)="toggleEdit()">Cancelar</button>
+            <button class="btn-primary" (click)="guardar()" [disabled]="saving() || form.pristine">
+              @if (saving()) { <span class="btn-spinner"></span> }
+              {{ saving() ? 'Guardando…' : 'Guardar cambios' }}
+            </button>
+          }
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ CONTENIDO ══ -->
+    <form [formGroup]="form" novalidate>
+      <div class="profile-grid">
+
+        <!-- Datos básicos -->
+        <div class="sima-card profile-section">
+          <div class="section-title">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+            Datos personales
+          </div>
+
+          <div class="fields-grid">
+            <div class="form-group" [class.error]="isInvalid('nombre')">
+              <label>Nombre <span class="required">*</span></label>
+              @if (editMode()) {
+                <input formControlName="nombre" type="text" placeholder="Nombre">
+                @if (isInvalid('nombre')) { <span class="field-error">Nombre requerido</span> }
+              } @else {
+                <p class="field-value">{{ adulto()!.nombre }}</p>
+              }
+            </div>
+
+            <div class="form-group" [class.error]="isInvalid('apellido')">
+              <label>Apellido <span class="required">*</span></label>
+              @if (editMode()) {
+                <input formControlName="apellido" type="text" placeholder="Apellido">
+                @if (isInvalid('apellido')) { <span class="field-error">Apellido requerido</span> }
+              } @else {
+                <p class="field-value">{{ adulto()!.apellido }}</p>
+              }
+            </div>
+
+            <div class="form-group" [class.error]="isInvalid('fechaNacimiento')">
+              <label>Fecha de nacimiento <span class="required">*</span></label>
+              @if (editMode()) {
+                <input formControlName="fechaNacimiento" type="date">
+                @if (isInvalid('fechaNacimiento')) { <span class="field-error">Fecha requerida</span> }
+              } @else {
+                <p class="field-value">{{ adulto()!.fechaNacimiento | date:'dd/MM/yyyy' }}
+                  <span class="field-sub">({{ calcEdad(adulto()!.fechaNacimiento) }} años)</span>
+                </p>
+              }
+            </div>
+
+
+          </div>
+        </div>
+
+        <!-- Contacto -->
+        <div class="sima-card profile-section">
+          <div class="section-title">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/></svg>
+            Contacto Médico
+          </div>
+
+          <div class="fields-grid">
+            <div class="form-group full-width">
+              <label>Contacto Médico</label>
+              @if (editMode()) {
+                <input formControlName="contactoMedico" type="text" placeholder="Teléfono o nombre del médico">
+              } @else {
+                <p class="field-value">{{ adulto()!.contactoMedico || '—' }}</p>
+              }
+            </div>
+          </div>
+        </div>
+
+        <!-- Información médica -->
+        <div class="sima-card profile-section medical-section">
+          <div class="section-title">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 3H5c-1.1 0-1.99.9-1.99 2L3 19c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-1 11h-4v4h-4v-4H6v-4h4V6h4v4h4v4z"/></svg>
+            Condiciones Médicas
+          </div>
+
+          <div class="fields-grid">
+            <div class="form-group full-width">
+              <label>Condiciones Médicas</label>
+              @if (editMode()) {
+                <textarea formControlName="condicionesMedicas" rows="3" placeholder="Diagnóstico médico principal, condiciones crónicas…"></textarea>
+              } @else {
+                <p class="field-value multiline">{{ adulto()!.condicionesMedicas || 'Sin información registrada' }}</p>
+              }
+            </div>
+          </div>
+        </div>
+
+        <!-- Accesos rápidos -->
+        @if (!editMode()) {
+          <div class="sima-card quick-links-card">
+            <div class="section-title">
+              <svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z"/></svg>
+              Accesos rápidos
+            </div>
+            <div class="quick-links">
+              <a [routerLink]="['/familiar/medicamentos']" [queryParams]="{adultoId: adulto()!.idAdulto}" class="quick-link">
+                <div class="ql-icon teal">
+                  <svg viewBox="0 0 24 24" fill="currentColor"><path d="M6.5 10h-2v5h2v-5zm4 0h-2v5h2v-5zm8.5 7H4v2h15v-2zm-4.5-7h-2v5h2v-5zM11.5 1L2 6v2h19V6l-9.5-5z"/></svg>
+                </div>
+                <div>
+                  <span class="ql-label">Medicamentos</span>
+                  <span class="ql-sub">Agenda de tomas</span>
+                </div>
+                <svg class="ql-arrow" viewBox="0 0 24 24" fill="currentColor"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>
+              </a>
+              <a [routerLink]="['/familiar/historial']" [queryParams]="{adultoId: adulto()!.idAdulto}" class="quick-link">
+                <div class="ql-icon indigo">
+                  <svg viewBox="0 0 24 24" fill="currentColor"><path d="M13 3c-4.97 0-9 4.03-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42C8.27 19.99 10.51 21 13 21c4.97 0 9-4.03 9-9s-4.03-9-9-9zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z"/></svg>
+                </div>
+                <div>
+                  <span class="ql-label">Historial</span>
+                  <span class="ql-sub">Eventos y alertas</span>
+                </div>
+                <svg class="ql-arrow" viewBox="0 0 24 24" fill="currentColor"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>
+              </a>
+            </div>
+          </div>
+        }
+
+      </div>
+    </form>
+  }
+
+</div>
+
+<!-- ══ TOAST ══ -->
+@if (toast()) {
+  <div class="toast" [class.toast-success]="toast()!.type === 'success'" [class.toast-error]="toast()!.type === 'error'" role="alert" aria-live="polite">
+    @if (toast()!.type === 'success') {
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+    } @else {
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
+    }
+    {{ toast()!.msg }}
+  </div>
+}

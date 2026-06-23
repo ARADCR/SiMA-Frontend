@@ -1,0 +1,18 @@
+@if (showLayout()) {
+  <!-- Layout autenticado: Navbar + Sidebar + Contenido -->
+  <app-navbar
+    [sidebarCollapsed]="sidebarCollapsed()"
+    (toggleSidebar)="toggleSidebar()">
+  </app-navbar>
+
+  <div class="app-layout">
+    <app-sidebar [collapsed]="sidebarCollapsed()"></app-sidebar>
+
+    <main class="main-content" [class.sidebar-collapsed]="sidebarCollapsed()">
+      <router-outlet></router-outlet>
+    </main>
+  </div>
+} @else {
+  <!-- Layout público: solo el router-outlet (login, registro) -->
+  <router-outlet></router-outlet>
+}

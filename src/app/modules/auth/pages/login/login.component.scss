@@ -1,0 +1,162 @@
+@use '../../../../../assets/styles/variables' as v;
+@use '../../../../../assets/styles/mixins' as m;
+
+.login-page {
+  position: relative;
+  min-height: 100vh;
+  @include m.flex-center;
+  background: v.$color-bg;
+  overflow: hidden;
+}
+
+// Fondo claro con sutiles manchas de color médico
+.bg-gradient {
+  position: absolute; inset: 0;
+  background:
+    radial-gradient(ellipse at 20% 50%, rgba(8, 145, 178, 0.07) 0%, transparent 60%),
+    radial-gradient(ellipse at 80% 50%, rgba(5, 150, 105, 0.05) 0%, transparent 60%);
+}
+
+.bg-orbs {
+  position: absolute; inset: 0; overflow: hidden;
+}
+
+.orb {
+  position: absolute; border-radius: 50%; filter: blur(80px);
+  animation: float 7s ease-in-out infinite;
+
+  &-1 { width: 400px; height: 400px; background: rgba(8,145,178,0.07); top: -100px; left: -100px; animation-delay: 0s; }
+  &-2 { width: 300px; height: 300px; background: rgba(5,150,105,0.05); bottom: -80px; right: -80px; animation-delay: 2.5s; }
+  &-3 { width: 200px; height: 200px; background: rgba(8,145,178,0.04); top: 50%; left: 50%; animation-delay: 5s; }
+}
+
+@keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-20px); } }
+
+// Container
+.login-container {
+  position: relative; width: 100%; max-width: 440px;
+  padding: v.$space-6; @include m.flex-col; gap: v.$space-8; z-index: 1;
+}
+
+// Brand
+.brand { @include m.flex-center; gap: v.$space-4; }
+
+.brand-icon {
+  @include m.flex-center;
+  width: 56px; height: 56px; border-radius: v.$border-radius-lg;
+  background: v.$gradient-primary; color: white;
+  font-family: v.$font-family-heading; font-size: v.$font-size-2xl; font-weight: 900;
+  box-shadow: 0 4px 16px rgba(8,145,178,0.25);
+}
+
+.brand-name {
+  font-family: v.$font-family-heading;
+  font-size: v.$font-size-3xl; font-weight: 900;
+  color: v.$color-primary; line-height: 1.1;
+}
+
+.brand-sub { font-size: v.$font-size-xs; color: v.$color-text-subtle; margin-top: 2px; }
+
+// Card — blanca pura con sombra suave
+.login-card {
+  background: v.$color-bg-card;
+  border: 1px solid v.$color-border;
+  border-radius: v.$border-radius-xl;
+  padding: v.$space-8;
+  box-shadow: v.$shadow-lg;
+  animation: slideInUp 0.35s ease;
+}
+
+.card-header {
+  margin-bottom: v.$space-6;
+
+  h2 {
+    font-family: v.$font-family-heading;
+    font-size: v.$font-size-2xl; font-weight: 700;
+    color: v.$color-text; margin-bottom: v.$space-1;
+  }
+  p { color: v.$color-text-muted; font-size: v.$font-size-sm; }
+}
+
+// Error
+.error-alert {
+  @include m.flex-center;
+  justify-content: flex-start; gap: v.$space-2;
+  padding: v.$space-3 v.$space-4;
+  background: #FEF2F2; border: 1px solid #FECACA;
+  border-radius: v.$border-radius;
+  color: #991B1B; font-size: v.$font-size-sm;
+  margin-bottom: v.$space-4; animation: fadeIn 0.3s ease;
+}
+
+// Form
+.form-group {
+  @include m.flex-col; gap: v.$space-2; margin-bottom: v.$space-4;
+
+  label { font-size: v.$font-size-sm; font-weight: 600; color: v.$color-text-muted; }
+
+  &.has-error {
+    .input-wrapper { border-color: v.$color-danger !important; }
+    label { color: v.$color-danger; }
+  }
+}
+
+.input-wrapper {
+  position: relative; display: flex; align-items: center;
+  background: v.$color-bg-surface; border: 1.5px solid v.$color-border;
+  border-radius: v.$border-radius; transition: v.$transition-fast; min-height: 48px;
+
+  &:focus-within {
+    border-color: v.$color-primary;
+    background: v.$color-bg-card;
+    box-shadow: v.$shadow-glow;
+  }
+
+  input {
+    flex: 1; padding: v.$space-3 v.$space-3 v.$space-3 2.75rem;
+    background: transparent; border: none; outline: none;
+    color: v.$color-text; font-size: v.$font-size-sm; font-family: v.$font-family;
+    &::placeholder { color: v.$color-text-subtle; }
+  }
+}
+
+.input-icon { position: absolute; left: v.$space-3; width: 18px; height: 18px; color: v.$color-text-subtle; pointer-events: none; }
+
+.toggle-pass {
+  padding: 0 v.$space-3; color: v.$color-text-subtle; background: none; border: none; cursor: pointer;
+  display: flex; align-items: center; transition: v.$transition-fast;
+  svg { width: 18px; height: 18px; }
+  &:hover { color: v.$color-primary; }
+}
+
+.error-msg { font-size: v.$font-size-xs; color: v.$color-danger; animation: fadeIn 0.2s ease; }
+
+// Submit
+.btn-submit {
+  @include m.flex-center; gap: v.$space-2; width: 100%;
+  padding: v.$space-4;
+  background: v.$gradient-primary;
+  color: white; border: none; border-radius: v.$border-radius;
+  font-family: v.$font-family-heading;
+  font-size: v.$font-size-base; font-weight: 700;
+  cursor: pointer; transition: v.$transition-fast; margin-top: v.$space-2;
+  min-height: 52px;
+  box-shadow: 0 2px 8px rgba(8,145,178,0.2);
+
+  &:hover:not(:disabled) {
+    opacity: 0.92; transform: translateY(-1px);
+    box-shadow: 0 4px 16px rgba(8,145,178,0.3);
+  }
+  &:disabled { opacity: 0.65; cursor: not-allowed; transform: none; }
+}
+
+.btn-spinner {
+  width: 18px; height: 18px; border: 2px solid rgba(255,255,255,0.35);
+  border-top-color: white; border-radius: 50%; animation: spin 0.7s linear infinite;
+}
+
+.footer-text { text-align: center; font-size: v.$font-size-xs; color: v.$color-text-subtle; }
+
+@keyframes fadeIn    { from { opacity: 0; } to { opacity: 1; } }
+@keyframes slideInUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes spin      { to { transform: rotate(360deg); } }

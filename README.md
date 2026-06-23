@@ -1,92 +1,25 @@
-# SiMA
-# SIMA — Sistema Inteligente de Monitoreo para Adultos
+# SimaFrontend
 
-SIMA es una plataforma diseñada para apoyar el monitoreo y asistencia de personas adultas mayores mediante la integración de un chatbot, dispositivos IoT y notificaciones inteligentes.
+This project was generated with [Angular CLI](https://github.com/angular/angular-cli) version 17.3.11.
 
-El sistema permite consultar si un medicamento fue tomado, revisar eventos detectados por dispositivos como un pastillero inteligente o una pulsera IoT, y enviar alertas a familiares o cuidadores a través de WeChat.
+## Development server
 
----
+Run `ng serve` for a dev server. Navigate to `http://localhost:4200/`. The application will automatically reload if you change any of the source files.
 
-## Descripción del proyecto
+## Code scaffolding
 
-SIMA nace como una solución tecnológica enfocada en la salud y el acompañamiento de adultos mayores, especialmente en contextos donde es importante tener seguimiento básico de medicación, actividad y posibles riesgos.
+Run `ng generate component component-name` to generate a new component. You can also use `ng generate directive|pipe|service|class|guard|interface|enum|module`.
 
-El sistema combina:
+## Build
 
-- una interfaz web moderna,
-- un backend robusto,
-- procesamiento o lógica auxiliar en Python,
-- dispositivos IoT basados en ESP32,
-- e integración con WeChat para notificaciones.
+Run `ng build` to build the project. The build artifacts will be stored in the `dist/` directory.
 
----
+## Running unit tests
 
-## Objetivo
+Run `ng test` to execute the unit tests via [Karma](https://karma-runner.github.io).
 
-Brindar una herramienta centralizada que permita consultar, monitorear y alertar sobre eventos relevantes relacionados con el cuidado de adultos mayores.
+## Running end-to-end tests
 
----
+Run `ng e2e` to execute the end-to-end tests via a platform of your choice. To use this command, you need to first add a package that implements end-to-end testing capabilities.
 
-## Funcionalidades principales
-
-- Consulta del estado de medicamentos.
-- Registro de apertura del pastillero IoT.
-- Monitoreo básico de actividad o señales mediante pulsera IoT.
-- Chatbot para consultas en lenguaje natural.
-- Alertas a familiares o cuidadores.
-- Historial de eventos y monitoreo.
-- Integración con WeChat para notificaciones.
-- Panel web para visualización de información.
-
----
-
-## Arquitectura general
-
-El proyecto se organiza en los siguientes componentes:
-
-- **Frontend:** Angular
-- **Backend:** Spring Boot
-- **Procesamiento auxiliar / reglas:** Python
-- **Dispositivo IoT:** ESP32
-- **Notificaciones:** WeChat
-- **Persistencia:** MySQL
-
-### Flujo general
-1. El usuario o familiar interactúa con el sistema mediante el chatbot o la interfaz web.
-2. El backend procesa la solicitud y consulta la información disponible.
-3. Los dispositivos IoT reportan eventos relevantes al sistema.
-4. El sistema evalúa reglas o condiciones.
-5. Si existe una alerta, se notifica al familiar o cuidador por WeChat.
-
----
-
-## Pila tecnológica
-
-- **Frontend:** Angular
-- **Backend:** Spring Boot
-- **Lenguaje auxiliar:** Python
-- **Hardware IoT:** ESP32
-- **Mensajería / integración:** WeChat
-- **Base de datos:** MySQL
-
----
-
-## Metodología de desarrollo
-
-El proyecto se desarrollará bajo un enfoque ágil, utilizando Scrum y trabajo por sprints para organizar entregas incrementales.
-
----
-
-## Estructura esperada del proyecto
-
-La estructura del repositorio puede organizarse de la siguiente manera:
-
-```bash
-SIMA/
-├── frontend/
-├── backend/
-├── python-services/
-├── iot/
-├── docs/
-├── README.md
-└── .gitignore
+## Further help
