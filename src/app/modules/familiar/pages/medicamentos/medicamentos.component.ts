@@ -123,7 +123,7 @@ export class MedicamentosComponent implements OnInit {
       instrucciones: m.instrucciones ?? '',
       stockActual: m.stockActual ?? null, stockMinimo: m.stockMinimo ?? null,
       prescritoPor: m.prescritoPor ?? '',
-      adultoMayorId: m.adultoMayorId,
+      adultoMayorId: (m as any).idAdulto || m.adultoMayorId || '',
     });
     this.horasInput.set((m.horasToma ?? []).map(h => `${h}:00`).join(', '));
     this.modalMode.set('edit');
@@ -158,7 +158,8 @@ export class MedicamentosComponent implements OnInit {
         error: e  => { this.showToast(e.mensaje ?? 'Error', 'error'); this.saving.set(false); }
       });
     } else {
-      this.medSvc.update(this.selected()!.id, payload).subscribe({
+      const idMed = (this.selected() as any).idMedicamento || this.selected()!.id;
+      this.medSvc.update(idMed, payload).subscribe({
         next: () => { this.showToast('Medicamento actualizado', 'success'); this.closeModal(); this.recargar(); },
         error: e  => { this.showToast(e.mensaje ?? 'Error', 'error'); this.saving.set(false); }
       });
@@ -175,7 +176,8 @@ export class MedicamentosComponent implements OnInit {
   confirmarEliminar(): void {
     const m = this.confirmDelete();
     if (!m) return;
-    this.medSvc.delete(m.id).subscribe({
+    const idMed = (m as any).idMedicamento || m.id;
+    this.medSvc.delete(idMed).subscribe({
       next: () => { this.showToast('Medicamento eliminado', 'success'); this.confirmDelete.set(null); this.recargar(); },
       error: e  => { this.showToast(e.mensaje ?? 'Error', 'error'); this.confirmDelete.set(null); }
     });
