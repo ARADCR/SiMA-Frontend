@@ -9,6 +9,10 @@ import { AdultoMayor } from '../../../../core/models/adulto-mayor.model';
 
 type ModalMode = 'create' | 'edit' | null;
 
+/**
+ * Componente para agregar, editar o eliminar medicamentos de la agenda.
+ * Implementación para HU-08: Agregar o editar agenda de medicamentos del adulto.
+ */
 @Component({
   selector: 'app-medicamentos',
   standalone: true,
