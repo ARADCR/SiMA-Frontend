@@ -1,0 +1,48 @@
+<aside class="sidebar" [class.collapsed]="collapsed">
+  <!-- Logo -->
+  <div class="sidebar-header">
+    <div class="logo">
+      <div class="logo-icon">S</div>
+      @if (!collapsed) {
+        <div class="logo-text">
+          <span class="logo-name">SiMA</span>
+          <span class="logo-sub">Sistema de Monitoreo</span>
+        </div>
+      }
+    </div>
+  </div>
+
+  <!-- Nav items -->
+  <nav class="sidebar-nav">
+    @for (item of navItems; track item.route) {
+      <a
+        [routerLink]="item.route"
+        routerLinkActive="active"
+        class="nav-item"
+        [title]="collapsed ? item.label : ''"
+        [id]="'sidebar-' + item.route.split('/').pop()">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+          <path [attr.d]="item.icon"/>
+        </svg>
+        @if (!collapsed) {
+          <span class="nav-label">{{ item.label }}</span>
+        }
+      </a>
+    }
+  </nav>
+
+  <!-- Footer -->
+  <div class="sidebar-footer">
+    @if (!collapsed) {
+      <div class="user-card">
+        <div class="user-avatar">
+          {{ (auth.usuarioActual?.nombre || 'U').charAt(0) }}
+        </div>
+        <div class="user-details">
+          <span class="user-name">{{ auth.usuarioActual?.nombre }}</span>
+          <span class="user-role">{{ auth.rolActual }}</span>
+        </div>
+      </div>
+    }
+  </div>
+</aside>
