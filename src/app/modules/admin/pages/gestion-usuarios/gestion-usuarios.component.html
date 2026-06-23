@@ -1,0 +1,246 @@
+<div class="page-container">
+
+  <!-- ══ HEADER ══ -->
+  <div class="page-header">
+    <div class="header-left">
+      <h1>Gestión de Usuarios</h1>
+      <p>Administra los cuentas de familiares y cuidadores del sistema</p>
+    </div>
+    <button class="btn-primary" (click)="openCreate()">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+      Nuevo usuario
+    </button>
+  </div>
+
+  <!-- ══ STATS ══ -->
+  <div class="stats-row">
+    <div class="stat-card">
+      <span class="stat-value">{{ stats().total }}</span>
+      <span class="stat-label">Total usuarios</span>
+    </div>
+    <div class="stat-card accent-green">
+      <span class="stat-value">{{ stats().activos }}</span>
+      <span class="stat-label">Activos</span>
+    </div>
+    <div class="stat-card accent-blue">
+      <span class="stat-value">{{ stats().familiares }}</span>
+      <span class="stat-label">Familiares</span>
+    </div>
+    <div class="stat-card accent-teal">
+      <span class="stat-value">{{ stats().cuidadores }}</span>
+      <span class="stat-label">Cuidadores</span>
+    </div>
+  </div>
+
+  <!-- ══ FILTROS ══ -->
+  <div class="sima-card filters-card">
+    <div class="search-wrap">
+      <svg class="search-icon" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>
+      </svg>
+      <input
+        class="search-input"
+        type="text"
+        placeholder="Buscar por nombre, apellido o correo…"
+        [ngModel]="filtroTexto()"
+        (ngModelChange)="filtroTexto.set($event)" />
+    </div>
+    <select class="rol-select" [ngModel]="filtroRol()" (ngModelChange)="filtroRol.set($event)">
+      <option value="">Todos los roles</option>
+      @for (r of roles; track r) {
+        <option [value]="r">{{ r }}</option>
+      }
+    </select>
+  </div>
+
+  <!-- ══ TABLA ══ -->
+  <div class="sima-card table-card">
+    @if (loading()) {
+      <div class="loading-state">
+        <div class="spinner"></div>
+        <span>Cargando usuarios…</span>
+      </div>
+    } @else if (error()) {
+      <div class="error-state">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
+        <p>{{ error() }}</p>
+        <button class="btn-secondary" (click)="ngOnInit()">Reintentar</button>
+      </div>
+    } @else if (usuariosFiltrados().length === 0) {
+      <div class="empty-state">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
+        <p>No se encontraron usuarios</p>
+      </div>
+    } @else {
+      <div class="table-wrapper">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Usuario</th>
+              <th>Correo</th>
+              <th>Rol</th>
+              <th>Estado</th>
+              <th>Registrado</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (u of usuariosFiltrados(); track u.id; let i = $index) {
+              <tr class="table-row" [style.animation-delay]="(i * 50) + 'ms'">
+                <td>
+                  <div class="user-cell">
+                    <div class="avatar" [attr.data-rol]="u.rol">{{ iniciales(u) }}</div>
+                    <div>
+                      <div class="user-name">{{ u.nombre }} {{ u.apellido }}</div>
+                    </div>
+                  </div>
+                </td>
+                <td class="email-cell">{{ u.email }}</td>
+                <td>
+                  <span class="badge badge-{{ rolColor(u.rol) }}">{{ u.rol }}</span>
+                </td>
+                <td>
+                  <button
+                    class="toggle-btn"
+                    [class.active]="u.activo"
+                    (click)="toggleActivo(u)"
+                    [attr.aria-label]="u.activo ? 'Desactivar usuario' : 'Activar usuario'">
+                    <span class="toggle-dot"></span>
+                  </button>
+                </td>
+                <td class="date-cell">{{ u.createdAt | date:'dd/MM/yyyy' }}</td>
+                <td>
+                  <div class="action-btns">
+                    <button class="icon-btn edit" (click)="openEdit(u)" aria-label="Editar usuario">
+                      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
+                    </button>
+                    <button class="icon-btn delete" (click)="pedirConfirmacion(u)" aria-label="Eliminar usuario">
+                      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </div>
+
+</div>
+
+<!-- ══ MODAL CREAR / EDITAR ══ -->
+@if (modalMode()) {
+  <div class="modal-overlay" (click)="closeModal()">
+    <div class="modal" (click)="$event.stopPropagation()" role="dialog" [attr.aria-label]="modalMode() === 'create' ? 'Crear usuario' : 'Editar usuario'">
+      <div class="modal-header">
+        <h2>{{ modalMode() === 'create' ? 'Nuevo usuario' : 'Editar usuario' }}</h2>
+        <button class="modal-close" (click)="closeModal()" aria-label="Cerrar">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </div>
+
+      <form [formGroup]="form" (ngSubmit)="guardar()" class="modal-body" novalidate>
+
+        <div class="form-row">
+          <div class="form-group" [class.error]="isInvalid('nombre')">
+            <label for="nombre">Nombre <span class="required">*</span></label>
+            <input id="nombre" formControlName="nombre" type="text" placeholder="Ej: María" autocomplete="given-name">
+            @if (isInvalid('nombre')) {
+              <span class="field-error">Ingresa un nombre válido (mín. 2 caracteres)</span>
+            }
+          </div>
+          <div class="form-group" [class.error]="isInvalid('apellido')">
+            <label for="apellido">Apellido <span class="required">*</span></label>
+            <input id="apellido" formControlName="apellido" type="text" placeholder="Ej: García" autocomplete="family-name">
+            @if (isInvalid('apellido')) {
+              <span class="field-error">Ingresa un apellido válido</span>
+            }
+          </div>
+        </div>
+
+        <div class="form-group" [class.error]="isInvalid('correo')">
+          <label for="correo">Correo electrónico <span class="required">*</span></label>
+          <input id="correo" formControlName="correo" type="email" placeholder="correo@ejemplo.com" autocomplete="email"
+                 [attr.readonly]="modalMode() === 'edit' ? true : null">
+          @if (isInvalid('correo')) {
+            <span class="field-error">Ingresa un correo electrónico válido</span>
+          }
+        </div>
+
+        <div class="form-group" [class.error]="isInvalid('password')">
+          <label for="password">
+            Contraseña
+            @if (modalMode() === 'create') { <span class="required">*</span> }
+            @if (modalMode() === 'edit') { <span class="optional">(dejar vacío para mantener)</span> }
+          </label>
+          <div class="password-wrap">
+            <input
+              id="password"
+              formControlName="password"
+              [type]="showPassword() ? 'text' : 'password'"
+              placeholder="Mín. 8 caracteres, 1 mayúscula, 1 número, 1 símbolo"
+              autocomplete="new-password">
+            <button type="button" class="toggle-pass" (click)="showPassword.set(!showPassword())" aria-label="Ver contraseña">
+              @if (showPassword()) {
+                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 7c2.76 0 5 2.24 5 5 0 .65-.13 1.26-.36 1.83l2.92 2.92c1.51-1.26 2.7-2.89 3.43-4.75-1.73-4.39-6-7.5-11-7.5-1.4 0-2.74.25-3.98.7l2.16 2.16C10.74 7.13 11.35 7 12 7zM2 4.27l2.28 2.28.46.46A11.804 11.804 0 0 0 1 12c1.73 4.39 6 7.5 11 7.5 1.55 0 3.03-.3 4.38-.84l.42.42L19.73 22 21 20.73 3.27 3 2 4.27zM7.53 9.8l1.55 1.55c-.05.21-.08.43-.08.65 0 1.66 1.34 3 3 3 .22 0 .44-.03.65-.08l1.55 1.55c-.67.33-1.41.53-2.2.53-2.76 0-5-2.24-5-5 0-.79.2-1.53.53-2.2zm4.31-.78l3.15 3.15.02-.16c0-1.66-1.34-3-3-3l-.17.01z"/></svg>
+              } @else {
+                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>
+              }
+            </button>
+          </div>
+          @if (isInvalid('password')) {
+            <span class="field-error">Mín. 8 caracteres, 1 mayúscula, 1 número y 1 símbolo (&#64;$!%*?&amp;)</span>
+          }
+        </div>
+
+        <div class="form-group" [class.error]="isInvalid('rol')">
+          <label for="rol">Rol <span class="required">*</span></label>
+          <select id="rol" formControlName="rol">
+            @for (r of roles; track r) {
+              <option [value]="r">{{ r }}</option>
+            }
+          </select>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn-secondary" (click)="closeModal()">Cancelar</button>
+          <button type="submit" class="btn-primary" [disabled]="saving()">
+            @if (saving()) { <span class="btn-spinner"></span> }
+            {{ saving() ? 'Guardando…' : (modalMode() === 'create' ? 'Crear usuario' : 'Guardar cambios') }}
+          </button>
+        </div>
+
+      </form>
+    </div>
+  </div>
+}
+
+<!-- ══ CONFIRM DELETE ══ -->
+@if (confirmDelete()) {
+  <div class="modal-overlay" (click)="cancelarEliminar()">
+    <div class="modal modal-sm" (click)="$event.stopPropagation()" role="alertdialog">
+      <div class="confirm-icon danger">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
+      </div>
+      <h3>Eliminar usuario</h3>
+      <p>¿Seguro que deseas eliminar a <strong>{{ confirmDelete()!.nombre }} {{ confirmDelete()!.apellido }}</strong>? Esta acción no se puede deshacer.</p>
+      <div class="modal-footer">
+        <button class="btn-secondary" (click)="cancelarEliminar()">Cancelar</button>
+        <button class="btn-danger" (click)="confirmarEliminar()">Eliminar</button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- ══ TOAST ══ -->
+@if (toast()) {
+  <div class="toast" [class.toast-success]="toast()!.type === 'success'" [class.toast-error]="toast()!.type === 'error'" role="alert" aria-live="polite">
+    @if (toast()!.type === 'success') {
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+    } @else {
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
+    }
+    {{ toast()!.msg }}
+  </div>
+}

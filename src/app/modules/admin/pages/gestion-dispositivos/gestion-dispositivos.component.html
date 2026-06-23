@@ -1,0 +1,241 @@
+<div class="page-container">
+
+  <!-- ══ HEADER ══ -->
+  <div class="page-header">
+    <div class="header-left">
+      <h1>Dispositivos IoT</h1>
+      <p>Registra y asigna dispositivos a los adultos mayores del sistema</p>
+    </div>
+    <button class="btn-primary" (click)="openCreate()">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+      Registrar dispositivo
+    </button>
+  </div>
+
+  <!-- ══ STATS ══ -->
+  <div class="stats-row">
+    <div class="stat-card">
+      <div class="stat-icon"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M17 1H7c-1.1 0-2 .9-2 2v18c0 1.1.9 2 2 2h10c1.1 0 2-.9 2-2V3c0-1.1-.9-2-2-2zm0 18H7V5h10v14zm-5-4c.83 0 1.5-.67 1.5-1.5S12.83 12 12 12s-1.5.67-1.5 1.5S11.17 15 12 15z"/></svg></div>
+      <div class="stat-info">
+        <span class="stat-value">{{ stats().total }}</span>
+        <span class="stat-label">Total registrados</span>
+      </div>
+    </div>
+    <div class="stat-card accent-green">
+      <div class="stat-icon"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg></div>
+      <div class="stat-info">
+        <span class="stat-value">{{ stats().activos }}</span>
+        <span class="stat-label">Activos</span>
+      </div>
+    </div>
+    <div class="stat-card accent-red">
+      <div class="stat-icon"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg></div>
+      <div class="stat-info">
+        <span class="stat-value">{{ stats().desconectados }}</span>
+        <span class="stat-label">Desconectados</span>
+      </div>
+    </div>
+    <div class="stat-card accent-yellow">
+      <div class="stat-icon"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg></div>
+      <div class="stat-info">
+        <span class="stat-value">{{ stats().sinAsignar }}</span>
+        <span class="stat-label">Sin asignar</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ FILTROS ══ -->
+  <div class="sima-card filters-card">
+    <div class="search-wrap">
+      <svg class="search-icon" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>
+      </svg>
+      <input class="search-input" type="text" placeholder="Buscar por nombre, serie o adulto mayor…"
+        [ngModel]="filtroTexto()" (ngModelChange)="filtroTexto.set($event)">
+    </div>
+    <select class="rol-select" [ngModel]="filtroEstado()" (ngModelChange)="filtroEstado.set($event)">
+      <option value="">Todos los estados</option>
+      @for (e of estadosDispositivo; track e.value) {
+        <option [value]="e.value">{{ e.label }}</option>
+      }
+    </select>
+  </div>
+
+  <!-- ══ GRID DE DISPOSITIVOS ══ -->
+  @if (loading()) {
+    <div class="loading-state">
+      <div class="spinner"></div>
+      <span>Cargando dispositivos…</span>
+    </div>
+  } @else if (error()) {
+    <div class="error-state sima-card">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
+      <p>{{ error() }}</p>
+    </div>
+  } @else if (dispositivosFiltrados().length === 0) {
+    <div class="empty-state sima-card">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M17 1H7c-1.1 0-2 .9-2 2v18c0 1.1.9 2 2 2h10c1.1 0 2-.9 2-2V3c0-1.1-.9-2-2-2z"/></svg>
+      <p>No se encontraron dispositivos</p>
+      <button class="btn-primary" (click)="openCreate()">Registrar el primero</button>
+    </div>
+  } @else {
+    <div class="devices-grid">
+      @for (d of dispositivosFiltrados(); track d.id; let i = $index) {
+        <div class="device-card" [style.animation-delay]="(i * 60) + 'ms'">
+
+          <!-- Header de la tarjeta -->
+          <div class="device-card-header">
+            <div class="device-icon-wrap" [attr.data-tipo]="d.tipo">
+              <svg viewBox="0 0 24 24" fill="currentColor"><path [attr.d]="tipoIcon(d.tipo)"/></svg>
+            </div>
+            <span class="badge badge-{{ estadoClass(d.estado) }}">{{ d.estado }}</span>
+          </div>
+
+          <!-- Nombre y tipo -->
+          <div class="device-info">
+            <h3 class="device-name">{{ d.nombre }}</h3>
+            <p class="device-tipo">{{ tipoLabel(d.tipo) }}</p>
+          </div>
+
+          <!-- Detalles -->
+          <div class="device-meta">
+            @if (d.numeroSerie) {
+              <div class="meta-row">
+                <span class="meta-label">N° Serie</span>
+                <span class="meta-value mono">{{ d.numeroSerie }}</span>
+              </div>
+            }
+            <div class="meta-row">
+              <span class="meta-label">Asignado a</span>
+              <span class="meta-value" [class.unassigned]="!d.adultoMayorId">
+                {{ getNombreAdulto(d.adultoMayorId) }}
+              </span>
+            </div>
+            @if (d.nivelBateria !== undefined) {
+              <div class="meta-row">
+                <span class="meta-label">Batería</span>
+                <div class="battery-wrap">
+                  <div class="battery-bar">
+                    <div class="battery-fill" [style.width]="d.nivelBateria + '%'" [style.background]="batteryColor(d.nivelBateria)"></div>
+                  </div>
+                  <span class="battery-pct" [style.color]="batteryColor(d.nivelBateria)">{{ d.nivelBateria }}%</span>
+                </div>
+              </div>
+            }
+            @if (d.ultimaConexion) {
+              <div class="meta-row">
+                <span class="meta-label">Última conexión</span>
+                <span class="meta-value">{{ d.ultimaConexion | date:'dd/MM/yy HH:mm' }}</span>
+              </div>
+            }
+          </div>
+
+          <!-- Acciones -->
+          <div class="device-actions">
+            <button class="btn-icon-card edit" (click)="openEdit(d)" aria-label="Editar dispositivo">
+              <svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
+              Editar
+            </button>
+            <button class="btn-icon-card delete" (click)="pedirConfirmacion(d)" aria-label="Eliminar dispositivo">
+              <svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+              Eliminar
+            </button>
+          </div>
+        </div>
+      }
+    </div>
+  }
+</div>
+
+<!-- ══ MODAL CREAR / EDITAR ══ -->
+@if (modalMode()) {
+  <div class="modal-overlay" (click)="closeModal()">
+    <div class="modal" (click)="$event.stopPropagation()" role="dialog">
+      <div class="modal-header">
+        <h2>{{ modalMode() === 'create' ? 'Registrar dispositivo' : 'Editar dispositivo' }}</h2>
+        <button class="modal-close" (click)="closeModal()" aria-label="Cerrar">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </div>
+
+      <form [formGroup]="form" (ngSubmit)="guardar()" class="modal-body" novalidate>
+
+        <div class="form-group" [class.error]="isInvalid('nombre')">
+          <label for="d-nombre">Nombre del dispositivo <span class="required">*</span></label>
+          <input id="d-nombre" formControlName="nombre" type="text" placeholder="Ej: Pulsera de María">
+          @if (isInvalid('nombre')) {
+            <span class="field-error">Ingresa un nombre válido (mín. 2 caracteres)</span>
+          }
+        </div>
+
+        <div class="form-row">
+          <div class="form-group" [class.error]="isInvalid('tipo')">
+            <label for="d-tipo">Tipo de dispositivo <span class="required">*</span></label>
+            <select id="d-tipo" formControlName="tipo">
+              @for (t of tiposDispositivo; track t.value) {
+                <option [value]="t.value">{{ t.label }}</option>
+              }
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="d-modelo">Modelo</label>
+            <input id="d-modelo" formControlName="modelo" type="text" placeholder="Ej: Xiaomi Band 7">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="d-serie">Número de serie</label>
+          <input id="d-serie" formControlName="numeroSerie" type="text" placeholder="Ej: SN-2024-001">
+        </div>
+
+        <div class="form-group">
+          <label for="d-adulto">Asignar a adulto mayor</label>
+          <select id="d-adulto" formControlName="adultoMayorId">
+            <option value="">— Sin asignar —</option>
+            @for (a of adultos(); track a.idAdulto) {
+              <option [value]="a.idAdulto">{{ a.nombre }} {{ a.apellido }}</option>
+            }
+          </select>
+          <span class="field-hint">Cada adulto mayor puede tener máximo un dispositivo asignado.</span>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn-secondary" (click)="closeModal()">Cancelar</button>
+          <button type="submit" class="btn-primary" [disabled]="saving()">
+            @if (saving()) { <span class="btn-spinner"></span> }
+            {{ saving() ? 'Guardando…' : (modalMode() === 'create' ? 'Registrar' : 'Guardar cambios') }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+}
+
+<!-- ══ CONFIRM DELETE ══ -->
+@if (confirmDelete()) {
+  <div class="modal-overlay" (click)="cancelarEliminar()">
+    <div class="modal modal-sm" (click)="$event.stopPropagation()" role="alertdialog">
+      <div class="confirm-icon danger">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
+      </div>
+      <h3>Eliminar dispositivo</h3>
+      <p>¿Deseas eliminar el dispositivo <strong>{{ confirmDelete()!.nombre }}</strong>? Esta acción no se puede deshacer.</p>
+      <div class="modal-footer">
+        <button class="btn-secondary" (click)="cancelarEliminar()">Cancelar</button>
+        <button class="btn-danger" (click)="confirmarEliminar()">Eliminar</button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- ══ TOAST ══ -->
+@if (toast()) {
+  <div class="toast" [class.toast-success]="toast()!.type === 'success'" [class.toast-error]="toast()!.type === 'error'" role="alert" aria-live="polite">
+    @if (toast()!.type === 'success') {
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+    } @else {
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
+    }
+    {{ toast()!.msg }}
+  </div>
+}
