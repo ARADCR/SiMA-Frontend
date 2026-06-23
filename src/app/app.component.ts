@@ -1,7 +1,7 @@
 import { Component, OnInit, signal, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterOutlet, Router, NavigationEnd } from '@angular/router';
-import { filter } from 'rxjs/operators';
+import { filter, startWith } from 'rxjs/operators';
 
 import { NavbarComponent } from './shared/components/navbar/navbar.component';
 import { SidebarComponent } from './shared/components/sidebar/sidebar.component';
@@ -24,15 +24,17 @@ export class AppComponent implements OnInit {
   showLayout       = signal(false);
 
   ngOnInit(): void {
-    // Evalúa la URL actual (necesario al refrescar la página)
-    this.actualizarLayout(this.router.url);
-
-    // Evalúa cada cambio de ruta posterior
+    // startWith(null) garantiza que evaluemos la URL al primer tick,
+    // capturando el refresh en la ruta actual sin esperar NavigationEnd
     this.router.events
-      .pipe(filter(e => e instanceof NavigationEnd))
-      .subscribe((e) => {
-        const navEnd = e as NavigationEnd;
-        this.actualizarLayout(navEnd.urlAfterRedirects);
+      .pipe(
+        filter(e => e instanceof NavigationEnd),
+        startWith(null)          // dispara inmediatamente con valor null
+      )
+      .subscribe(() => {
+        // urlAfterRedirects en NavigationEnd, o snapshot actual del router
+        const url = this.router.url || '/';
+        this.actualizarLayout(url);
       });
 
     this.notification.recordatorios$.subscribe((recordatorio: RecordatorioMedicamento) => {
