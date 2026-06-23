@@ -1,0 +1,198 @@
+@use '../../../../../assets/styles/variables' as v;
+
+.page-container {
+  padding: v.$space-8; max-width: 1100px; margin: 0 auto;
+  animation: fadeIn 0.3s ease;
+  @media (max-width: v.$bp-md) { padding: v.$space-4; }
+}
+
+// ══ LOADING / ERROR ══════════════════════════════════════════
+.loading-full, .error-full {
+  display: flex; flex-direction: column; align-items: center;
+  justify-content: center; gap: v.$space-4; padding: v.$space-12;
+  color: v.$color-text-muted;
+  svg { width: 48px; height: 48px; opacity: 0.3; }
+}
+.error-full { background: v.$color-bg-card; border: 1px solid v.$color-border; border-radius: v.$border-radius-xl; box-shadow: v.$shadow; }
+
+// ══ PROFILE HEADER ═══════════════════════════════════════════
+.profile-back { margin-bottom: v.$space-5; }
+
+.back-link {
+  display: inline-flex; align-items: center; gap: v.$space-2;
+  color: v.$color-text-muted; font-size: v.$font-size-sm; font-weight: 500;
+  text-decoration: none; transition: v.$transition-fast;
+  svg { width: 18px; height: 18px; }
+  &:hover { color: v.$color-primary; }
+}
+
+.profile-hero {
+  display: flex; align-items: center; gap: v.$space-6;
+  margin-bottom: v.$space-8; flex-wrap: wrap;
+  @media (max-width: v.$bp-md) { flex-direction: column; align-items: flex-start; }
+}
+
+.profile-avatar {
+  width: 80px; height: 80px; border-radius: 50%; flex-shrink: 0;
+  background: v.$gradient-primary;
+  display: flex; align-items: center; justify-content: center;
+  font-family: v.$font-family-heading;
+  font-size: v.$font-size-2xl; font-weight: 800; color: #fff;
+  box-shadow: 0 4px 12px rgba(8, 145, 178, 0.25);
+}
+
+.profile-info {
+  flex: 1;
+  h1 { font-family: v.$font-family-heading; font-size: v.$font-size-3xl; font-weight: 700; color: v.$color-text; margin-bottom: v.$space-3; letter-spacing: -0.3px; }
+}
+
+.profile-meta { display: flex; align-items: center; gap: v.$space-3; flex-wrap: wrap; }
+
+.meta-chip {
+  display: inline-flex; align-items: center; gap: v.$space-1;
+  background: v.$color-bg-surface; border: 1px solid v.$color-border;
+  border-radius: v.$border-radius-full; padding: 4px v.$space-3;
+  font-size: v.$font-size-xs; color: v.$color-text-muted; font-weight: 500;
+  svg { width: 14px; height: 14px; }
+}
+
+.profile-actions { display: flex; gap: v.$space-3; flex-shrink: 0;
+  @media (max-width: v.$bp-md) { width: 100%; }
+}
+
+// ══ GRID DE PERFIL ═══════════════════════════════════════════
+.profile-grid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: v.$space-5;
+  @media (max-width: v.$bp-md) { grid-template-columns: 1fr; }
+}
+
+.profile-section { display: flex; flex-direction: column; gap: v.$space-5; }
+.medical-section { grid-column: 1 / -1; }
+.quick-links-card { grid-column: 1 / -1; }
+
+// ══ SIMA CARD ════════════════════════════════════════════════
+.sima-card {
+  background: v.$color-bg-card; border: 1px solid v.$color-border;
+  border-radius: v.$border-radius-xl; padding: v.$space-6;
+  box-shadow: v.$shadow; transition: v.$transition-base;
+  &:hover { box-shadow: v.$shadow-md; }
+}
+
+.section-title {
+  display: flex; align-items: center; gap: v.$space-2;
+  font-size: v.$font-size-xs; font-weight: 700; color: v.$color-text-subtle;
+  text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: v.$space-4;
+  svg { width: 16px; height: 16px; color: v.$color-primary; }
+}
+
+// ══ FIELDS ═══════════════════════════════════════════════════
+.fields-grid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: v.$space-5;
+  @media (max-width: v.$bp-sm) { grid-template-columns: 1fr; }
+}
+
+.form-group {
+  display: flex; flex-direction: column; gap: v.$space-2;
+  &.full-width { grid-column: 1 / -1; }
+
+  label { font-size: v.$font-size-xs; font-weight: 700; color: v.$color-text-muted; text-transform: uppercase; letter-spacing: 0.06em; }
+
+  input, textarea, select {
+    padding: 10px v.$space-4; background: v.$color-bg-card;
+    border: 1.5px solid v.$color-border; border-radius: v.$border-radius;
+    color: v.$color-text; font-size: v.$font-size-sm;
+    outline: none; transition: v.$transition-fast; font-family: v.$font-family; min-height: 44px;
+    &::placeholder { color: v.$color-text-subtle; }
+    &:focus { border-color: v.$color-primary; box-shadow: v.$shadow-glow; }
+  }
+
+  textarea { resize: vertical; min-height: 80px; }
+  &.error { input, textarea { border-color: v.$color-danger; } }
+}
+
+.field-value {
+  font-size: v.$font-size-sm; color: v.$color-text; font-weight: 500;
+  padding: v.$space-2 0; min-height: 24px; line-height: 1.5;
+  &.multiline { line-height: 1.6; color: v.$color-text-muted; }
+}
+
+.field-sub  { font-size: v.$font-size-xs; color: v.$color-text-muted; margin-left: v.$space-2; }
+.required   { color: v.$color-danger; margin-left: 2px; }
+.field-error { font-size: v.$font-size-xs; color: v.$color-danger; }
+
+// ══ QUICK LINKS ══════════════════════════════════════════════
+.quick-links { display: flex; flex-direction: column; gap: v.$space-3; }
+
+.quick-link {
+  display: flex; align-items: center; gap: v.$space-4;
+  padding: v.$space-4; border-radius: v.$border-radius-lg;
+  border: 1px solid v.$color-border; background: v.$color-bg-surface;
+  text-decoration: none; transition: v.$transition-base; cursor: pointer;
+
+  &:hover {
+    border-color: rgba(8,145,178,0.4);
+    background: rgba(8,145,178,0.04);
+    transform: translateX(4px);
+  }
+  > div:nth-child(2) { flex: 1; }
+}
+
+.ql-icon {
+  width: 40px; height: 40px; border-radius: v.$border-radius;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  svg { width: 20px; height: 20px; }
+  &.teal   { background: rgba(8,145,178,0.10); color: v.$color-primary; }
+  &.indigo { background: rgba(5,150,105,0.10); color: v.$color-secondary; }
+}
+
+.ql-label { display: block; font-size: v.$font-size-sm; font-weight: 600; color: v.$color-text; }
+.ql-sub   { display: block; font-size: v.$font-size-xs; color: v.$color-text-muted; }
+.ql-arrow { width: 20px; height: 20px; color: v.$color-text-subtle; flex-shrink: 0; }
+
+// ══ BADGE ════════════════════════════════════════════════════
+.badge {
+  display: inline-flex; align-items: center; padding: 3px v.$space-3;
+  border-radius: v.$border-radius-full; font-size: v.$font-size-xs; font-weight: 600;
+  &-success { background: rgba(v.$color-success, 0.10); color: #065F46; }
+  &-danger  { background: rgba(v.$color-danger,  0.08); color: #991B1B; }
+}
+
+// ══ BUTTONS ══════════════════════════════════════════════════
+.btn-primary {
+  display: inline-flex; align-items: center; gap: v.$space-2;
+  padding: 10px v.$space-5; background: v.$color-primary; color: #fff;
+  border: none; border-radius: v.$border-radius; font-family: v.$font-family;
+  font-weight: 600; font-size: v.$font-size-sm; cursor: pointer;
+  transition: v.$transition-fast; white-space: nowrap; min-height: 44px;
+  svg { width: 16px; height: 16px; }
+  &:hover:not(:disabled) { background: v.$color-primary-dark; transform: translateY(-1px); box-shadow: v.$shadow-md; }
+  &:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+}
+.btn-secondary {
+  padding: 10px v.$space-5; background: v.$color-bg-surface; color: v.$color-text-muted;
+  border: 1px solid v.$color-border; border-radius: v.$border-radius; font-family: v.$font-family;
+  font-weight: 600; font-size: v.$font-size-sm; cursor: pointer; transition: v.$transition-fast; min-height: 44px;
+  &:hover { border-color: v.$color-primary; color: v.$color-primary; background: rgba(8,145,178,0.04); }
+}
+.btn-spinner {
+  width: 14px; height: 14px; border: 2px solid rgba(255,255,255,0.4);
+  border-top-color: #fff; border-radius: 50%; display: inline-block; animation: spin 0.6s linear infinite;
+}
+
+// ══ TOAST ════════════════════════════════════════════════════
+.toast {
+  position: fixed; bottom: v.$space-6; right: v.$space-6;
+  display: flex; align-items: center; gap: v.$space-3;
+  padding: v.$space-4 v.$space-5; border-radius: v.$border-radius-lg;
+  font-size: v.$font-size-sm; font-weight: 600; z-index: 2000; box-shadow: v.$shadow-lg;
+  animation: slideInUp 0.25s ease, fadeOut 0.3s ease 3.7s forwards;
+  svg { width: 18px; height: 18px; flex-shrink: 0; }
+  &-success { background: #ECFDF5; color: #065F46; border: 1px solid #6EE7B7; }
+  &-error   { background: #FEF2F2; color: #991B1B; border: 1px solid #FECACA; }
+}
+.spinner { width: 36px; height: 36px; border: 3px solid v.$color-border; border-top-color: v.$color-primary; border-radius: 50%; animation: spin 0.7s linear infinite; }
+
+@keyframes fadeIn    { from { opacity: 0; } to { opacity: 1; } }
+@keyframes fadeOut   { from { opacity: 1; } to { opacity: 0; } }
+@keyframes slideInUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes spin      { to { transform: rotate(360deg); } }

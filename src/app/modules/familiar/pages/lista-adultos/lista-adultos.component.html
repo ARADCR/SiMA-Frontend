@@ -1,0 +1,103 @@
+<div class="page-container">
+  <div class="page-header">
+    <div class="header-content">
+      <h1>Lista de Adultos Mayores</h1>
+      <p>Gestión de perfiles de adultos mayores a tu cargo</p>
+    </div>
+    <button class="btn btn-primary" (click)="openCreate()">
+      <i class="fas fa-plus"></i> Agregar Adulto Mayor
+    </button>
+  </div>
+
+  <div class="sima-card" *ngIf="loading()">
+    <p class="text-center text-muted p-4">Cargando...</p>
+  </div>
+
+  <div class="sima-card" *ngIf="!loading() && error()">
+    <p class="text-center text-danger p-4">{{ error() }}</p>
+  </div>
+
+  <div class="grid" *ngIf="!loading() && !error() && adultos().length > 0">
+    <div class="sima-card" *ngFor="let adulto of adultos()">
+      <div class="card-header">
+        <h3 class="card-title">{{ adulto.nombre }} {{ adulto.apellido }}</h3>
+        <span class="badge" [ngClass]="adulto.activo ? 'badge-success' : 'badge-danger'">
+          {{ adulto.activo ? 'Activo' : 'Inactivo' }}
+        </span>
+      </div>
+      <div class="card-body">
+        <p><strong>Edad:</strong> {{ adulto.edad || 'N/A' }}</p>
+        <p><strong>Nacimiento:</strong> {{ adulto.fechaNacimiento }}</p>
+        <p><strong>Condiciones Médicas:</strong> {{ adulto.condicionesMedicas || 'No registradas' }}</p>
+        <p><strong>Contacto Médico:</strong> {{ adulto.contactoMedico || 'No registrado' }}</p>
+      </div>
+      <div class="card-actions">
+        <button class="btn btn-outline-primary btn-sm" (click)="openEdit(adulto)">Editar</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="sima-card" *ngIf="!loading() && !error() && adultos().length === 0">
+    <p class="text-center text-muted p-4">No hay adultos mayores registrados.</p>
+  </div>
+</div>
+
+<!-- ══ MODAL FORM ══ -->
+@if (modalMode()) {
+  <div class="modal-overlay" (click)="closeModal()">
+    <div class="modal" (click)="$event.stopPropagation()" role="dialog">
+      <div class="modal-header">
+        <h2>{{ modalMode() === 'create' ? 'Agregar Adulto Mayor' : 'Editar Adulto Mayor' }}</h2>
+        <button class="modal-close" (click)="closeModal()" aria-label="Cerrar">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </div>
+      <form [formGroup]="form" (ngSubmit)="guardar()" class="modal-body" novalidate>
+        <div class="form-row">
+          <div class="form-group" [class.error]="isInvalid('nombre')">
+            <label>Nombre <span class="required">*</span></label>
+            <input type="text" formControlName="nombre" placeholder="Ej: Juan">
+            @if (isInvalid('nombre')) { <span class="field-error">Nombre requerido</span> }
+          </div>
+
+          <div class="form-group" [class.error]="isInvalid('apellido')">
+            <label>Apellido <span class="required">*</span></label>
+            <input type="text" formControlName="apellido" placeholder="Ej: Pérez">
+            @if (isInvalid('apellido')) { <span class="field-error">Apellido requerido</span> }
+          </div>
+        </div>
+
+        <div class="form-group" [class.error]="isInvalid('fechaNacimiento')">
+          <label>Fecha de Nacimiento <span class="required">*</span></label>
+          <input type="date" formControlName="fechaNacimiento">
+          @if (isInvalid('fechaNacimiento')) { <span class="field-error">Fecha requerida</span> }
+        </div>
+
+        <div class="form-group">
+          <label>Condiciones Médicas</label>
+          <textarea formControlName="condicionesMedicas" rows="3" placeholder="Diagnósticos, alergias..."></textarea>
+        </div>
+
+        <div class="form-group">
+          <label>Contacto Médico</label>
+          <input type="text" formControlName="contactoMedico" placeholder="Teléfono o nombre del médico de cabecera">
+          <span class="field-hint">Opcional. Información para emergencias.</span>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn-secondary" (click)="closeModal()">Cancelar</button>
+          <button type="submit" class="btn-primary" [disabled]="saving()">
+            @if (saving()) { <span class="btn-spinner"></span> }
+            {{ saving() ? 'Guardando…' : 'Guardar' }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+}
+
+<div class="toast-container" *ngIf="toast()">
+  <div class="toast" [ngClass]="'toast-' + toast()?.type">
+    {{ toast()?.msg }}
+  </div>
+</div>

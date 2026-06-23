@@ -1,0 +1,350 @@
+// ============================================================
+// SIMA — Estilos globales · Healthcare Light Theme
+// ============================================================
+@use 'variables' as v;
+@use 'mixins' as m;
+@use 'reset';
+
+
+// --- Base ---
+html, body {
+  height: 100%;
+  font-family: v.$font-family;
+  background-color: v.$color-bg;
+  color: v.$color-text;
+  font-size: 16px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: v.$font-family-heading;
+  line-height: 1.3;
+}
+
+// --- Scrollbar personalizado (suave, claro) ---
+::-webkit-scrollbar         { width: 6px; height: 6px; }
+::-webkit-scrollbar-track   { background: v.$color-bg-surface; }
+::-webkit-scrollbar-thumb   {
+  background: v.$color-border;
+  border-radius: v.$border-radius-full;
+  &:hover { background: v.$color-primary; }
+}
+
+// --- Animaciones globales ---
+@keyframes fadeIn    { from { opacity: 0; }                           to { opacity: 1; } }
+@keyframes slideInUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes slideInLeft { from { opacity: 0; transform: translateX(-16px); } to { opacity: 1; transform: translateX(0); } }
+@keyframes spin      { to   { transform: rotate(360deg); } }
+@keyframes pulse     { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+@keyframes fadeOut   { from { opacity: 1; } to { opacity: 0; } }
+@keyframes ping      { 75%, 100% { transform: scale(1.5); opacity: 0; } }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+}
+
+// --- Utilidades de texto ---
+.text-primary  { color: v.$color-primary; }
+.text-success  { color: v.$color-success; }
+.text-warning  { color: v.$color-warning; }
+.text-danger   { color: v.$color-danger; }
+.text-muted    { color: v.$color-text-muted; }
+.text-subtle   { color: v.$color-text-subtle; }
+
+.bg-card       { background-color: v.$color-bg-card; }
+.bg-surface    { background-color: v.$color-bg-surface; }
+
+.gradient-text {
+  background: v.$gradient-primary;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+// --- Layout principal ---
+.app-layout {
+  display: flex;
+  min-height: 100vh;
+  background: v.$color-bg;
+}
+
+.main-content {
+  flex: 1;
+  margin-left: v.$sidebar-width;
+  padding-top: v.$navbar-height;
+  transition: margin-left v.$transition-base;
+  min-height: 100vh;
+  background: v.$color-bg;
+
+  &.sidebar-collapsed {
+    margin-left: v.$sidebar-collapsed;
+  }
+}
+
+// --- Page containers ---
+.page-container {
+  padding: v.$space-8;
+  max-width: 1400px;
+  margin: 0 auto;
+  animation: fadeIn 0.3s ease;
+
+  @media (max-width: v.$bp-md) { padding: v.$space-4; }
+}
+
+.page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: v.$space-8;
+  gap: v.$space-4;
+  flex-wrap: wrap;
+
+  h1 {
+    font-family: v.$font-family-heading;
+    font-size: v.$font-size-3xl;
+    font-weight: 700;
+    color: v.$color-text;
+    margin-bottom: v.$space-1;
+    letter-spacing: -0.3px;
+  }
+
+  p { color: v.$color-text-muted; font-size: v.$font-size-base; }
+
+  @media (max-width: v.$bp-md) {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
+// --- SIMA Card base ---
+.sima-card {
+  background: v.$color-bg-card;
+  border: 1px solid v.$color-border;
+  border-radius: v.$border-radius-lg;
+  padding: v.$space-6;
+  box-shadow: v.$shadow;
+  transition: v.$transition-base;
+
+  &:hover {
+    box-shadow: v.$shadow-md;
+  }
+}
+
+// --- Buttons base ---
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: v.$space-2;
+  padding: v.$space-3 v.$space-5;
+  border-radius: v.$border-radius;
+  font-family: v.$font-family;
+  font-weight: 600;
+  font-size: v.$font-size-sm;
+  transition: v.$transition-fast;
+  cursor: pointer;
+  border: none;
+  touch-action: manipulation;
+  min-height: 44px;
+
+  &-primary {
+    background: v.$color-primary;
+    color: #fff;
+    &:hover:not(:disabled) { background: v.$color-primary-dark; transform: translateY(-1px); box-shadow: v.$shadow-md; }
+    &:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+  }
+
+  &-secondary {
+    background: v.$color-bg-surface;
+    color: v.$color-text-muted;
+    border: 1px solid v.$color-border;
+    &:hover { border-color: v.$color-primary; color: v.$color-primary; background: rgba(8,145,178,0.04); }
+  }
+
+  &-danger {
+    background: rgba(v.$color-danger, 0.08);
+    color: v.$color-danger;
+    border: 1px solid rgba(v.$color-danger, 0.25);
+    &:hover { background: v.$color-danger; color: #fff; border-color: v.$color-danger; }
+  }
+
+  &-sm {
+    padding: v.$space-2 v.$space-4;
+    font-size: v.$font-size-xs;
+    min-height: 36px;
+  }
+}
+
+// --- Badges ---
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px v.$space-3;
+  border-radius: v.$border-radius-full;
+  font-size: v.$font-size-xs;
+  font-weight: 600;
+  white-space: nowrap;
+
+  &-success { background: rgba(v.$color-success, 0.12); color: #065F46; }
+  &-warning { background: rgba(v.$color-warning, 0.12); color: #92400E; }
+  &-danger  { background: rgba(v.$color-danger, 0.10);  color: #991B1B; }
+  &-info    { background: rgba(v.$color-info, 0.10);    color: #164E63; }
+  &-primary { background: rgba(v.$color-primary, 0.10); color: #164E63; }
+  &-pending { background: rgba(v.$color-warning, 0.10); color: #92400E; }
+  &-neutral { background: v.$color-bg-surface;          color: v.$color-text-muted; }
+}
+
+// --- Form base ---
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: v.$space-2;
+
+  label {
+    font-size: v.$font-size-xs;
+    font-weight: 700;
+    color: v.$color-text-muted;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+
+  input, select, textarea {
+    padding: 10px v.$space-4;
+    background: v.$color-bg-card;
+    border: 1.5px solid v.$color-border;
+    border-radius: v.$border-radius;
+    color: v.$color-text;
+    font-size: v.$font-size-sm;
+    font-family: v.$font-family;
+    outline: none;
+    transition: v.$transition-fast;
+    min-height: 44px;
+
+    &::placeholder { color: v.$color-text-subtle; }
+    &:focus { border-color: v.$color-primary; box-shadow: v.$shadow-glow; }
+    &[readonly] { background: v.$color-bg-surface; cursor: not-allowed; opacity: 0.7; }
+    option { background: v.$color-bg-card; }
+  }
+
+  textarea { min-height: 80px; resize: vertical; }
+
+  &.error {
+    input, select, textarea { border-color: v.$color-danger; }
+  }
+}
+
+.field-error { font-size: v.$font-size-xs; color: v.$color-danger; margin-top: v.$space-1; }
+.field-hint  { font-size: v.$font-size-xs; color: v.$color-text-subtle; margin-top: v.$space-1; }
+.required    { color: v.$color-danger; margin-left: 2px; }
+
+// --- Modal overlay ---
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.45);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: v.$space-4;
+  animation: fadeIn 0.2s ease;
+}
+
+.modal {
+  background: v.$color-bg-card;
+  border: 1px solid v.$color-border;
+  border-radius: v.$border-radius-xl;
+  box-shadow: v.$shadow-lg;
+  width: 100%;
+  max-width: 520px;
+  max-height: 90vh;
+  overflow-y: auto;
+  animation: slideInUp 0.22s ease;
+
+  &.modal-sm {
+    max-width: 400px;
+    padding: v.$space-8;
+    text-align: center;
+    h3 { font-family: v.$font-family-heading; font-size: v.$font-size-xl; font-weight: 700; color: v.$color-text; margin-bottom: v.$space-3; }
+    p  { color: v.$color-text-muted; font-size: v.$font-size-sm; line-height: 1.6;
+         strong { color: v.$color-text; } }
+  }
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: v.$space-5 v.$space-6;
+  border-bottom: 1px solid v.$color-border;
+
+  h2 { font-family: v.$font-family-heading; font-size: v.$font-size-xl; font-weight: 700; color: v.$color-text; }
+}
+
+.modal-close {
+  width: 36px; height: 36px;
+  border-radius: v.$border-radius;
+  background: transparent; border: none;
+  color: v.$color-text-subtle; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: v.$transition-fast;
+  svg { width: 20px; height: 20px; }
+  &:hover { background: v.$color-bg-surface; color: v.$color-text; }
+}
+
+.modal-body   { padding: v.$space-6; display: flex; flex-direction: column; gap: v.$space-5; }
+.modal-footer { display: flex; justify-content: flex-end; gap: v.$space-3; padding-top: v.$space-4; }
+
+.confirm-icon {
+  width: 56px; height: 56px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  margin: 0 auto v.$space-4;
+  svg { width: 28px; height: 28px; }
+  &.danger { background: rgba(v.$color-danger, 0.10); color: v.$color-danger; }
+}
+
+// --- Toast ---
+.toast {
+  position: fixed;
+  bottom: v.$space-6; right: v.$space-6;
+  display: flex; align-items: center; gap: v.$space-3;
+  padding: v.$space-4 v.$space-5;
+  border-radius: v.$border-radius-lg;
+  font-size: v.$font-size-sm; font-weight: 600;
+  z-index: 2000;
+  box-shadow: v.$shadow-lg;
+  animation: slideInUp 0.25s ease, fadeOut 0.3s ease 3.7s forwards;
+  svg { width: 18px; height: 18px; flex-shrink: 0; }
+
+  &-success { background: #ECFDF5; color: #065F46; border: 1px solid #6EE7B7; }
+  &-error   { background: #FEF2F2; color: #991B1B; border: 1px solid #FECACA; }
+}
+
+// --- Spinner ---
+.spinner {
+  width: 36px; height: 36px;
+  border: 3px solid v.$color-border;
+  border-top-color: v.$color-primary;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+
+.btn-spinner {
+  width: 14px; height: 14px;
+  border: 2px solid rgba(255,255,255,0.4);
+  border-top-color: #fff;
+  border-radius: 50%;
+  display: inline-block;
+  animation: spin 0.6s linear infinite;
+}
+
+// --- States ---
+.loading-state, .empty-state, .error-state {
+  display: flex; flex-direction: column; align-items: center;
+  justify-content: center; gap: v.$space-4; padding: v.$space-12;
+  color: v.$color-text-muted;
+  svg { width: 48px; height: 48px; opacity: 0.35; }
+  p   { font-size: v.$font-size-base; }
+}
