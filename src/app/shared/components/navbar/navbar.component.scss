@@ -1,0 +1,183 @@
+@use '../../../../assets/styles/variables' as v;
+@use '../../../../assets/styles/mixins' as m;
+
+.navbar {
+  @include m.flex-between;
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  height: v.$navbar-height;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid v.$color-border;
+  padding: 0 v.$space-6;
+  z-index: 100;
+  gap: v.$space-4;
+  box-shadow: v.$shadow-sm;
+}
+
+.navbar-left {
+  @include m.flex-center;
+  gap: v.$space-4;
+}
+
+.toggle-btn {
+  @include m.flex-center;
+  width: 40px; height: 40px;
+  border-radius: v.$border-radius;
+  color: v.$color-text-muted;
+  transition: v.$transition-fast;
+  cursor: pointer;
+
+  &:hover {
+    background: v.$color-bg-surface;
+    color: v.$color-primary;
+  }
+}
+
+.toggle-icon {
+  @include m.flex-col;
+  gap: 5px;
+
+  span {
+    display: block;
+    width: 18px; height: 2px;
+    background: currentColor;
+    border-radius: 2px;
+    transition: v.$transition-fast;
+  }
+}
+
+.breadcrumb-logo {
+  font-family: v.$font-family-heading;
+  font-size: v.$font-size-xl;
+  font-weight: 800;
+  color: v.$color-primary;
+  letter-spacing: -0.3px;
+}
+
+.navbar-right {
+  @include m.flex-center;
+  gap: v.$space-2;
+}
+
+.icon-btn {
+  @include m.flex-center;
+  position: relative;
+  width: 40px; height: 40px;
+  border-radius: v.$border-radius;
+  color: v.$color-text-muted;
+  transition: v.$transition-fast;
+  cursor: pointer;
+
+  &:hover {
+    background: v.$color-bg-surface;
+    color: v.$color-primary;
+  }
+}
+
+.badge-count {
+  position: absolute;
+  top: 4px; right: 4px;
+  min-width: 18px; height: 18px;
+  background: v.$color-danger;
+  color: white;
+  border-radius: v.$border-radius-full;
+  font-size: 10px; font-weight: 700;
+  @include m.flex-center;
+  padding: 0 4px;
+
+  &.pulse { animation: ping 1.5s cubic-bezier(0, 0, 0.2, 1) infinite; }
+}
+
+.user-menu-wrapper { position: relative; }
+
+.user-btn {
+  @include m.flex-center;
+  gap: v.$space-3;
+  padding: v.$space-2 v.$space-3;
+  border-radius: v.$border-radius;
+  border: 1px solid v.$color-border;
+  background: v.$color-bg-card;
+  transition: v.$transition-fast;
+  cursor: pointer;
+
+  &:hover {
+    border-color: v.$color-primary;
+    background: rgba(8, 145, 178, 0.04);
+  }
+
+  svg {
+    color: v.$color-text-subtle;
+    transition: transform v.$transition-fast;
+    &.rotate { transform: rotate(180deg); }
+  }
+}
+
+.avatar {
+  @include m.flex-center;
+  width: 32px; height: 32px;
+  border-radius: v.$border-radius-full;
+  background: v.$gradient-primary;
+  color: white;
+  font-weight: 700;
+  font-size: v.$font-size-xs;
+  flex-shrink: 0;
+}
+
+.user-info {
+  @include m.flex-col;
+  text-align: left;
+
+  @media (max-width: v.$bp-md) { display: none; }
+}
+
+.user-name {
+  font-size: v.$font-size-sm;
+  font-weight: 600;
+  color: v.$color-text;
+  line-height: 1.2;
+}
+
+.user-role {
+  font-size: v.$font-size-xs;
+  color: v.$color-primary;
+  font-weight: 500;
+  line-height: 1.2;
+}
+
+.dropdown-menu {
+  position: absolute;
+  top: calc(100% + v.$space-2);
+  right: 0;
+  min-width: 200px;
+  background: v.$color-bg-card;
+  border: 1px solid v.$color-border;
+  border-radius: v.$border-radius-lg;
+  box-shadow: v.$shadow-lg;
+  overflow: hidden;
+  animation: slideInUp 0.15s ease;
+  z-index: 200;
+}
+
+.dropdown-item {
+  @include m.flex-center;
+  justify-content: flex-start;
+  gap: v.$space-3;
+  width: 100%;
+  padding: v.$space-3 v.$space-4;
+  font-size: v.$font-size-sm;
+  font-weight: 500;
+  color: v.$color-text;
+  transition: v.$transition-fast;
+  cursor: pointer;
+
+  &:hover { background: v.$color-bg-surface; }
+
+  &.danger {
+    color: v.$color-danger;
+    &:hover { background: rgba(v.$color-danger, 0.06); }
+  }
+}
+
+@keyframes slideInUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes ping      { 75%, 100% { transform: scale(1.5); opacity: 0; } }
