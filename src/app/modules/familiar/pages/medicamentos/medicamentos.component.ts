@@ -9,6 +9,10 @@ import { AdultoMayor } from '../../../../core/models/adulto-mayor.model';
 
 type ModalMode = 'create' | 'edit' | null;
 
+/**
+ * Componente para agregar, editar o eliminar medicamentos de la agenda.
+ * Implementación para HU-08: Agregar o editar agenda de medicamentos del adulto.
+ */
 @Component({
   selector: 'app-medicamentos',
   standalone: true,
@@ -135,15 +139,17 @@ export class MedicamentosComponent implements OnInit {
     const horasToma = this.horasInput()
       .split(',').map(h => parseInt(h.trim().split(':')[0], 10)).filter(n => !isNaN(n));
 
-    const payload: MedicamentoCreate = {
-      nombre: val.nombre, principioActivo: val.principioActivo || undefined,
-      dosis: val.dosis, frecuencia: val.frecuencia,
-      horasToma: horasToma.length ? horasToma : undefined,
-      fechaInicio: val.fechaInicio, fechaFin: val.fechaFin || undefined,
-      instrucciones: val.instrucciones || undefined,
-      stockActual: val.stockActual ?? undefined, stockMinimo: val.stockMinimo ?? undefined,
-      adultoMayorId: Number(val.adultoMayorId || this.adultoActual()?.idAdulto),
-      prescritoPor: val.prescritoPor || undefined,
+    let freqHoras = 24;
+    if (val.frecuencia === 'semanal') freqHoras = 168;
+    else if (val.frecuencia === 'cada_X_horas') freqHoras = 8; // fallback razonable
+
+    const payload: any = {
+      idAdulto: Number(val.adultoMayorId || this.adultoActual()?.idAdulto),
+      nombre: val.nombre,
+      dosis: val.dosis,
+      frecuenciaHoras: freqHoras,
+      observaciones: val.instrucciones || undefined,
+      horarios: horasToma.length ? horasToma.map(h => ({ horaProgramada: `${h.toString().padStart(2, '0')}:00` })) : []
     };
 
     if (this.modalMode() === 'create') {

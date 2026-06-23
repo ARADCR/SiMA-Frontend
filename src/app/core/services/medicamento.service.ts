@@ -17,8 +17,8 @@ export class MedicamentoService {
     return this.api.getPaginado<Medicamento>(this.endpoint, params);
   }
 
-  getByAdulto(adultoMayorId: number): Observable<Medicamento[]> {
-    return this.api.get<Medicamento[]>(`/adultos-mayores/${adultoMayorId}/medicamentos`).pipe(map(r => r.data));
+  getByAdulto(adultoId: number): Observable<Medicamento[]> {
+    return this.api.get<Medicamento[]>(`${this.endpoint}/adulto/${adultoId}`).pipe(map(r => r.data));
   }
 
   getById(id: number): Observable<Medicamento> {
