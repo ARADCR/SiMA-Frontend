@@ -63,7 +63,7 @@ export class ApiService {
   }
 
   private handleError(error: unknown): Observable<never> {
-    const err = error as { status?: number; error?: { mensaje?: string; data?: Record<string, unknown> }; message?: string };
+    const err = error as { status?: number; error?: { mensaje?: string; message?: string; data?: Record<string, unknown> }; message?: string };
     let mensaje = 'Error inesperado. Inténtalo de nuevo.';
 
     if (err.status === 0) {
