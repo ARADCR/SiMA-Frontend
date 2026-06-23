@@ -107,8 +107,8 @@ export class GestionDispositivosComponent implements OnInit {
       },
       error: e => { this.error.set(e.mensaje ?? 'Error al cargar'); this.loading.set(false); }
     });
-    this.adultoSvc.getAll().subscribe({
-      next: r => this.adultos.set(r.data ?? []),
+    this.adultoSvc.getAllAdmin().subscribe({
+      next: r => this.adultos.set(r ?? []),
       error: () => {}
     });
   }
