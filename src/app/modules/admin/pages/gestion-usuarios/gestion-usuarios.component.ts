@@ -134,9 +134,9 @@ export class GestionUsuariosComponent implements OnInit {
 
     const val = this.form.value;
     if (this.modalMode() === 'create') {
-      const payload: UsuarioCreate = {
+      const payload: any = {
         nombre: val.nombre, apellido: val.apellido,
-        email: val.correo, password: val.password, rol: val.rol
+        correo: val.correo, password: val.password, idRol: this.getRolId(val.rol)
       };
       this.svc.create(payload).subscribe({
         next: () => { this.showToast('Usuario creado exitosamente', 'success'); this.closeModal(); this.cargarUsuarios(); },
@@ -144,7 +144,7 @@ export class GestionUsuariosComponent implements OnInit {
       });
     } else {
       const u = this.selectedUser()!;
-      const payload: any = { nombre: val.nombre, apellido: val.apellido, rol: val.rol };
+      const payload: any = { nombre: val.nombre, apellido: val.apellido, correo: val.correo, idRol: this.getRolId(val.rol) };
       if (val.password) payload.password = val.password;
       this.svc.update(u.id, payload).subscribe({
         next: () => { this.showToast('Usuario actualizado', 'success'); this.closeModal(); this.cargarUsuarios(); },
@@ -194,5 +194,15 @@ export class GestionUsuariosComponent implements OnInit {
 
   iniciales(u: Usuario): string {
     return (u.nombre.charAt(0) + u.apellido.charAt(0)).toUpperCase();
+  }
+
+  private getRolId(rol: RolUsuario): number {
+    const rolMap: Record<string, number> = {
+      'Administrador': 1,
+      'Familiar': 2,
+      'Cuidador': 3,
+      'Adulto Mayor': 4
+    };
+    return rolMap[rol as string] || 2;
   }
 }
