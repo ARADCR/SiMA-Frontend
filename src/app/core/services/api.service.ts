@@ -74,8 +74,8 @@ export class ApiService {
       mensaje = 'No tienes permisos para realizar esta acción.';
     } else if (err.status === 404) {
       mensaje = 'Recurso no encontrado.';
-    } else if (err.error?.mensaje) {
-      mensaje = err.error.mensaje;
+    } else if (err.error?.message || err.error?.mensaje) {
+      mensaje = err.error.message || err.error.mensaje;
       // Si el backend envía errores de validación en la propiedad "data"
       if (err.error.data && typeof err.error.data === 'object') {
         const validationErrors = Object.values(err.error.data).filter(v => typeof v === 'string');
