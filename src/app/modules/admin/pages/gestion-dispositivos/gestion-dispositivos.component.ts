@@ -8,6 +8,10 @@ import { AdultoMayor } from '../../../../core/models/adulto-mayor.model';
 
 type ModalMode = 'create' | 'edit' | null;
 
+/**
+ * Componente para la administración y asignación de dispositivos IoT.
+ * Implementación para HU-18: Registrar y asignar dispositivos IoT a un adulto mayor.
+ */
 @Component({
   selector: 'app-gestion-dispositivos',
   standalone: true,
