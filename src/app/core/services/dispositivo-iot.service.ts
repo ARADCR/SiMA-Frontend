@@ -13,24 +13,40 @@ export class DispositivoIotService {
 
   constructor(private api: ApiService) {}
 
-  getAll(params?: Record<string, unknown>): Observable<RespuestaPaginada<DispositivoIot>> {
-    return this.api.getPaginado<DispositivoIot>(this.endpoint, params);
+  getAll(params?: Record<string, unknown>): Observable<any> {
+    return this.api.get<any[]>(this.endpoint, params).pipe(
+      map(r => ({ data: (r.data || []).map(this.mapBackendToFrontend) }))
+    );
   }
 
-  getByAdulto(adultoMayorId: number): Observable<DispositivoIot[]> {
-    return this.api.get<DispositivoIot[]>(`/adultos-mayores/${adultoMayorId}/dispositivos`).pipe(map(r => r.data));
+  getByAdulto(adultoId: number): Observable<DispositivoIot[]> {
+    return this.api.get<any[]>(`${this.endpoint}/adulto/${adultoId}`).pipe(
+      map(r => (r.data || []).map(this.mapBackendToFrontend))
+    );
   }
 
   getById(id: number): Observable<DispositivoIot> {
-    return this.api.get<DispositivoIot>(`${this.endpoint}/${id}`).pipe(map(r => r.data));
+    return this.api.get<any>(`${this.endpoint}/${id}`).pipe(map(r => this.mapBackendToFrontend(r.data)));
   }
 
-  create(dispositivo: DispositivoCreate): Observable<DispositivoIot> {
-    return this.api.post<DispositivoIot>(this.endpoint, dispositivo).pipe(map(r => r.data));
+  create(dispositivo: any): Observable<DispositivoIot> {
+    return this.api.post<any>(this.endpoint, dispositivo).pipe(map(r => this.mapBackendToFrontend(r.data)));
   }
 
-  update(id: number, datos: Partial<DispositivoCreate>): Observable<DispositivoIot> {
-    return this.api.put<DispositivoIot>(`${this.endpoint}/${id}`, datos).pipe(map(r => r.data));
+  update(id: number, datos: any): Observable<DispositivoIot> {
+    return this.api.put<any>(`${this.endpoint}/${id}`, datos).pipe(map(r => this.mapBackendToFrontend(r.data)));
+  }
+
+  private mapBackendToFrontend(d: any): DispositivoIot {
+    return {
+      id: d.idDispositivo,
+      nombre: `Dispositivo ${d.identificadorFisico}`, // Backend doesnt store nombre, we use ID Fisico
+      tipo: d.tipoDispositivo === 'pulsera_inteligente' ? 'pulsera' : 'sensor_cama',
+      numeroSerie: d.identificadorFisico,
+      estado: d.activo ? 'activo' : 'inactivo',
+      adultoMayorId: d.idAdulto,
+      adultoMayorNombre: d.nombreAdulto,
+    } as DispositivoIot;
   }
 
   delete(id: number): Observable<void> {
