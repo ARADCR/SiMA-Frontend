@@ -108,13 +108,14 @@ export class RecordatoriosComponent implements OnInit {
 
   // ─── Acciones ─────────────────────────────────────────────────────────────
   confirmarToma(toma: Toma): void {
-    this.confirmando.set(toma.id);
-    this.medSvc.registrarToma(toma.id, {
+    const tomaId = (toma as any).idRegistro || toma.id;
+    this.confirmando.set(tomaId);
+    this.medSvc.registrarToma(tomaId, {
       estado: 'tomado',
       fechaHoraReal: new Date().toISOString()
     }).subscribe({
       next: updated => {
-        this.tomas.update(all => all.map(t => t.id === updated.id ? updated : t));
+        this.tomas.update(all => all.map(t => ((t as any).idRegistro || t.id) === ((updated as any).idRegistro || updated.id) ? updated : t));
         this.confirmando.set(null);
         this.showToast('Toma confirmada correctamente', 'success');
       },
@@ -126,9 +127,10 @@ export class RecordatoriosComponent implements OnInit {
   }
 
   omitirToma(toma: Toma): void {
-    this.medSvc.registrarToma(toma.id, { estado: 'omitido' }).subscribe({
+    const tomaId = (toma as any).idRegistro || toma.id;
+    this.medSvc.registrarToma(tomaId, { estado: 'omitido' }).subscribe({
       next: updated => {
-        this.tomas.update(all => all.map(t => t.id === updated.id ? updated : t));
+        this.tomas.update(all => all.map(t => ((t as any).idRegistro || t.id) === ((updated as any).idRegistro || updated.id) ? updated : t));
         this.showToast('Toma marcada como omitida', 'success');
       },
       error: e => this.showToast(e.mensaje ?? 'Error', 'error')
