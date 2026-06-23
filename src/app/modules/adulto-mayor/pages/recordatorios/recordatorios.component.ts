@@ -1,8 +1,10 @@
 import { Component, OnInit, inject, signal, computed } from '@angular/core';
 import { CommonModule, DatePipe } from '@angular/common';
+import { HttpClient } from '@angular/common/http';
 import { MedicamentoService } from '../../../../core/services/medicamento.service';
 import { AuthService }        from '../../../../core/auth/auth.service';
 import { Toma, EstadoToma }   from '../../../../core/models/medicamento.model';
+import { environment } from '../../../../../environments/environment';
 
 interface TomaAgrupada {
   hora: string;     // "08:00"
@@ -21,6 +23,7 @@ export class RecordatoriosComponent implements OnInit {
   private medSvc  = inject(MedicamentoService);
   private auth    = inject(AuthService);
   private datePipe = inject(DatePipe);
+  private http    = inject(HttpClient);
 
   tomas        = signal<Toma[]>([]);
   loading      = signal(true);
@@ -39,9 +42,33 @@ export class RecordatoriosComponent implements OnInit {
     const userId = this.auth.usuarioActual?.userId;
     if (!userId) { this.loading.set(false); return; }
 
+    // Si el usuario es Adulto Mayor, primero obtener su idAdulto via /adultos/mi-perfil
+    if (this.auth.rolActual === 'Adulto Mayor') {
+      this.http.get<any>(`${environment.apiUrl}/adultos/mi-perfil`).subscribe({
+        next: resp => {
+          const idAdulto = resp?.data?.idAdulto;
+          if (idAdulto) {
+            this.cargarTomas(idAdulto);
+          } else {
+            this.error.set('No se encontró tu perfil de adulto mayor.');
+            this.loading.set(false);
+          }
+        },
+        error: () => {
+          this.error.set('Error al obtener tu perfil.');
+          this.loading.set(false);
+        }
+      });
+    } else {
+      // Para Familiar/Cuidador se usa el userId directamente
+      this.cargarTomas(userId);
+    }
+  }
+
+  private cargarTomas(idAdulto: number): void {
     const hoy = new Date().toISOString().substring(0, 10);
-    this.medSvc.getTomas(userId, hoy).subscribe({
-      next: t  => { this.tomas.set(t); this.loading.set(false); },
+    this.medSvc.getTomas(idAdulto, hoy).subscribe({
+      next: t  => { this.tomas.set(t ?? []); this.loading.set(false); },
       error: e => { this.error.set(e.mensaje ?? 'Error al cargar recordatorios'); this.loading.set(false); }
     });
   }

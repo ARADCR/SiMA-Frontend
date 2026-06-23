@@ -39,12 +39,15 @@ export class MedicamentoService {
 
   /** Tomas */
   getTomas(adultoMayorId: number, fecha?: string): Observable<Toma[]> {
-    const params: Record<string, unknown> = { adultoMayorId };
-    if (fecha) params['fecha'] = fecha;
-    return this.api.get<Toma[]>('/tomas', params).pipe(map(r => r.data));
+    return this.api.get<Toma[]>(`/tomas/hoy/${adultoMayorId}`).pipe(map(r => r.data));
   }
 
   registrarToma(tomaId: number, datos: { estado: string; observacion?: string; fechaHoraReal?: string }): Observable<Toma> {
-    return this.api.patch<Toma>(`/tomas/${tomaId}`, datos).pipe(map(r => r.data));
+    const payload = {
+      idRegistro: tomaId,
+      metodoConfirmacion: 'app', // o manual_cuidador, dependiendo del rol, pero app funciona para HU-01
+      observacion: datos.observacion
+    };
+    return this.api.post<Toma>(`/tomas/confirmar`, payload).pipe(map(r => r.data));
   }
 }

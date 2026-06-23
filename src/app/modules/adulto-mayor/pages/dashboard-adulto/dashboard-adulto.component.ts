@@ -1,6 +1,10 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
+/**
+ * Dashboard principal para el adulto mayor.
+ * Implementación para HU-01: Recibir recordatorio de medicamento (alerta visual).
+ */
 @Component({
   selector: 'app-dashboard-adulto',
   standalone: true,
