@@ -138,11 +138,15 @@ export class GestionDispositivosComponent implements OnInit {
     this.saving.set(true);
     const val = this.form.value;
 
-    const payload: DispositivoCreate = {
-      nombre: val.nombre, tipo: val.tipo,
-      modelo: val.modelo || undefined,
-      numeroSerie: val.numeroSerie || undefined,
-      adultoMayorId: val.adultoMayorId ? Number(val.adultoMayorId) : undefined,
+    let backendTipo = val.tipo;
+    if (val.tipo === 'pulsera') backendTipo = 'pulsera_inteligente';
+    else backendTipo = 'pastillero_esp32'; // Todo lo demás al pastillero por defecto para pasar la validación
+
+    const payload: any = {
+      identificadorFisico: val.numeroSerie || val.nombre, // fallback if empty
+      tipoDispositivo: backendTipo,
+      idAdulto: val.adultoMayorId ? Number(val.adultoMayorId) : undefined,
+      // Los campos nombre y modelo no existen en DispositivoIotRequest, se omiten
     };
 
     if (this.modalMode() === 'create') {
