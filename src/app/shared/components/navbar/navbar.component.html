@@ -1,0 +1,56 @@
+<nav class="navbar">
+  <div class="navbar-left">
+    <button class="toggle-btn" (click)="onToggleSidebar()" id="sidebar-toggle-btn" aria-label="Toggle sidebar">
+      <span class="toggle-icon">
+        <span></span>
+        <span></span>
+        <span></span>
+      </span>
+    </button>
+
+    <div class="breadcrumb">
+      <span class="breadcrumb-logo">SiMA</span>
+    </div>
+  </div>
+
+  <div class="navbar-right">
+    <!-- Alertas -->
+    @if (auth.tieneRol(['Administrador', 'Familiar', 'Cuidador'])) {
+      <button class="icon-btn" routerLink="/familiar/alertas" id="navbar-alertas-btn">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 24 24">
+          <path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"/>
+        </svg>
+        @if (alertasActivas > 0) {
+          <span class="badge-count" [class.pulse]="alertasActivas > 0">{{ alertasActivas > 99 ? '99+' : alertasActivas }}</span>
+        }
+      </button>
+    }
+
+    <!-- Usuario -->
+    <div class="user-menu-wrapper">
+      <button class="user-btn" (click)="toggleMenuUsuario()" id="navbar-user-menu-btn">
+        <div class="avatar">
+          {{ inicialUsuario }}
+        </div>
+        <div class="user-info">
+          <span class="user-name">{{ nombreUsuario }}</span>
+          <span class="user-role">{{ auth.rolActual }}</span>
+        </div>
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 24 24" [class.rotate]="menuUsuarioAbierto">
+          <path d="M7 10l5 5 5-5z"/>
+        </svg>
+      </button>
+
+      @if (menuUsuarioAbierto) {
+        <div class="dropdown-menu">
+          <button class="dropdown-item danger" (click)="cerrarSesion()" id="navbar-logout-btn">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z"/>
+            </svg>
+            Cerrar sesión
+          </button>
+        </div>
+      }
+    </div>
+  </div>
+</nav>

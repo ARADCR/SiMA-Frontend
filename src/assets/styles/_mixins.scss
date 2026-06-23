@@ -1,0 +1,85 @@
+@use 'variables' as v;
+
+// ============================================================
+// SIMA - Mixins reutilizables
+// ============================================================
+
+// --- Responsive ---
+@mixin sm { @media (min-width: v.$bp-sm) { @content; } }
+@mixin md { @media (min-width: v.$bp-md) { @content; } }
+@mixin lg { @media (min-width: v.$bp-lg) { @content; } }
+@mixin xl { @media (min-width: v.$bp-xl) { @content; } }
+
+// --- Flex helpers ---
+@mixin flex-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+@mixin flex-between {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+@mixin flex-col {
+  display: flex;
+  flex-direction: column;
+}
+
+// --- Card glassmorphism ---
+@mixin glass-card($opacity: 0.05) {
+  background: rgba(255, 255, 255, $opacity);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: v.$border-radius-lg;
+}
+
+// --- Gradiente de texto ---
+@mixin gradient-text {
+  background: v.$gradient-primary;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+// --- Truncar texto ---
+@mixin truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+// --- Animación de entrada ---
+@mixin fade-in($duration: 0.3s) {
+  animation: fadeIn $duration ease forwards;
+}
+
+@mixin slide-in-up($duration: 0.4s) {
+  animation: slideInUp $duration ease forwards;
+}
+
+// --- Hover lift ---
+@mixin hover-lift {
+  transition: v.$transition-base;
+  &:hover {
+    transform: translateY(-3px);
+    box-shadow: v.$shadow-lg;
+  }
+}
+
+// --- Badge status ---
+@mixin status-badge($color) {
+  display: inline-flex;
+  align-items: center;
+  gap: v.$space-1;
+  padding: v.$space-1 v.$space-3;
+  background: rgba($color, 0.15);
+  color: $color;
+  border: 1px solid rgba($color, 0.3);
+  border-radius: v.$border-radius-full;
+  font-size: v.$font-size-xs;
+  font-weight: 600;
+}
