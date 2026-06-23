@@ -24,25 +24,34 @@ export class AppComponent implements OnInit {
   showLayout       = signal(false);
 
   ngOnInit(): void {
-    // Mostrar layout (navbar + sidebar) solo cuando el usuario está autenticado
+    // Evalúa la URL actual (necesario al refrescar la página)
+    this.actualizarLayout(this.router.url);
+
+    // Evalúa cada cambio de ruta posterior
     this.router.events
       .pipe(filter(e => e instanceof NavigationEnd))
       .subscribe((e) => {
         const navEnd = e as NavigationEnd;
-        const url = navEnd.urlAfterRedirects;
-        const isAuth = !url.startsWith('/auth') && this.auth.estaAutenticado;
-        this.showLayout.set(isAuth);
-
-        if (isAuth && this.auth.tieneRol('Adulto Mayor')) {
-          this.notification.conectar();
-        } else {
-          this.notification.desconectar();
-        }
+        this.actualizarLayout(navEnd.urlAfterRedirects);
       });
 
     this.notification.recordatorios$.subscribe((recordatorio: RecordatorioMedicamento) => {
       this.mostrarNotificacion(recordatorio);
     });
+  }
+
+  private actualizarLayout(url: string): void {
+    const esRutaPublica = url.startsWith('/auth') || url === '/';
+    const autenticado   = this.auth.estaAutenticado;
+    const mostrarNav    = !esRutaPublica && autenticado;
+
+    this.showLayout.set(mostrarNav);
+
+    if (mostrarNav && this.auth.tieneRol('Adulto Mayor')) {
+      this.notification.conectar();
+    } else {
+      this.notification.desconectar();
+    }
   }
 
   private mostrarNotificacion(recordatorio: RecordatorioMedicamento): void {
