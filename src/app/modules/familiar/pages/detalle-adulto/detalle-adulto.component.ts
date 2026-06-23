@@ -5,6 +5,10 @@ import { ActivatedRoute, RouterModule } from '@angular/router';
 import { AdultoMayorService } from '../../../../core/services/adulto-mayor.service';
 import { AdultoMayor, AdultoMayorUpdate } from '../../../../core/models/adulto-mayor.model';
 
+/**
+ * Componente para mostrar y actualizar el perfil del adulto mayor.
+ * Implementación para HU-12: Registrar o actualizar datos personales del adulto mayor.
+ */
 @Component({
   selector: 'app-detalle-adulto',
   standalone: true,
