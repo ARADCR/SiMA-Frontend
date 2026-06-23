@@ -6,6 +6,10 @@ import { Usuario, UsuarioCreate, RolUsuario } from '../../../../core/models/usua
 
 type ModalMode = 'create' | 'edit' | null;
 
+/**
+ * Componente para la administración de usuarios del sistema.
+ * Implementación para HU-17: Crear, editar o eliminar cuentas de familiares/cuidadores.
+ */
 @Component({
   selector: 'app-gestion-usuarios',
   standalone: true,
