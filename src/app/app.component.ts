@@ -49,11 +49,7 @@ export class AppComponent implements OnInit {
 
     this.showLayout.set(mostrarNav);
 
-    if (mostrarNav && this.auth.tieneRol('Adulto Mayor')) {
-      this.notification.conectar();
-    } else {
-      this.notification.desconectar();
-    }
+    this.notification.desconectar();
   }
 
   private mostrarNotificacion(recordatorio: RecordatorioMedicamento): void {

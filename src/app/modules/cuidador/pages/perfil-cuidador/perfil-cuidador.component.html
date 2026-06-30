@@ -1,0 +1,180 @@
+<div class="page">
+  <div class="card profile-header">
+    <div class="avatar-lg">CA</div>
+    <div class="profile-info">
+      <div class="profile-name-row">
+        <h1 class="profile-name">Carlos Andrade</h1>
+        <span class="verified-badge">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+          Verificado
+        </span>
+      </div>
+      <p class="profile-role">Cuidador profesional · 8 años de experiencia</p>
+      <div class="profile-stats">
+        <div class="pstat">
+          <span class="pstat-val">4</span>
+          <span class="pstat-lbl">Pacientes</span>
+        </div>
+        <div class="pstat-div"></div>
+        <div class="pstat">
+          <span class="pstat-val">4.8★</span>
+          <span class="pstat-lbl">Calificación</span>
+        </div>
+        <div class="pstat-div"></div>
+        <div class="pstat">
+          <span class="pstat-val">127</span>
+          <span class="pstat-lbl">Tomas registradas</span>
+        </div>
+        <div class="pstat-div"></div>
+        <div class="pstat">
+          <span class="pstat-val">98%</span>
+          <span class="pstat-lbl">Cumplimiento</span>
+        </div>
+      </div>
+    </div>
+    <button class="btn-outline">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
+      Editar perfil
+    </button>
+  </div>
+
+  <div class="tabs">
+    @for (t of tabs; track t.id) {
+      <button class="tab" [class.active]="activeTab() === t.id" (click)="activeTab.set(t.id)">
+        {{ t.label }}
+      </button>
+    }
+  </div>
+
+  @if (activeTab() === 'info') {
+    <div class="card tab-panel">
+      <div class="info-grid">
+        <div class="info-section">
+          <h3 class="section-title">Información de contacto</h3>
+          <div class="info-row">
+            <span class="info-lbl">Correo</span>
+            <span class="info-val">carlos.andrade&#64;email.com</span>
+          </div>
+          <div class="info-row">
+            <span class="info-lbl">Teléfono</span>
+            <span class="info-val">+52 55 1234 5678</span>
+          </div>
+          <div class="info-row">
+            <span class="info-lbl">Ciudad</span>
+            <span class="info-val">Ciudad de México, CDMX</span>
+          </div>
+          <div class="info-row">
+            <span class="info-lbl">Experiencia</span>
+            <span class="info-val">8 años</span>
+          </div>
+          <div class="info-row last">
+            <span class="info-lbl">Tarifa</span>
+            <span class="info-val">$180/hr</span>
+          </div>
+        </div>
+        <div class="info-section">
+          <h3 class="section-title">Especialidades</h3>
+          <div class="tags">
+            @for (esp of especialidades; track esp) {
+              <span class="tag">{{ esp }}</span>
+            }
+          </div>
+          <h3 class="section-title" style="margin-top:24px">Disponibilidad</h3>
+          <table class="avail-table">
+            <tr><td class="avail-day">Lunes – Viernes</td><td class="avail-hrs">08:00 – 20:00</td></tr>
+            <tr><td class="avail-day">Sábado</td><td class="avail-hrs">08:00 – 14:00</td></tr>
+            <tr><td class="avail-day">Domingo</td><td class="avail-hrs no-disp">No disponible</td></tr>
+          </table>
+        </div>
+        <div class="info-section full-width">
+          <h3 class="section-title">Acerca de mí</h3>
+          <p class="bio">Cuidador profesional certificado con 8 años de experiencia en atención domiciliaria a adultos mayores. Especializado en pacientes con diabetes tipo 2, hipertensión y movilidad reducida. Comprometido con el bienestar integral del paciente y la comunicación constante con las familias.</p>
+        </div>
+      </div>
+    </div>
+  }
+
+  @if (activeTab() === 'credenciales') {
+    <div class="card tab-panel">
+      <div class="cred-header">
+        <span class="section-title">Documentos y certificaciones</span>
+        <button class="btn-primary-sm">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+          Subir documento
+        </button>
+      </div>
+      @for (cred of credenciales; track cred.id) {
+        <div class="cred-row">
+          <div class="cred-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/>
+            </svg>
+          </div>
+          <div class="cred-info">
+            <div class="cred-tipo">{{ cred.tipo }}</div>
+            <div class="cred-nombre">{{ cred.nombre }}</div>
+            <div class="cred-fecha">Subido: {{ cred.fecha }}</div>
+          </div>
+          <span [class]="credBadgeClass(cred.estado)">{{ credLabel(cred.estado) }}</span>
+        </div>
+      }
+    </div>
+  }
+
+  @if (activeTab() === 'solicitudes') {
+    <div class="card tab-panel">
+      <div class="section-title" style="margin-bottom:20px">Solicitudes de familias</div>
+      @for (sol of solicitudes; track sol.id) {
+        <div class="sol-card">
+          <div class="avatar-med" style="background:#2E86AB">{{ sol.initials }}</div>
+          <div class="sol-info">
+            <div class="sol-familia">{{ sol.familia }}</div>
+            <div class="sol-adulto">Para: {{ sol.adulto }} · {{ sol.fecha }}</div>
+            <p class="sol-mensaje">{{ sol.mensaje }}</p>
+          </div>
+          <div class="sol-actions">
+            <button class="btn-sm btn-green">Aceptar</button>
+            <button class="btn-sm btn-outline-sm">Rechazar</button>
+          </div>
+        </div>
+      }
+    </div>
+  }
+
+  @if (activeTab() === 'resenas') {
+    <div class="card tab-panel">
+      <div class="resenas-summary">
+        <div class="rating-big">4.8</div>
+        <div>
+          <div class="stars-row">
+            @for (s of stars; track s) {
+              <svg width="20" height="20" viewBox="0 0 24 24" [style.fill]="s <= 4 ? '#F4A261' : '#E2EAF0'">
+                <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/>
+              </svg>
+            }
+          </div>
+          <div class="rating-sub">Basado en 24 reseñas</div>
+        </div>
+      </div>
+      @for (r of resenas; track r.id) {
+        <div class="resena-row">
+          <div class="avatar-sm" style="background:#52B788">{{ r.initials }}</div>
+          <div class="resena-body">
+            <div class="resena-meta">
+              <span class="resena-familia">{{ r.familia }}</span>
+              <span class="resena-stars">
+                @for (s of stars; track s) {
+                  <svg width="13" height="13" viewBox="0 0 24 24" [style.fill]="starFill(s, r.puntos)">
+                    <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/>
+                  </svg>
+                }
+              </span>
+              <span class="resena-fecha">{{ r.fecha }}</span>
+            </div>
+            <p class="resena-texto">{{ r.texto }}</p>
+          </div>
+        </div>
+      }
+    </div>
+  }
+</div>

@@ -1,0 +1,107 @@
+<div class="page">
+  <div class="header">
+    <div class="header-left">
+      <h1 class="title">Credenciales Pendientes</h1>
+      <span class="count-badge">{{ pendientes() }}</span>
+    </div>
+  </div>
+
+  <div class="two-panel">
+    <div class="list-panel card">
+      <div class="list-header">
+        <span class="list-title">Documentos por revisar</span>
+      </div>
+      @for (c of credenciales(); track c.id) {
+        <div class="cred-item" [class.active]="seleccionado()?.id === c.id" (click)="seleccionar(c)">
+          <div class="avatar" [style.background]="c.avatarBg">{{ c.initials }}</div>
+          <div class="cred-info">
+            <div class="cred-name">{{ c.cuidador }}</div>
+            <div class="cred-tipo">{{ c.tipo }}</div>
+            <div class="cred-fecha">{{ c.fecha }}</div>
+          </div>
+          <span [class]="estadoBadgeClass(c.estado)">{{ estadoLabel(c.estado) }}</span>
+        </div>
+      }
+    </div>
+
+    <div class="detail-panel card">
+      @if (seleccionado(); as sel) {
+        <div class="detail-header">
+          <div>
+            <div class="detail-title">{{ sel.cuidador }} — {{ sel.tipo }}</div>
+            <div class="detail-sub">Enviado el {{ sel.fecha }}</div>
+          </div>
+          <span [class]="estadoBadgeClass(sel.estado)">{{ estadoLabel(sel.estado) }}</span>
+        </div>
+        <div class="detail-body">
+          <div class="doc-viewer">
+            <div class="doc-card">
+              <div class="doc-icon">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg>
+              </div>
+              <div class="doc-filename">{{ sel.documento }}</div>
+              <div class="doc-divider"></div>
+              <div class="doc-meta">{{ sel.institucion }}</div>
+            </div>
+            <button class="btn-ver">Ver documento completo</button>
+          </div>
+
+          <div class="doc-form">
+            <div class="ai-notice">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="#F4A261"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/></svg>
+              <span>Datos extraídos automáticamente por Claude AI — verifica antes de aprobar</span>
+            </div>
+
+            <div class="form-field">
+              <label>Tipo de credencial</label>
+              <input [value]="sel.tipo" readonly>
+            </div>
+            <div class="form-field">
+              <label>Institución</label>
+              <input [value]="sel.institucion" readonly>
+            </div>
+            <div class="form-field">
+              <label>Descripción</label>
+              <textarea readonly rows="3">{{ sel.descripcion }}</textarea>
+            </div>
+            <div class="form-grid-2">
+              <div class="form-field">
+                <label>Fecha de emisión</label>
+                <input [value]="sel.fechaEmision" readonly>
+              </div>
+              <div class="form-field">
+                <label>Vigencia</label>
+                <input [value]="sel.vigencia" readonly>
+              </div>
+            </div>
+            <div class="form-field">
+              <label>Comentario del administrador</label>
+              <textarea [ngModel]="comentario()" (ngModelChange)="comentario.set($event)" placeholder="Agregar comentario opcional..." rows="2"></textarea>
+            </div>
+
+            @if (sel.estado === 'pendiente') {
+              <div class="action-buttons">
+                <button class="btn-reject" (click)="rechazar(sel)">Rechazar</button>
+                <button class="btn-approve" (click)="aprobar(sel)">Verificar y aprobar</button>
+              </div>
+            } @else {
+              <div class="revert-row">
+                <span class="revert-msg">Documento {{ sel.estado === 'aprobado' ? 'aprobado' : 'rechazado' }}.</span>
+                <button class="btn-revert" (click)="revertir(sel)">Revertir</button>
+              </div>
+            }
+          </div>
+        </div>
+      } @else {
+        <div class="empty-state">
+          <svg width="56" height="56" viewBox="0 0 24 24" fill="#D0D8E0"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm-1 9h-2V5h2v6zm0 4h-2v-2h2v2z"/></svg>
+          <p>Selecciona un documento para revisarlo</p>
+        </div>
+      }
+    </div>
+  </div>
+
+  @if (toast(); as t) {
+    <div class="toast" [class]="'toast--' + t.type">{{ t.msg }}</div>
+  }
+</div>

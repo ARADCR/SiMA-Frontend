@@ -31,5 +31,25 @@ export const FAMILIAR_ROUTES: Routes = [
     path: 'alertas',
     loadComponent: () => import('./pages/alertas/alertas.component').then(m => m.AlertasComponent),
     title: 'Alertas — SiMA'
+  },
+  {
+    path: 'actividad-iot',
+    loadComponent: () => import('./pages/actividad-iot/actividad-iot.component').then(m => m.ActividadIotComponent),
+    title: 'Actividad IoT — SiMA'
+  },
+  {
+    path: 'buscar-cuidador',
+    loadComponent: () => import('./pages/buscar-cuidador/buscar-cuidador.component').then(m => m.BuscarCuidadorComponent),
+    title: 'Buscar Cuidador — SiMA'
+  },
+  {
+    path: 'reportes',
+    loadComponent: () => import('./pages/reportes-semanales/reportes-semanales.component').then(m => m.ReportesSemanalesComponent),
+    title: 'Reportes Semanales — SiMA'
+  },
+  {
+    path: 'chatbot',
+    loadComponent: () => import('./pages/chatbot/chatbot-familiar.component').then(m => m.ChatbotFamiliarComponent),
+    title: 'Chatbot IA — SiMA'
   }
 ];

@@ -1,0 +1,116 @@
+<div class="page">
+  <div class="header">
+    <div>
+      <h1 class="title">Buenos días, Carlos</h1>
+      <p class="sub">{{ fechaHoy }} · <span class="turno-chip">Turno activo</span></p>
+    </div>
+  </div>
+
+  <div class="quick-grid">
+    <a routerLink="/cuidador/registrar-tomas" class="quick-card quick-blue">
+      <div class="quick-icon" style="background:#EBF5FB; color:#2E86AB">
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="currentColor"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+      </div>
+      <div class="quick-label">Registrar Toma</div>
+      <div class="quick-sub">Confirma que el adulto tomó su medicamento</div>
+      <span class="quick-btn quick-btn-blue">Registrar ahora</span>
+    </a>
+    <a routerLink="/cuidador/observaciones" class="quick-card quick-green">
+      <div class="quick-icon" style="background:#D8F3DC; color:#52B788">
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="currentColor"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm-1 9h-2v3H9v-3H7v-2h2V7h2v2h2v2z"/></svg>
+      </div>
+      <div class="quick-label">Nueva Observación</div>
+      <div class="quick-sub">Registra notas sobre el estado del adulto</div>
+      <span class="quick-btn quick-btn-green">Nueva observación</span>
+    </a>
+    <a routerLink="/cuidador/historial" class="quick-card quick-orange">
+      <div class="quick-icon" style="background:#FDE8E0; color:#E76F51; position:relative">
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="currentColor"><path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"/></svg>
+        <span class="alert-badge">2</span>
+      </div>
+      <div class="quick-label">Ver Alertas</div>
+      <div class="quick-sub">Hay alertas que necesitan revisión</div>
+      <span class="quick-btn quick-btn-orange">Ver alertas</span>
+    </a>
+  </div>
+
+  <div class="card patients-card">
+    <div class="card-header">
+      <span class="card-title">Mis pacientes de hoy</span>
+      <a routerLink="/cuidador/registrar-tomas" class="link-action">Ver todas las tomas →</a>
+    </div>
+    <div class="patient-list">
+      @for (p of pacientes(); track p.id) {
+        <div class="patient-row">
+          <div class="patient-avatar" [style.background]="avatarColor(p.id)">{{ p.initials }}</div>
+          <div class="patient-info">
+            <div class="patient-name">{{ p.nombre }}</div>
+            <div class="patient-meta">{{ p.edad }} años · {{ p.condiciones.join(', ') }}</div>
+          </div>
+          <div class="patient-progress">
+            <div class="progress-label">
+              <span>Tomas hoy</span>
+              <span class="progress-count">{{ p.tomasHoy }}/{{ p.tomasTotal }}</span>
+            </div>
+            <div class="progress-bar">
+              <div class="progress-fill" [style.width.%]="porcentajeTomas(p)"></div>
+            </div>
+          </div>
+          <div class="patient-next">
+            <div class="next-label">Próxima toma</div>
+            <div class="next-time">{{ p.proximaToma }}</div>
+            <div class="next-med">{{ p.proximaMed }}</div>
+          </div>
+          <div class="patient-estado">
+            <span [class]="estadoBadgeClass(p.estado)">{{ estadoLabel(p.estado) }}</span>
+          </div>
+          <div class="patient-actions">
+            <a [routerLink]="['/cuidador/registrar-tomas']" class="action-btn blue" title="Registrar toma">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+            </a>
+            <a routerLink="/cuidador/observaciones" class="action-btn green" title="Agregar observación">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm-1 9h-2v3H9v-3H7v-2h2V7h2v2h2v2z"/></svg>
+            </a>
+          </div>
+        </div>
+      }
+    </div>
+  </div>
+
+  <div class="bottom-grid">
+    <div class="card obs-card">
+      <div class="card-header">
+        <span class="card-title">Últimas observaciones</span>
+        <a routerLink="/cuidador/observaciones" class="link-action">Ver todas →</a>
+      </div>
+      <div class="obs-list">
+        @for (obs of observacionesRecientes(); track obs.id) {
+          <div class="obs-item">
+            <div class="obs-item-top">
+              <div class="avatar-sm" [style.background]="obs.color">{{ obs.initials }}</div>
+              <span class="obs-paciente">{{ obs.paciente }}</span>
+              <span class="obs-hora">{{ obs.hora }}</span>
+            </div>
+            <p class="obs-texto">{{ obs.texto }}</p>
+          </div>
+        }
+      </div>
+    </div>
+
+    <div class="card compliance-card">
+      <div class="card-header">
+        <span class="card-title">Cumplimiento última semana</span>
+      </div>
+      <div class="compliance-grid">
+        @for (d of diasCompliance; track d.label) {
+          <div class="compliance-day">
+            <div class="compliance-cell" [style.background]="d.bg" [style.color]="d.color">
+              {{ d.pct }}
+            </div>
+            <div class="compliance-label">{{ d.label }}</div>
+          </div>
+        }
+      </div>
+    </div>
+  </div>
+</div>

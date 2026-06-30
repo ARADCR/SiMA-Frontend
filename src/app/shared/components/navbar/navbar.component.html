@@ -9,29 +9,27 @@
     </button>
 
     <div class="breadcrumb">
-      <span class="breadcrumb-logo">SiMA</span>
+      <span class="breadcrumb-root">SiMA</span>
+      <span class="breadcrumb-sep">/</span>
+      <span class="breadcrumb-current">{{ auth.rolActual }}</span>
     </div>
   </div>
 
   <div class="navbar-right">
-    <!-- Alertas -->
     @if (auth.tieneRol(['Administrador', 'Familiar', 'Cuidador'])) {
-      <button class="icon-btn" routerLink="/familiar/alertas" id="navbar-alertas-btn">
+      <button class="icon-btn" routerLink="/familiar/alertas" id="navbar-alertas-btn" aria-label="Notificaciones">
         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 24 24">
           <path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"/>
         </svg>
         @if (alertasActivas > 0) {
-          <span class="badge-count" [class.pulse]="alertasActivas > 0">{{ alertasActivas > 99 ? '99+' : alertasActivas }}</span>
+          <span class="notif-dot"></span>
         }
       </button>
     }
 
-    <!-- Usuario -->
     <div class="user-menu-wrapper">
       <button class="user-btn" (click)="toggleMenuUsuario()" id="navbar-user-menu-btn">
-        <div class="avatar">
-          {{ inicialUsuario }}
-        </div>
+        <div class="avatar">{{ inicialUsuario }}</div>
         <div class="user-info">
           <span class="user-name">{{ nombreUsuario }}</span>
           <span class="user-role">{{ auth.rolActual }}</span>

@@ -1,0 +1,79 @@
+<div class="page">
+  <div class="chat-layout">
+    <div class="chat-sidebar card">
+      <div class="chat-sidebar-header">
+        <span class="card-title">Chatbot IA</span>
+        <button class="btn-new" (click)="nuevaConversacion()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z" />
+          </svg>
+          Nueva
+
+        </button>
+      </div>
+      <div class="conv-list">
+        @for (c of conversaciones; track c.id) {
+        <div class="conv-item" [class.active]="convActiva === c.id" (click)="convActiva = c.id">
+          <div class="conv-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z" />
+            </svg></div>
+          <div>
+            <div class="conv-titulo">{{ c.titulo }}</div>
+            <div class="conv-fecha">{{ c.fecha }}</div>
+          </div>
+        </div>
+        }
+      </div>
+      <div class="sugerencias">
+        <div class="sug-label">Preguntas frecuentes</div>
+        @for (s of sugerencias; track s) {
+        <button class="sug-btn" (click)="enviarSugerencia(s)">{{ s }}</button>
+        }
+      </div>
+    </div>
+    <div class="chat-panel card">
+      <div class="chat-panel-header">
+        <div class="bot-avatar"><svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z" />
+          </svg></div>
+        <div>
+          <div style="font-size:15px; font-weight:600; color:#1B2B3A">Asistente SiMA</div>
+          <div style="font-size:12px; color:#52B788">● En línea</div>
+        </div>
+        <span class="powered-badge">Powered by Claude AI</span>
+      </div>
+      <div class="messages" #messagesContainer>
+        @for (msg of mensajes(); track msg.id) {
+        <div class="msg-wrap" [class.msg-user]="msg.tipo === 'usuario'">
+          @if (msg.tipo === 'bot') {
+          <div class="bot-bubble-avatar"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z" />
+            </svg></div>
+          }
+          <div class="bubble" [class.bubble-bot]="msg.tipo === 'bot'" [class.bubble-user]="msg.tipo === 'usuario'">
+            {{ msg.texto }}
+            <div class="msg-hora">{{ msg.hora }}</div>
+          </div>
+        </div>
+        }
+        @if (escribiendo()) {
+        <div class="msg-wrap">
+          <div class="bot-bubble-avatar"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z" />
+            </svg></div>
+          <div class="bubble bubble-bot typing"><span></span><span></span><span></span></div>
+        </div>
+        }
+      </div>
+      <div class="input-area">
+        <input class="chat-input" placeholder="Escribe tu pregunta..." [(ngModel)]="inputTexto"
+          (keydown.enter)="enviar()">
+        <button class="send-btn" (click)="enviar()" [disabled]="!inputTexto.trim()">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" />
+          </svg>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

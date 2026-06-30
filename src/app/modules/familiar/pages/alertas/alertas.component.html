@@ -1,0 +1,85 @@
+<div class="page">
+  <div class="page-header">
+    <div>
+      <h1>Alertas</h1>
+      <p>Alertas y notificaciones del sistema</p>
+    </div>
+  </div>
+
+  <div class="filters card">
+    <div class="search-wrap">
+      <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input class="search-input" type="text" placeholder="Buscar alertas..."
+             [ngModel]="buscar()" (ngModelChange)="buscar.set($event)">
+    </div>
+    <div class="filter-selects">
+      <select class="select-input" [ngModel]="filtroTipo()" (ngModelChange)="filtroTipo.set($event)">
+        <option value="">Todos los tipos</option>
+        <option value="urgente">Urgente</option>
+        <option value="moderado">Moderado</option>
+        <option value="info">Info</option>
+      </select>
+      <select class="select-input" [ngModel]="filtroEstado()" (ngModelChange)="filtroEstado.set($event)">
+        <option value="">Todos los estados</option>
+        <option value="activa">Activa</option>
+        <option value="resuelta">Resuelta</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="alertas-count">
+    {{ alertasFiltradas().length }} alerta{{ alertasFiltradas().length !== 1 ? 's' : '' }}
+  </div>
+
+  <div class="alertas-list">
+    @for (a of alertasFiltradas(); track a.id) {
+      <div class="alerta-card" [class.urgente]="a.tipo === 'urgente'" [class.moderado]="a.tipo === 'moderado'" [class.info]="a.tipo === 'info'" [class.resuelta]="a.estado === 'resuelta'">
+        <div class="alerta-icon">
+          @if (a.tipo === 'urgente') {
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          } @else if (a.tipo === 'moderado') {
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+          } @else {
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          }
+        </div>
+        <div class="alerta-body">
+          <div class="alerta-top">
+            <div class="alerta-titulo">{{ a.titulo }}</div>
+            <div class="alerta-badges">
+              <span class="badge" [class.badge-red]="a.tipo === 'urgente'" [class.badge-yellow]="a.tipo === 'moderado'" [class.badge-blue]="a.tipo === 'info'">
+                {{ tipoLabel(a.tipo) }}
+              </span>
+              <span class="badge" [class.badge-green]="a.estado === 'resuelta'" [class.badge-gray]="a.estado === 'activa'">
+                {{ a.estado === 'activa' ? 'Activa' : 'Resuelta' }}
+              </span>
+            </div>
+          </div>
+          <div class="alerta-desc">{{ a.descripcion }}</div>
+          <div class="alerta-meta">
+            <span>{{ a.adulto }}</span>
+            <span class="dot">·</span>
+            <span>{{ a.hora }}</span>
+          </div>
+        </div>
+        @if (a.estado === 'activa') {
+          <button class="btn-resolver" (click)="marcarResuelta(a.id)">Marcar resuelta</button>
+        }
+      </div>
+    }
+
+    @if (alertasFiltradas().length === 0) {
+      <div class="empty-state card">
+        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#D0D8E0" stroke-width="1.5"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+        <p>No se encontraron alertas con los filtros actuales</p>
+      </div>
+    }
+  </div>
+</div>
+
+@if (toast()) {
+  <div class="toast toast-success">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+    {{ toast() }}
+  </div>
+}

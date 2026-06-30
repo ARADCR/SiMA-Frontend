@@ -1,0 +1,118 @@
+<div class="page">
+  <div class="header">
+    <div>
+      <h1 class="title">Cumplimiento</h1>
+      <p class="sub">Adherencia al tratamiento de tus pacientes</p>
+    </div>
+    <div class="date-range">
+      <input class="date-input" type="date" [(ngModel)]="fechaInicio">
+      <span class="date-sep">—</span>
+      <input class="date-input" type="date" [(ngModel)]="fechaFin">
+    </div>
+  </div>
+
+  <div class="stats-grid">
+    <div class="card stat-card">
+      <div class="stat-icon-wrap" style="background:#EBF5FB; color:#2E86AB">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+      </div>
+      <div class="stat-body">
+        <div class="stat-val" style="color:#2E86AB">{{ promedioGeneral() }}%</div>
+        <div class="stat-lbl">Cumplimiento promedio</div>
+        <div class="stat-bar">
+          <div class="stat-bar-fill" [style.width.%]="promedioGeneral()" style="background:#2E86AB"></div>
+        </div>
+      </div>
+    </div>
+    <div class="card stat-card">
+      <div class="stat-icon-wrap" style="background:#D8F3DC; color:#52B788">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M6.5 10h-2v5h2v-5zm4 0h-2v5h2v-5zm8.5 7H4v2h15v-2zm-4.5-7h-2v5h2v-5zM11.5 1L2 6v2h19V6l-9.5-5z"/></svg>
+      </div>
+      <div class="stat-body">
+        <div class="stat-val" style="color:#52B788">{{ totalCompletadas() }}</div>
+        <div class="stat-lbl">Tomas completadas</div>
+      </div>
+    </div>
+    <div class="card stat-card">
+      <div class="stat-icon-wrap" style="background:#FDE8E0; color:#E76F51">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+      </div>
+      <div class="stat-body">
+        <div class="stat-val" style="color:#E76F51">{{ totalOmitidas() }}</div>
+        <div class="stat-lbl">Tomas omitidas</div>
+      </div>
+    </div>
+    <div class="card stat-card">
+      <div class="stat-icon-wrap" style="background:#D8F3DC; color:#52B788">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 4l6 2.67V11c0 3.89-2.67 7.52-6 8.93-3.33-1.41-6-5.04-6-8.93V7.67L12 5z"/></svg>
+      </div>
+      <div class="stat-body">
+        <div class="stat-val" style="color:#52B788">{{ diasConCienPorciento() }}</div>
+        <div class="stat-lbl">Pacientes con 100%</div>
+      </div>
+    </div>
+  </div>
+
+  <h2 class="section-heading">Por paciente — semana actual</h2>
+
+  <div class="patients-section">
+    @for (p of pacientes(); track p.id) {
+      <div class="card patient-compliance-card">
+        <div class="pc-header">
+          <div class="pc-avatar" [style.background]="p.color">{{ p.initials }}</div>
+          <div class="pc-info">
+            <div class="pc-nombre">{{ p.nombre }}</div>
+            <div class="pc-pct" [style.color]="porcentajeBarColor(p.porcentaje)">{{ p.porcentaje }}%</div>
+          </div>
+          <div class="pc-dots">
+            @for (d of p.diasSemana; track d.fecha) {
+              <div class="dot-wrap">
+                <div [class]="dotClass(d.estado)" [title]="d.fecha + ': ' + d.estado"></div>
+                <span class="dot-label">{{ d.fecha.slice(0,1) }}</span>
+              </div>
+            }
+          </div>
+        </div>
+        <div class="pc-bar-wrap">
+          <div class="pc-bar">
+            <div class="pc-bar-fill" [style.width.%]="p.porcentaje" [style.background]="porcentajeBarColor(p.porcentaje)"></div>
+          </div>
+        </div>
+      </div>
+    }
+  </div>
+
+  <h2 class="section-heading">Tendencia 4 semanas</h2>
+
+  <div class="card trend-card">
+    <table class="trend-table">
+      <thead>
+        <tr>
+          <th class="trend-name-col">Paciente</th>
+          @for (sem of semanasLabels; track sem) {
+            <th>{{ sem }}</th>
+          }
+        </tr>
+      </thead>
+      <tbody>
+        @for (p of pacientes(); track p.id) {
+          <tr>
+            <td class="trend-patient">
+              <div class="trend-patient-cell">
+                <div class="avatar-xs" [style.background]="p.color">{{ p.initials }}</div>
+                <span>{{ p.nombre }}</span>
+              </div>
+            </td>
+            @for (pct of p.semanas; track $index) {
+              <td>
+                <span class="pct-chip" [style.background]="semanaBackground(pct)" [style.color]="semanaColor(pct)">
+                  {{ pct }}%
+                </span>
+              </td>
+            }
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+</div>

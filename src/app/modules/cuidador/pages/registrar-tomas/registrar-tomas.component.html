@@ -1,0 +1,101 @@
+<div class="page">
+  <div class="header">
+    <div>
+      <h1 class="title">Registrar Tomas</h1>
+      <p class="sub">Gestión de administración de medicamentos · hoy</p>
+    </div>
+    <select class="select-input" [(ngModel)]="pacienteFiltro">
+      <option value="">Todos los pacientes</option>
+      <option value="Elena Rodríguez">Elena Rodríguez</option>
+      <option value="José Martínez">José Martínez</option>
+      <option value="Rosa Pérez">Rosa Pérez</option>
+      <option value="Luis García">Luis García</option>
+    </select>
+  </div>
+
+  <div class="stats-row">
+    <div class="card stat-mini stat-green">
+      <div class="stat-val">{{ completadas() }}</div>
+      <div class="stat-lbl">Completadas</div>
+    </div>
+    <div class="card stat-mini stat-yellow">
+      <div class="stat-val">{{ pendientes() }}</div>
+      <div class="stat-lbl">Pendientes</div>
+    </div>
+    <div class="card stat-mini stat-red">
+      <div class="stat-val">{{ omitidas() }}</div>
+      <div class="stat-lbl">Omitidas</div>
+    </div>
+    <div class="card stat-mini stat-blue">
+      <div class="stat-val">{{ tomas().length }}</div>
+      <div class="stat-lbl">Total programadas</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="table-header">
+      <span class="card-title">Horario de tomas</span>
+    </div>
+    <div class="table-wrap">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Hora</th>
+            <th>Paciente</th>
+            <th>Medicamento</th>
+            <th>Dosis</th>
+            <th>Estado</th>
+            <th class="text-right">Acción</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (t of tomasFiltradas(); track t.id) {
+            <tr>
+              <td><span class="hora-val">{{ t.hora }}</span></td>
+              <td>
+                <div class="patient-cell">
+                  <div class="avatar" [style.background]="t.avatarColor">{{ t.initials }}</div>
+                  <span class="patient-name">{{ t.paciente }}</span>
+                </div>
+              </td>
+              <td class="med-name">{{ t.medicamento }}</td>
+              <td>{{ t.dosis }}</td>
+              <td>
+                <span [class]="badgeClass(t.estado)">{{ badgeLabel(t.estado) }}</span>
+              </td>
+              <td class="text-right">
+                @if (t.estado === 'pendiente') {
+                  <div class="action-group">
+                    <button class="btn-sm btn-green" (click)="registrar(t, 'tomado')">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+                      Tomada
+                    </button>
+                    <button class="btn-sm btn-red" (click)="registrar(t, 'omitido')">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+                      Omitir
+                    </button>
+                  </div>
+                } @else {
+                  <button class="btn-sm btn-gray" (click)="revertir(t)">Revertir</button>
+                }
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  @if (toast()) {
+    <div class="toast" [class]="'toast-' + toast()!.type">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+        @if (toast()!.type === 'success') {
+          <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+        } @else {
+          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
+        }
+      </svg>
+      {{ toast()!.msg }}
+    </div>
+  }
+</div>
