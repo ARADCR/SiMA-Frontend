@@ -1,0 +1,145 @@
+<div class="page">
+  <div class="header">
+    <div>
+      <h1 class="title">Configuración del Sistema</h1>
+      <p class="sub">Parámetros globales de la plataforma SiMA</p>
+    </div>
+  </div>
+
+  <div class="config-col">
+    <!-- Medicación -->
+    <div class="card section-card">
+      <div class="section-header">
+        <div class="section-icon" style="background:#EBF5FB; color:#2E86AB">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M6.5 10h-2v5h2v-5zm4 0h-2v5h2v-5zm8.5 7H4v2h15v-2zm-4.5-7h-2v5h2v-5zM11.5 1L2 6v2h19V6l-9.5-5z"/></svg>
+        </div>
+        <div>
+          <div class="section-title">Medicación</div>
+          <div class="section-sub">Parámetros de recordatorio y reintentos de tomas</div>
+        </div>
+      </div>
+      <div class="section-body">
+        <div class="form-row">
+          <div class="form-field">
+            <label>Tolerancia por toma (minutos)</label>
+            <div class="input-wrap">
+              <input type="number" [ngModel]="toleranciaMed()" (ngModelChange)="toleranciaMed.set($event)" min="5" max="120">
+              <span class="input-unit">min</span>
+            </div>
+            <div class="field-hint">Tiempo permitido antes/después del horario programado</div>
+          </div>
+          <div class="form-field">
+            <label>Reintentos de notificación</label>
+            <div class="input-wrap">
+              <input type="number" [ngModel]="reintentosMed()" (ngModelChange)="reintentosMed.set($event)" min="1" max="10">
+              <span class="input-unit">veces</span>
+            </div>
+            <div class="field-hint">Número de alertas antes de marcar como omitida</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- IoT -->
+    <div class="card section-card">
+      <div class="section-header">
+        <div class="section-icon" style="background:#D8F3DC; color:#52B788">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z"/></svg>
+        </div>
+        <div>
+          <div class="section-title">Dispositivos IoT</div>
+          <div class="section-sub">Umbrales y frecuencias de los sensores ESP32</div>
+        </div>
+      </div>
+      <div class="section-body">
+        <div class="form-row">
+          <div class="form-field">
+            <label>Umbral de detección de caídas (g)</label>
+            <div class="input-wrap">
+              <input type="number" step="0.1" [ngModel]="umbralCaidas()" (ngModelChange)="umbralCaidas.set($event)" min="1" max="10">
+              <span class="input-unit">g</span>
+            </div>
+            <div class="field-hint">Aceleración mínima para activar alerta de caída</div>
+          </div>
+          <div class="form-field">
+            <label>Frecuencia de verificación</label>
+            <div class="input-wrap">
+              <input type="number" [ngModel]="freqVerif()" (ngModelChange)="freqVerif.set($event)" min="5" max="60">
+              <span class="input-unit">min</span>
+            </div>
+            <div class="field-hint">Intervalo de sincronización del dispositivo</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- WeChat -->
+    <div class="card section-card">
+      <div class="section-header">
+        <div class="section-icon" style="background:#D8F3DC; color:#1A7A4A">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg>
+        </div>
+        <div>
+          <div class="section-title">Integración WeChat</div>
+          <div class="section-sub">Credenciales del canal de notificaciones</div>
+        </div>
+      </div>
+      <div class="section-body">
+        <div class="form-row">
+          <div class="form-field">
+            <label>App ID</label>
+            <input type="text" [ngModel]="wechatAppId()" (ngModelChange)="wechatAppId.set($event)" placeholder="wx_xxxxxxxxxxxxxx">
+          </div>
+          <div class="form-field">
+            <label>App Secret</label>
+            <input type="password" [ngModel]="wechatSecret()" (ngModelChange)="wechatSecret.set($event)" placeholder="••••••••••••••••">
+          </div>
+        </div>
+        <div class="wechat-status">
+          <span class="status-dot" [class.connected]="wechatConectado()"></span>
+          <span class="status-lbl">{{ wechatConectado() ? 'Conectado' : 'Sin conexión' }}</span>
+          <button class="btn-test" (click)="probarWechat()">Probar conexión</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Suscripciones -->
+    <div class="card section-card">
+      <div class="section-header">
+        <div class="section-icon" style="background:#FEF3E2; color:#B47B12">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z"/></svg>
+        </div>
+        <div>
+          <div class="section-title">Suscripciones WeChat</div>
+          <div class="section-sub">Familiares habilitados para recibir notificaciones</div>
+        </div>
+      </div>
+      <div class="section-body">
+        <table class="subs-table">
+          <thead><tr><th>Familiar</th><th>Adulto asociado</th><th>Habilitado</th><th>Última notif.</th></tr></thead>
+          <tbody>
+            @for (s of suscripciones; track s.id) {
+              <tr>
+                <td>{{ s.familiar }}</td>
+                <td class="text-muted">{{ s.adulto }}</td>
+                <td><span class="badge" [class]="s.habilitado ? 'badge-green' : 'badge-gray'">{{ s.habilitado ? 'Activo' : 'Inactivo' }}</span></td>
+                <td class="text-muted">{{ s.ultimaNotif }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="save-row">
+      <button class="btn-save" (click)="guardar()">Guardar cambios</button>
+    </div>
+  </div>
+
+  @if (toast()) {
+    <div class="toast">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+      {{ toast() }}
+    </div>
+  }
+</div>

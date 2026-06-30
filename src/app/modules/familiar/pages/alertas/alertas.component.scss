@@ -1,0 +1,202 @@
+:host { display: block; }
+
+.page {
+  padding: 32px;
+  background: #F7FAFC;
+  min-height: calc(100vh - 64px);
+}
+
+.page-header {
+  margin-bottom: 20px;
+
+  h1 { font-size: 28px; font-weight: 700; color: #1B2B3A; margin: 0 0 4px; }
+  p { font-size: 13px; color: #9CABB8; margin: 0; }
+}
+
+.card {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+  padding: 20px 24px;
+}
+
+.filters {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.search-wrap {
+  position: relative;
+  flex: 1;
+  min-width: 200px;
+
+  .search-icon {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #9CABB8;
+  }
+
+  .search-input {
+    width: 100%;
+    padding: 9px 12px 9px 36px;
+    border: 1px solid #E2EAF0;
+    border-radius: 8px;
+    font-size: 14px;
+    font-family: inherit;
+    color: #1B2B3A;
+    outline: none;
+    background: #F7FAFC;
+    box-sizing: border-box;
+
+    &:focus { border-color: #2E86AB; background: white; }
+    &::placeholder { color: #9CABB8; }
+  }
+}
+
+.filter-selects {
+  display: flex;
+  gap: 8px;
+}
+
+.select-input {
+  padding: 9px 14px;
+  border: 1px solid #E2EAF0;
+  border-radius: 8px;
+  font-size: 13px;
+  color: #5C6B7A;
+  background: white;
+  outline: none;
+  cursor: pointer;
+}
+
+.alertas-count {
+  font-size: 13px;
+  color: #5C6B7A;
+  margin-bottom: 12px;
+}
+
+.alertas-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.alerta-card {
+  background: white;
+  border-radius: 12px;
+  padding: 16px 20px;
+  box-shadow: 0 1px 8px rgba(0,0,0,0.05);
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  border-left: 3px solid transparent;
+  transition: box-shadow 0.2s;
+
+  &:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.09); }
+
+  &.urgente { border-left-color: #E76F51; .alerta-icon { color: #E76F51; } }
+  &.moderado { border-left-color: #F4A261; .alerta-icon { color: #F4A261; } }
+  &.info { border-left-color: #2E86AB; .alerta-icon { color: #2E86AB; } }
+  &.resuelta { opacity: 0.65; }
+}
+
+.alerta-icon {
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.alerta-body { flex: 1; }
+
+.alerta-top {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 6px;
+  flex-wrap: wrap;
+}
+
+.alerta-titulo { font-size: 15px; font-weight: 600; color: #1B2B3A; }
+
+.alerta-badges { display: flex; gap: 6px; }
+
+.alerta-desc {
+  font-size: 13px;
+  color: #5C6B7A;
+  line-height: 1.5;
+  margin-bottom: 8px;
+}
+
+.alerta-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: #9CABB8;
+
+  .dot { color: #D0D8E0; }
+}
+
+.badge {
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 500;
+  white-space: nowrap;
+
+  &.badge-red { background: #FDE8E0; color: #C0452A; }
+  &.badge-yellow { background: #FEF3E2; color: #B47B12; }
+  &.badge-blue { background: #EBF5FB; color: #1E5F7A; }
+  &.badge-green { background: #D8F3DC; color: #1A7A4A; }
+  &.badge-gray { background: #F0F4F8; color: #9CABB8; }
+}
+
+.btn-resolver {
+  flex-shrink: 0;
+  padding: 6px 14px;
+  background: transparent;
+  border: 1px solid #E2EAF0;
+  border-radius: 7px;
+  font-size: 12px;
+  font-weight: 600;
+  font-family: inherit;
+  color: #5C6B7A;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s;
+
+  &:hover { border-color: #2E86AB; color: #2E86AB; background: #EBF5FB; }
+}
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48px;
+  gap: 12px;
+  text-align: center;
+
+  p { color: #9CABB8; font-size: 14px; margin: 0; }
+}
+
+.toast {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 20px;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  z-index: 2000;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.10);
+
+  &.toast-success { background: #ECFDF5; color: #065F46; border: 1px solid #6EE7B7; }
+}

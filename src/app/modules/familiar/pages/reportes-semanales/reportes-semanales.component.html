@@ -1,0 +1,129 @@
+<div class="page">
+  <div class="header">
+    <div>
+      <h1 class="title">Reportes Semanales</h1>
+      <p class="sub">Análisis de bienestar generado por IA para Elena Rodríguez</p>
+    </div>
+    <div class="header-actions">
+      <select class="select-input" [(ngModel)]="adultoSel">
+        <option>Elena Rodríguez</option>
+        <option>José Rodríguez</option>
+      </select>
+      <button class="btn-outline" (click)="compartir()">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92 1.61 0 2.92-1.31 2.92-2.92s-1.31-2.92-2.92-2.92z"/></svg>
+        Compartir con médico
+      </button>
+      <button class="btn-primary" (click)="descargar()">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
+        Descargar PDF
+      </button>
+    </div>
+  </div>
+
+  <div class="card semana-nav">
+    <button class="nav-arrow" (click)="semanaAnterior()">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/></svg>
+    </button>
+    <div class="semanas-row">
+      @for (s of semanas; track s.value) {
+        <button class="semana-btn" [class.active]="semanaActiva() === s.value" (click)="semanaActiva.set(s.value)">
+          {{ s.label }}
+        </button>
+      }
+    </div>
+    <button class="nav-arrow" (click)="semanaSiguiente()">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>
+    </button>
+  </div>
+
+  <div class="metrics-grid">
+    @for (m of metricas; track m.nombre) {
+      <div class="card metric-card">
+        <div class="metric-icon" [style.background]="m.bg" [style.color]="m.color">
+          <span style="font-size:20px">{{ m.icon }}</span>
+        </div>
+        <div>
+          <div class="metric-val">{{ m.valor }}</div>
+          <div class="metric-lbl">{{ m.nombre }}</div>
+          <div class="metric-change" [class.positive]="m.cambio >= 0" [class.negative]="m.cambio < 0">
+            {{ m.cambio >= 0 ? '↑' : '↓' }} {{ Math.abs(m.cambio) }}% vs semana anterior
+          </div>
+        </div>
+      </div>
+    }
+  </div>
+
+  <div class="report-grid">
+    <div class="card ia-report">
+      <div class="ia-header">
+        <div class="ia-icon-wrap">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm1 17.93V18a1 1 0 0 0-2 0v1.93A8 8 0 0 1 4.07 13H6a1 1 0 0 0 0-2H4.07A8 8 0 0 1 11 4.07V6a1 1 0 0 0 2 0V4.07A8 8 0 0 1 19.93 11H18a1 1 0 0 0 0 2h1.93A8 8 0 0 1 13 19.93z"/></svg>
+        </div>
+        <div>
+          <div style="font-size:15px; font-weight:600; color:#1B2B3A">Análisis de IA — Semana {{ semanaActiva() }}</div>
+          <div style="font-size:12px; color:#9CABB8">Generado automáticamente por SiMA</div>
+        </div>
+        <span class="badge badge-blue">IA</span>
+      </div>
+      <div class="ia-body">
+        <div class="ia-section">
+          <div class="ia-section-title">Resumen de estabilidad</div>
+          <p class="ia-text">{{ iaResumen() }}</p>
+        </div>
+        <div class="ia-section">
+          <div class="ia-section-title">Observaciones relevantes</div>
+          <ul class="ia-list">
+            @for (obs of iaObservaciones(); track obs) { <li>{{ obs }}</li> }
+          </ul>
+        </div>
+        <div class="ia-section">
+          <div class="ia-section-title">Recomendaciones</div>
+          <ul class="ia-list">
+            @for (rec of iaRecomendaciones(); track rec) { <li>{{ rec }}</li> }
+          </ul>
+        </div>
+        <div class="ia-disclaimer">
+          Este análisis es orientativo. Consulta siempre con el médico tratante.
+        </div>
+      </div>
+    </div>
+
+    <div class="card chart-card">
+      <div class="chart-header">
+        <span class="card-title">Tomas diarias</span>
+        <div class="chart-legend">
+          <span class="legend-dot" style="background:#52B788"></span><span>Completadas</span>
+          <span class="legend-dot" style="background:#E76F51"></span><span>Omitidas</span>
+        </div>
+      </div>
+      <div class="chart-body">
+        @for (d of chartData; track d.dia) {
+          <div class="chart-col">
+            <div class="bar-wrap">
+              <div class="bar bar-omision" [style.height.px]="(d.omisiones / 5) * 80" [title]="d.omisiones + ' omitidas'"></div>
+              <div class="bar bar-toma" [style.height.px]="(d.tomas / 5) * 80" [title]="d.tomas + ' completadas'"></div>
+            </div>
+            <div class="chart-dia">{{ d.dia }}</div>
+            <div class="chart-val">{{ d.tomas }}/{{ d.tomas + d.omisiones }}</div>
+          </div>
+        }
+      </div>
+      <div class="chart-note">
+        <div class="compliance-bar">
+          <div class="compliance-fill" [style.width.%]="cumplimientoSemana()"></div>
+        </div>
+        <div style="display:flex; justify-content:space-between; font-size:12px; color:#5C6B7A; margin-top:6px">
+          <span>Cumplimiento semanal</span>
+          <span style="font-weight:700; color:#52B788">{{ cumplimientoSemana() }}%</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+@if (toast()) {
+  <div class="toast">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+    {{ toast() }}
+  </div>
+}

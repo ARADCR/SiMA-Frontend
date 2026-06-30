@@ -21,5 +21,20 @@ export const ADMIN_ROUTES: Routes = [
     path: 'configuracion',
     loadComponent: () => import('./pages/configuracion-sistema/configuracion-sistema.component').then(m => m.ConfiguracionSistemaComponent),
     title: 'Configuración — SiMA'
+  },
+  {
+    path: 'adultos',
+    loadComponent: () => import('./pages/gestion-adultos/gestion-adultos.component').then(m => m.GestionAdultosComponent),
+    title: 'Adultos Mayores — SiMA'
+  },
+  {
+    path: 'credenciales',
+    loadComponent: () => import('./pages/credenciales/credenciales.component').then(m => m.CredencialesComponent),
+    title: 'Credenciales — SiMA'
+  },
+  {
+    path: 'reportes',
+    loadComponent: () => import('./pages/reportes-admin/reportes-admin.component').then(m => m.ReportesAdminComponent),
+    title: 'Reportes — SiMA'
   }
 ];
