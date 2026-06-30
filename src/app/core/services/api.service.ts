@@ -63,7 +63,7 @@ export class ApiService {
   }
 
   private handleError(error: unknown): Observable<never> {
-    const err = error as { status?: number; error?: { mensaje?: string }; message?: string };
+    const err = error as { status?: number; error?: { mensaje?: string; message?: string; data?: Record<string, unknown> }; message?: string };
     let mensaje = 'Error inesperado. Inténtalo de nuevo.';
 
     if (err.status === 0) {
@@ -74,8 +74,15 @@ export class ApiService {
       mensaje = 'No tienes permisos para realizar esta acción.';
     } else if (err.status === 404) {
       mensaje = 'Recurso no encontrado.';
-    } else if (err.error?.mensaje) {
-      mensaje = err.error.mensaje;
+    } else if (err.error?.message || err.error?.mensaje) {
+      mensaje = err.error.message || err.error.mensaje || 'Error desconocido';
+      // Si el backend envía errores de validación en la propiedad "data"
+      if (err.error.data && typeof err.error.data === 'object') {
+        const validationErrors = Object.values(err.error.data).filter(v => typeof v === 'string');
+        if (validationErrors.length > 0) {
+          mensaje += `: ${validationErrors.join(', ')}`;
+        }
+      }
     }
 
     return throwError(() => ({ mensaje, status: err.status }));

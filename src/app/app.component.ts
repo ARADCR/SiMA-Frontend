@@ -1,7 +1,7 @@
 import { Component, OnInit, signal, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterOutlet, Router, NavigationEnd } from '@angular/router';
-import { filter } from 'rxjs/operators';
+import { filter, startWith } from 'rxjs/operators';
 
 import { NavbarComponent } from './shared/components/navbar/navbar.component';
 import { SidebarComponent } from './shared/components/sidebar/sidebar.component';
@@ -24,25 +24,32 @@ export class AppComponent implements OnInit {
   showLayout       = signal(false);
 
   ngOnInit(): void {
-    // Mostrar layout (navbar + sidebar) solo cuando el usuario está autenticado
+    // startWith(null) garantiza que evaluemos la URL al primer tick,
+    // capturando el refresh en la ruta actual sin esperar NavigationEnd
     this.router.events
-      .pipe(filter(e => e instanceof NavigationEnd))
-      .subscribe((e) => {
-        const navEnd = e as NavigationEnd;
-        const url = navEnd.urlAfterRedirects;
-        const isAuth = !url.startsWith('/auth') && this.auth.estaAutenticado;
-        this.showLayout.set(isAuth);
-
-        if (isAuth && this.auth.tieneRol('Adulto Mayor')) {
-          this.notification.conectar();
-        } else {
-          this.notification.desconectar();
-        }
+      .pipe(
+        filter(e => e instanceof NavigationEnd),
+        startWith(null)          // dispara inmediatamente con valor null
+      )
+      .subscribe(() => {
+        // urlAfterRedirects en NavigationEnd, o snapshot actual del router
+        const url = this.router.url || '/';
+        this.actualizarLayout(url);
       });
 
     this.notification.recordatorios$.subscribe((recordatorio: RecordatorioMedicamento) => {
       this.mostrarNotificacion(recordatorio);
     });
+  }
+
+  private actualizarLayout(url: string): void {
+    const esRutaPublica = url.startsWith('/auth') || url === '/';
+    const autenticado   = this.auth.estaAutenticado;
+    const mostrarNav    = !esRutaPublica && autenticado;
+
+    this.showLayout.set(mostrarNav);
+
+    this.notification.desconectar();
   }
 
   private mostrarNotificacion(recordatorio: RecordatorioMedicamento): void {

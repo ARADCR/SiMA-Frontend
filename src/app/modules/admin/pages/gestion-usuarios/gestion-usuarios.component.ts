@@ -1,194 +1,151 @@
-import { Component, OnInit, inject, signal, computed } from '@angular/core';
+import { Component, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators, AbstractControl } from '@angular/forms';
-import { UsuarioService } from '../../../../core/services/usuario.service';
-import { Usuario, UsuarioCreate, RolUsuario } from '../../../../core/models/usuario.model';
+import { FormsModule } from '@angular/forms';
 
-type ModalMode = 'create' | 'edit' | null;
+type RolUsuario = 'Familiar' | 'Cuidador' | 'Administrador';
+type ModalMode = 'crear' | 'editar' | null;
+
+interface Usuario {
+  id: number;
+  nombre: string;
+  apellido: string;
+  email: string;
+  rol: RolUsuario;
+  activo: boolean;
+  createdAt: string;
+  ultimoAcceso: string;
+  wechat: boolean;
+}
+
+interface UsuarioForm {
+  nombre: string;
+  apellido: string;
+  email: string;
+  password: string;
+  confirmPassword: string;
+  rol: RolUsuario;
+  wechatOpenId: string;
+}
 
 @Component({
   selector: 'app-gestion-usuarios',
   standalone: true,
-  imports: [CommonModule, FormsModule, ReactiveFormsModule],
+  imports: [CommonModule, FormsModule],
   templateUrl: './gestion-usuarios.component.html',
-  styleUrl: './gestion-usuarios.component.scss'
+  styleUrls: ['./gestion-usuarios.component.scss']
 })
-export class GestionUsuariosComponent implements OnInit {
-  private fb      = inject(FormBuilder);
-  private svc     = inject(UsuarioService);
-
-  // ─── State ────────────────────────────────────────────────────────────────
-  usuarios        = signal<Usuario[]>([]);
-  loading         = signal(true);
-  saving          = signal(false);
-  error           = signal<string | null>(null);
-  toast           = signal<{ msg: string; type: 'success' | 'error' } | null>(null);
-
-  modalMode       = signal<ModalMode>(null);
-  selectedUser    = signal<Usuario | null>(null);
-  confirmDelete   = signal<Usuario | null>(null);
-  showPassword    = signal(false);
-
-  filtroTexto     = signal('');
-  filtroRol       = signal<RolUsuario | ''>('');
-
+export class GestionUsuariosComponent {
   readonly roles: RolUsuario[] = ['Familiar', 'Cuidador', 'Administrador'];
 
-  form!: FormGroup;
+  filtroTexto = signal('');
+  filtroRol = signal<RolUsuario | ''>('');
+  filtroEstado = signal<'activo' | 'inactivo' | ''>('');
+  modalMode = signal<ModalMode>(null);
+  selectedUser = signal<Usuario | null>(null);
+  toast = signal<{ msg: string; type: 'success' | 'error' } | null>(null);
 
-  // ─── Computed ─────────────────────────────────────────────────────────────
+  form = signal<UsuarioForm>({
+    nombre: '', apellido: '', email: '',
+    password: '', confirmPassword: '',
+    rol: 'Familiar', wechatOpenId: ''
+  });
+
+  usuarios = signal<Usuario[]>([
+    { id: 1, nombre: 'María',   apellido: 'García',   email: 'maria@sima.mx',   rol: 'Familiar',      activo: true,  createdAt: '01/01/2026', ultimoAcceso: 'Hace 2 h',  wechat: true  },
+    { id: 2, nombre: 'Carlos',  apellido: 'Andrade',  email: 'carlos@sima.mx',  rol: 'Cuidador',      activo: true,  createdAt: '05/02/2026', ultimoAcceso: 'Hace 4 h',  wechat: false },
+    { id: 3, nombre: 'Pedro',   apellido: 'López',    email: 'pedro@sima.mx',   rol: 'Familiar',      activo: true,  createdAt: '10/02/2026', ultimoAcceso: 'Ayer',       wechat: true  },
+    { id: 4, nombre: 'Laura',   apellido: 'Vega',     email: 'laura@sima.mx',   rol: 'Cuidador',      activo: true,  createdAt: '15/03/2026', ultimoAcceso: 'Hace 1 d',  wechat: false },
+    { id: 5, nombre: 'Ana',     apellido: 'Torres',   email: 'ana@sima.mx',     rol: 'Familiar',      activo: false, createdAt: '20/03/2026', ultimoAcceso: 'Hace 3 d',  wechat: true  },
+    { id: 6, nombre: 'Marco',   apellido: 'Torres',   email: 'marco@sima.mx',   rol: 'Cuidador',      activo: true,  createdAt: '01/04/2026', ultimoAcceso: 'Hace 5 h',  wechat: false },
+    { id: 7, nombre: 'Juan',    apellido: 'Flores',   email: 'juan@sima.mx',    rol: 'Familiar',      activo: true,  createdAt: '10/04/2026', ultimoAcceso: 'Hace 2 d',  wechat: true  },
+    { id: 8, nombre: 'Admin',   apellido: 'SIMA',     email: 'admin@sima.mx',   rol: 'Administrador', activo: true,  createdAt: '01/01/2026', ultimoAcceso: 'Ahora',      wechat: false },
+  ]);
+
   usuariosFiltrados = computed(() => {
-    const txt = this.filtroTexto().toLowerCase();
-    const rol = this.filtroRol();
+    const txt  = this.filtroTexto().toLowerCase();
+    const rol  = this.filtroRol();
+    const est  = this.filtroEstado();
     return this.usuarios().filter(u => {
-      const matchTxt = !txt ||
-        u.nombre.toLowerCase().includes(txt) ||
-        u.apellido.toLowerCase().includes(txt) ||
-        u.email.toLowerCase().includes(txt);
+      const matchTxt = !txt || u.nombre.toLowerCase().includes(txt) || u.apellido.toLowerCase().includes(txt) || u.email.toLowerCase().includes(txt);
       const matchRol = !rol || u.rol === rol;
-      return matchTxt && matchRol;
+      const matchEst = !est || (est === 'activo' ? u.activo : !u.activo);
+      return matchTxt && matchRol && matchEst;
     });
   });
 
-  stats = computed(() => {
-    const all = this.usuarios();
-    return {
-      total:    all.length,
-      activos:  all.filter(u => u.activo).length,
-      familiares: all.filter(u => u.rol === 'Familiar').length,
-      cuidadores: all.filter(u => u.rol === 'Cuidador').length,
+  iniciales(u: Usuario): string {
+    return (u.nombre.charAt(0) + u.apellido.charAt(0)).toUpperCase();
+  }
+
+  avatarBg(u: Usuario): string {
+    const map: Record<RolUsuario, string> = {
+      Administrador: '#2E86AB',
+      Familiar: '#52B788',
+      Cuidador: '#F4A261'
     };
-  });
-
-  // ─── Lifecycle ────────────────────────────────────────────────────────────
-  ngOnInit(): void {
-    this.buildForm();
-    this.cargarUsuarios();
+    return map[u.rol];
   }
 
-  private buildForm(): void {
-    this.form = this.fb.group({
-      nombre:   ['', [Validators.required, Validators.minLength(2)]],
-      apellido: ['', [Validators.required, Validators.minLength(2)]],
-      correo:   ['', [Validators.required, Validators.email]],
-      password: ['', [Validators.required, Validators.minLength(8),
-                      Validators.pattern(/^(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])/)]],
-      rol:      ['Familiar', Validators.required],
-    });
+  rolBadge(rol: RolUsuario): { bg: string; color: string } {
+    const map: Record<RolUsuario, { bg: string; color: string }> = {
+      Administrador: { bg: '#EBF5FB', color: '#1E5F7A' },
+      Familiar:      { bg: '#D8F3DC', color: '#1A7A4A' },
+      Cuidador:      { bg: '#FEF3E2', color: '#B47B12' }
+    };
+    return map[rol];
   }
 
-  // ─── API ──────────────────────────────────────────────────────────────────
-  private cargarUsuarios(): void {
-    this.loading.set(true);
-    this.svc.getAll().subscribe({
-      next: r => {
-        this.usuarios.set(r.data ?? []);
-        this.loading.set(false);
-      },
-      error: e => {
-        this.error.set(e.mensaje ?? 'Error al cargar usuarios');
-        this.loading.set(false);
-      }
-    });
-  }
-
-  // ─── Modal ────────────────────────────────────────────────────────────────
   openCreate(): void {
-    this.form.reset({ rol: 'Familiar' });
-    this.setPasswordRequired(true);
-    this.showPassword.set(false);
+    this.form.set({ nombre: '', apellido: '', email: '', password: '', confirmPassword: '', rol: 'Familiar', wechatOpenId: '' });
     this.selectedUser.set(null);
-    this.modalMode.set('create');
+    this.modalMode.set('crear');
   }
 
   openEdit(u: Usuario): void {
+    this.form.set({ nombre: u.nombre, apellido: u.apellido, email: u.email, password: '', confirmPassword: '', rol: u.rol, wechatOpenId: '' });
     this.selectedUser.set(u);
-    this.setPasswordRequired(false);
-    this.form.patchValue({ nombre: u.nombre, apellido: u.apellido, correo: u.email, rol: u.rol, password: '' });
-    this.showPassword.set(false);
-    this.modalMode.set('edit');
+    this.modalMode.set('editar');
+  }
+
+  setField<K extends keyof UsuarioForm>(key: K, value: UsuarioForm[K]): void {
+    this.form.update(f => ({ ...f, [key]: value }));
   }
 
   closeModal(): void { this.modalMode.set(null); }
 
-  private setPasswordRequired(required: boolean): void {
-    const ctrl = this.form.get('password')!;
-    if (required) {
-      ctrl.setValidators([Validators.required, Validators.minLength(8),
-                          Validators.pattern(/^(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])/)]);
-    } else {
-      ctrl.setValidators([Validators.minLength(8),
-                          Validators.pattern(/^(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])/)]);
-    }
-    ctrl.updateValueAndValidity();
-  }
-
-  // ─── Submit ───────────────────────────────────────────────────────────────
   guardar(): void {
-    if (this.form.invalid) { this.form.markAllAsTouched(); return; }
-    this.saving.set(true);
-
-    const val = this.form.value;
-    if (this.modalMode() === 'create') {
-      const payload: UsuarioCreate = {
-        nombre: val.nombre, apellido: val.apellido,
-        email: val.correo, password: val.password, rol: val.rol
-      };
-      this.svc.create(payload).subscribe({
-        next: () => { this.showToast('Usuario creado exitosamente', 'success'); this.closeModal(); this.cargarUsuarios(); },
-        error: e  => { this.showToast(e.mensaje ?? 'Error al crear usuario', 'error'); this.saving.set(false); }
-      });
+    const f = this.form();
+    if (!f.nombre.trim() || !f.apellido.trim() || !f.email.trim()) return;
+    if (this.modalMode() === 'crear') {
+      this.usuarios.update(list => [...list, {
+        id: list.length + 1,
+        nombre: f.nombre, apellido: f.apellido,
+        email: f.email, rol: f.rol,
+        activo: true,
+        createdAt: new Date().toLocaleDateString('es-MX'),
+        ultimoAcceso: 'Nunca',
+        wechat: !!f.wechatOpenId
+      }]);
+      this.showToast('Usuario creado exitosamente', 'success');
     } else {
-      const u = this.selectedUser()!;
-      const payload: any = { nombre: val.nombre, apellido: val.apellido, rol: val.rol };
-      if (val.password) payload.password = val.password;
-      this.svc.update(u.id, payload).subscribe({
-        next: () => { this.showToast('Usuario actualizado', 'success'); this.closeModal(); this.cargarUsuarios(); },
-        error: e  => { this.showToast(e.mensaje ?? 'Error al actualizar', 'error'); this.saving.set(false); }
-      });
+      const u = this.selectedUser();
+      if (u) {
+        this.usuarios.update(list => list.map(x => x.id === u.id
+          ? { ...x, nombre: f.nombre, apellido: f.apellido, email: f.email, rol: f.rol }
+          : x));
+        this.showToast('Usuario actualizado', 'success');
+      }
     }
+    this.closeModal();
   }
 
-  // ─── Toggle activo ────────────────────────────────────────────────────────
   toggleActivo(u: Usuario): void {
-    const obs = u.activo ? this.svc.desactivar(u.id) : this.svc.activar(u.id);
-    obs.subscribe({
-      next: () => {
-        this.showToast(u.activo ? 'Usuario desactivado' : 'Usuario activado', 'success');
-        this.cargarUsuarios();
-      },
-      error: e => this.showToast(e.mensaje ?? 'Error', 'error')
-    });
+    this.usuarios.update(list => list.map(x => x.id === u.id ? { ...x, activo: !x.activo } : x));
+    this.showToast(u.activo ? 'Usuario desactivado' : 'Usuario activado', 'success');
   }
 
-  // ─── Delete ───────────────────────────────────────────────────────────────
-  pedirConfirmacion(u: Usuario): void { this.confirmDelete.set(u); }
-  cancelarEliminar(): void { this.confirmDelete.set(null); }
-
-  confirmarEliminar(): void {
-    const u = this.confirmDelete();
-    if (!u) return;
-    this.svc.delete(u.id).subscribe({
-      next: () => { this.showToast('Usuario eliminado', 'success'); this.confirmDelete.set(null); this.cargarUsuarios(); },
-      error: e  => { this.showToast(e.mensaje ?? 'Error al eliminar', 'error'); this.confirmDelete.set(null); }
-    });
-  }
-
-  // ─── Helpers ──────────────────────────────────────────────────────────────
   private showToast(msg: string, type: 'success' | 'error'): void {
-    this.saving.set(false);
     this.toast.set({ msg, type });
     setTimeout(() => this.toast.set(null), 4000);
-  }
-
-  f(name: string): AbstractControl { return this.form.get(name)!; }
-  isInvalid(name: string): boolean { const c = this.f(name); return c.invalid && c.touched; }
-
-  rolColor(rol: RolUsuario): string {
-    return { Administrador: 'primary', Familiar: 'info', Cuidador: 'warning', 'Adulto Mayor': 'neutral' }[rol as string] || 'neutral';
-  }
-
-  iniciales(u: Usuario): string {
-    return (u.nombre.charAt(0) + u.apellido.charAt(0)).toUpperCase();
   }
 }

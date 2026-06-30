@@ -121,7 +121,6 @@ export class AuthService {
       'Administrador': '/admin/dashboard',
       'Familiar':      '/familiar/dashboard',
       'Cuidador':      '/cuidador/dashboard',
-      'Adulto Mayor':  '/adulto/dashboard'
     };
     const ruta = this.rolActual ? rutas[this.rolActual] : '/auth/login';
     this.router.navigate([ruta]);

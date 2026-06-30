@@ -1,0 +1,142 @@
+<div class="page">
+
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Panel de Administración</h1>
+      <p class="page-sub">{{ todayDate }}</p>
+    </div>
+    <a routerLink="/admin/usuarios" class="btn-primary">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+      Nueva cuenta
+    </a>
+  </div>
+
+  <div class="stats-row">
+    <div class="stat-card">
+      <div class="stat-icon stat-icon--blue">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
+      </div>
+      <div>
+        <div class="stat-val">{{ stats().totalUsuarios }}</div>
+        <div class="stat-lbl">Usuarios activos</div>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon stat-icon--green">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+      </div>
+      <div>
+        <div class="stat-val">{{ stats().adultosActivos }}</div>
+        <div class="stat-lbl">Adultos monitoreados</div>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon stat-icon--blue">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M17 1H7c-1.1 0-2 .9-2 2v18c0 1.1.9 2 2 2h10c1.1 0 2-.9 2-2V3c0-1.1-.9-2-2-2zm0 18H7V5h10v14zm-5-4c.83 0 1.5-.67 1.5-1.5S12.83 12 12 12s-1.5.67-1.5 1.5S11.17 15 12 15z"/></svg>
+      </div>
+      <div>
+        <div class="stat-val">{{ stats().dispositivosConectados }}</div>
+        <div class="stat-lbl">Dispositivos conectados</div>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon stat-icon--red">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"/></svg>
+      </div>
+      <div>
+        <div class="stat-val stat-val--alert">{{ stats().alertasActivas }}</div>
+        <div class="stat-lbl">Alertas activas</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="two-col">
+    <div class="card table-card">
+      <div class="card-header">
+        <span class="card-title">Usuarios del sistema</span>
+      </div>
+      <div class="table-wrap">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Usuario</th>
+              <th>Correo</th>
+              <th>Rol</th>
+              <th>Último acceso</th>
+              <th class="th-right">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (u of usuarios(); track u.id) {
+              <tr class="table-row">
+                <td>
+                  <div class="user-cell">
+                    <div class="avatar" [style.background]="u.avatarBg">{{ u.initials }}</div>
+                    <span class="user-name">{{ u.name }}</span>
+                  </div>
+                </td>
+                <td class="td-muted">{{ u.email }}</td>
+                <td>
+                  <span class="badge" [style.background]="u.roleBg" [style.color]="u.roleColor">{{ u.role }}</span>
+                </td>
+                <td class="td-muted">{{ u.lastAccess }}</td>
+                <td class="td-right">
+                  <div class="action-btns">
+                    <a [routerLink]="['/admin/usuarios']" class="icon-btn" title="Editar">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
+                    </a>
+                    <button class="icon-btn icon-btn--danger" title="Eliminar">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+      <div class="card-footer">
+        <span class="footer-text">Mostrando 1-5 de {{ stats().totalUsuarios }} usuarios</span>
+        <a routerLink="/admin/usuarios" class="footer-link">Ver todos</a>
+      </div>
+    </div>
+
+    <div class="right-col">
+      <div class="card side-card">
+        <div class="side-card-header">
+          <span class="card-title">Credenciales pendientes</span>
+          <span class="badge-count">{{ pendingCredentials().length }}</span>
+        </div>
+        @for (cred of pendingCredentials(); track cred.id) {
+          <div class="cred-item">
+            <div class="cred-avatar">{{ cred.initials }}</div>
+            <div class="cred-info">
+              <div class="cred-name">{{ cred.name }}</div>
+              <div class="cred-meta">{{ cred.docType }} · {{ cred.date }}</div>
+            </div>
+            <a routerLink="/admin/credenciales" class="btn-outline-sm">Revisar</a>
+          </div>
+        }
+      </div>
+
+      <div class="card side-card">
+        <div class="side-card-header">
+          <span class="card-title">Dispositivos sin asignar</span>
+        </div>
+        @for (dev of unassignedDevices(); track dev.id) {
+          <div class="cred-item">
+            <div class="dev-icon">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M17 1H7c-1.1 0-2 .9-2 2v18c0 1.1.9 2 2 2h10c1.1 0 2-.9 2-2V3c0-1.1-.9-2-2-2zm0 18H7V5h10v14zm-5-4c.83 0 1.5-.67 1.5-1.5S12.83 12 12 12s-1.5.67-1.5 1.5S11.17 15 12 15z"/></svg>
+            </div>
+            <div class="cred-info">
+              <div class="cred-name">{{ dev.type }}</div>
+              <div class="cred-meta dev-mac">{{ dev.mac }}</div>
+            </div>
+            <a routerLink="/admin/dispositivos" class="btn-outline-sm">Asignar</a>
+          </div>
+        }
+      </div>
+    </div>
+  </div>
+
+</div>
