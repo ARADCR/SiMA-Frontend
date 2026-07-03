@@ -21,7 +21,7 @@ export class AuthService {
   constructor(
     private http: HttpClient,
     private router: Router
-  ) {}
+  ) { }
 
   // ─── Getters ─────────────────────────────────────────────────────────────────
 
@@ -42,7 +42,7 @@ export class AuthService {
   // ─── Autenticación ────────────────────────────────────────────────────────────
 
   login(credenciales: CredencialesLogin): Observable<any> {
-    const payload = { correo: credenciales.email, password: credenciales.password };
+    const payload = { correo: credenciales.correo, password: credenciales.password };
     return this.http.post<any>(this.loginUrl, payload).pipe(
       tap(resp => {
         // La API devuelve RespuestaApi con la data anidada
@@ -119,9 +119,9 @@ export class AuthService {
   redirigirPorRol(): void {
     const rutas: Record<RolUsuario, string> = {
       'Administrador': '/admin/dashboard',
-      'Familiar':      '/familiar/dashboard',
-      'Cuidador':      '/cuidador/dashboard',
-      'Adulto Mayor':  '/adulto/dashboard'
+      'Familiar': '/familiar/dashboard',
+      'Cuidador': '/cuidador/dashboard',
+      'Adulto Mayor': '/adulto/dashboard'
     };
     const ruta = this.rolActual ? rutas[this.rolActual] : '/auth/login';
     this.router.navigate([ruta]);

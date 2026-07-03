@@ -1,40 +1,48 @@
 export type RolUsuario = 'Administrador' | 'Familiar' | 'Cuidador' | 'Adulto Mayor';
 
+export interface Rol {
+  idRol: number;
+  nombreRol: string;
+}
+
 export interface Usuario {
-  id: number;
+  idUsuario: number;
   nombre: string;
   apellido: string;
-  email: string;
-  telefono?: string;
-  rol: RolUsuario;
+  correo: string;
+  idRol: number;
+  nombreRol: RolUsuario;
+  wechatOpenid?: string;
   activo: boolean;
-  createdAt?: string;
-  updatedAt?: string;
+  creadoEn?: string;
+  ultimoAcceso?: string;
 }
 
 export interface UsuarioCreate {
   nombre: string;
   apellido: string;
-  email: string;
+  correo: string;
   password: string;
-  telefono?: string;
-  rol: RolUsuario;
+  idRol: number;
+  wechatOpenid?: string;
 }
 
 export interface UsuarioUpdate {
   nombre?: string;
   apellido?: string;
-  telefono?: string;
-  activo?: boolean;
+  correo?: string;
+  password?: string;
+  idRol?: number;
+  wechatOpenid?: string;
 }
 
 export interface CredencialesLogin {
-  email: string;
+  correo: string;
   password: string;
 }
 
 export interface TokenPayload {
-  sub: string;          // email
+  sub: string;
   userId: number;
   rol: RolUsuario;
   nombre: string;

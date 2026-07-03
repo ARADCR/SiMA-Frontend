@@ -2,7 +2,7 @@ import { Component, OnInit, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators, AbstractControl } from '@angular/forms';
 import { UsuarioService } from '../../../../core/services/usuario.service';
-import { Usuario, UsuarioCreate, RolUsuario } from '../../../../core/models/usuario.model';
+import { Usuario, UsuarioCreate, UsuarioUpdate } from '../../../../core/models/usuario.model';
 
 type ModalMode = 'create' | 'edit' | null;
 
@@ -18,25 +18,32 @@ type ModalMode = 'create' | 'edit' | null;
   styleUrl: './gestion-usuarios.component.scss'
 })
 export class GestionUsuariosComponent implements OnInit {
-  private fb      = inject(FormBuilder);
-  private svc     = inject(UsuarioService);
+  private fb = inject(FormBuilder);
+  private svc = inject(UsuarioService);
 
   // ─── State ────────────────────────────────────────────────────────────────
-  usuarios        = signal<Usuario[]>([]);
-  loading         = signal(true);
-  saving          = signal(false);
-  error           = signal<string | null>(null);
-  toast           = signal<{ msg: string; type: 'success' | 'error' } | null>(null);
+  usuarios = signal<Usuario[]>([]);
+  loading = signal(true);
+  saving = signal(false);
+  error = signal<string | null>(null);
+  toast = signal<{ msg: string; type: 'success' | 'error' } | null>(null);
 
-  modalMode       = signal<ModalMode>(null);
-  selectedUser    = signal<Usuario | null>(null);
-  confirmDelete   = signal<Usuario | null>(null);
-  showPassword    = signal(false);
+  modalMode = signal<ModalMode>(null);
+  selectedUser = signal<Usuario | null>(null);
+  confirmDelete = signal<Usuario | null>(null);
+  showPassword = signal(false);
 
-  filtroTexto     = signal('');
-  filtroRol       = signal<RolUsuario | ''>('');
+  filtroTexto = signal('');
+  filtroRol = signal<number | ''>('');
+  filtroEstado = signal<'todos' | 'activos' | 'inactivos'>('todos');
 
-  readonly roles: RolUsuario[] = ['Familiar', 'Cuidador', 'Administrador'];
+  // idRol -> nombreRol, según tu DataSeeder: 1=Administrador, 2=Familiar, 3=Cuidador, 4=Adulto Mayor
+  readonly roles: { idRol: number; nombreRol: string }[] = [
+    { idRol: 2, nombreRol: 'Familiar' },
+    { idRol: 3, nombreRol: 'Cuidador' },
+    { idRol: 1, nombreRol: 'Administrador' },
+    { idRol: 4, nombreRol: 'Adulto Mayor' },
+  ];
 
   form!: FormGroup;
 
@@ -44,23 +51,27 @@ export class GestionUsuariosComponent implements OnInit {
   usuariosFiltrados = computed(() => {
     const txt = this.filtroTexto().toLowerCase();
     const rol = this.filtroRol();
+    const estado = this.filtroEstado();
     return this.usuarios().filter(u => {
       const matchTxt = !txt ||
         u.nombre.toLowerCase().includes(txt) ||
         u.apellido.toLowerCase().includes(txt) ||
-        u.email.toLowerCase().includes(txt);
-      const matchRol = !rol || u.rol === rol;
-      return matchTxt && matchRol;
+        u.correo.toLowerCase().includes(txt);
+      const matchRol = rol === '' || u.idRol === rol;
+      const matchEstado = estado === 'todos' ||
+        (estado === 'activos' && u.activo) ||
+        (estado === 'inactivos' && !u.activo);
+      return matchTxt && matchRol && matchEstado;
     });
   });
 
   stats = computed(() => {
     const all = this.usuarios();
     return {
-      total:    all.length,
-      activos:  all.filter(u => u.activo).length,
-      familiares: all.filter(u => u.rol === 'Familiar').length,
-      cuidadores: all.filter(u => u.rol === 'Cuidador').length,
+      total: all.length,
+      activos: all.filter(u => u.activo).length,
+      familiares: all.filter(u => u.idRol === 2).length,
+      cuidadores: all.filter(u => u.idRol === 3).length,
     };
   });
 
@@ -72,12 +83,12 @@ export class GestionUsuariosComponent implements OnInit {
 
   private buildForm(): void {
     this.form = this.fb.group({
-      nombre:   ['', [Validators.required, Validators.minLength(2)]],
+      nombre: ['', [Validators.required, Validators.minLength(2)]],
       apellido: ['', [Validators.required, Validators.minLength(2)]],
-      correo:   ['', [Validators.required, Validators.email]],
+      correo: ['', [Validators.required, Validators.email]],
       password: ['', [Validators.required, Validators.minLength(8),
-                      Validators.pattern(/^(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])/)]],
-      rol:      ['Familiar', Validators.required],
+      Validators.pattern(/^(?=.*[A-Z])(?=.*[a-z])(?=.*\d).*$/)]],
+      idRol: [2, Validators.required],
     });
   }
 
@@ -98,7 +109,7 @@ export class GestionUsuariosComponent implements OnInit {
 
   // ─── Modal ────────────────────────────────────────────────────────────────
   openCreate(): void {
-    this.form.reset({ rol: 'Familiar' });
+    this.form.reset({ idRol: 2 });
     this.setPasswordRequired(true);
     this.showPassword.set(false);
     this.selectedUser.set(null);
@@ -108,7 +119,7 @@ export class GestionUsuariosComponent implements OnInit {
   openEdit(u: Usuario): void {
     this.selectedUser.set(u);
     this.setPasswordRequired(false);
-    this.form.patchValue({ nombre: u.nombre, apellido: u.apellido, correo: u.email, rol: u.rol, password: '' });
+    this.form.patchValue({ nombre: u.nombre, apellido: u.apellido, correo: u.correo, idRol: u.idRol, password: '' });
     this.showPassword.set(false);
     this.modalMode.set('edit');
   }
@@ -119,10 +130,10 @@ export class GestionUsuariosComponent implements OnInit {
     const ctrl = this.form.get('password')!;
     if (required) {
       ctrl.setValidators([Validators.required, Validators.minLength(8),
-                          Validators.pattern(/^(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])/)]);
+      Validators.pattern(/^(?=.*[A-Z])(?=.*[a-z])(?=.*\d).*$/)]);
     } else {
       ctrl.setValidators([Validators.minLength(8),
-                          Validators.pattern(/^(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])/)]);
+      Validators.pattern(/^(?=.*[A-Z])(?=.*[a-z])(?=.*\d).*$/)]);
     }
     ctrl.updateValueAndValidity();
   }
@@ -134,28 +145,28 @@ export class GestionUsuariosComponent implements OnInit {
 
     const val = this.form.value;
     if (this.modalMode() === 'create') {
-      const payload: any = {
+      const payload: UsuarioCreate = {
         nombre: val.nombre, apellido: val.apellido,
-        correo: val.correo, password: val.password, idRol: this.getRolId(val.rol)
+        correo: val.correo, password: val.password, idRol: val.idRol
       };
       this.svc.create(payload).subscribe({
         next: () => { this.showToast('Usuario creado exitosamente', 'success'); this.closeModal(); this.cargarUsuarios(); },
-        error: e  => { this.showToast(e.mensaje ?? 'Error al crear usuario', 'error'); this.saving.set(false); }
+        error: e => { this.showToast(e.mensaje ?? 'Error al crear usuario', 'error'); this.saving.set(false); }
       });
     } else {
       const u = this.selectedUser()!;
-      const payload: any = { nombre: val.nombre, apellido: val.apellido, correo: val.correo, idRol: this.getRolId(val.rol) };
+      const payload: UsuarioUpdate = { nombre: val.nombre, apellido: val.apellido, correo: val.correo, idRol: val.idRol };
       if (val.password) payload.password = val.password;
-      this.svc.update(u.id, payload).subscribe({
+      this.svc.update(u.idUsuario, payload).subscribe({
         next: () => { this.showToast('Usuario actualizado', 'success'); this.closeModal(); this.cargarUsuarios(); },
-        error: e  => { this.showToast(e.mensaje ?? 'Error al actualizar', 'error'); this.saving.set(false); }
+        error: e => { this.showToast(e.mensaje ?? 'Error al actualizar', 'error'); this.saving.set(false); }
       });
     }
   }
 
   // ─── Toggle activo ────────────────────────────────────────────────────────
   toggleActivo(u: Usuario): void {
-    const obs = u.activo ? this.svc.desactivar(u.id) : this.svc.activar(u.id);
+    const obs = u.activo ? this.svc.desactivar(u.idUsuario) : this.svc.activar(u.idUsuario);
     obs.subscribe({
       next: () => {
         this.showToast(u.activo ? 'Usuario desactivado' : 'Usuario activado', 'success');
@@ -172,9 +183,9 @@ export class GestionUsuariosComponent implements OnInit {
   confirmarEliminar(): void {
     const u = this.confirmDelete();
     if (!u) return;
-    this.svc.delete(u.id).subscribe({
+    this.svc.delete(u.idUsuario).subscribe({
       next: () => { this.showToast('Usuario eliminado', 'success'); this.confirmDelete.set(null); this.cargarUsuarios(); },
-      error: e  => { this.showToast(e.mensaje ?? 'Error al eliminar', 'error'); this.confirmDelete.set(null); }
+      error: e => { this.showToast(e.mensaje ?? 'Error al eliminar', 'error'); this.confirmDelete.set(null); }
     });
   }
 
@@ -188,21 +199,11 @@ export class GestionUsuariosComponent implements OnInit {
   f(name: string): AbstractControl { return this.form.get(name)!; }
   isInvalid(name: string): boolean { const c = this.f(name); return c.invalid && c.touched; }
 
-  rolColor(rol: RolUsuario): string {
-    return { Administrador: 'primary', Familiar: 'info', Cuidador: 'warning', 'Adulto Mayor': 'neutral' }[rol as string] || 'neutral';
+  rolColor(idRol: number): string {
+    return { 1: 'primary', 2: 'info', 3: 'warning', 4: 'neutral' }[idRol] || 'neutral';
   }
 
   iniciales(u: Usuario): string {
     return (u.nombre.charAt(0) + u.apellido.charAt(0)).toUpperCase();
-  }
-
-  private getRolId(rol: RolUsuario): number {
-    const rolMap: Record<string, number> = {
-      'Administrador': 1,
-      'Familiar': 2,
-      'Cuidador': 3,
-      'Adulto Mayor': 4
-    };
-    return rolMap[rol as string] || 2;
   }
 }
