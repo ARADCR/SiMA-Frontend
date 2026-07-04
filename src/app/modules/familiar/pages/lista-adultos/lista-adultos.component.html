@@ -4,19 +4,24 @@
       <h1>Mis Adultos Mayores</h1>
       <p>Gestión / Mis Adultos</p>
     </div>
-    <button class="btn-primary" (click)="vincularAdulto()">
+    <button class="btn-primary" (click)="abrirModal()">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-      Vincular adulto
+      Registrar adulto
     </button>
   </div>
 
   <div class="adultos-grid">
-    @for (a of adultos; track a.id) {
+    @if (cargando()) {
+      <div style="padding:40px;text-align:center;color:#666">Cargando adultos mayores...</div>
+    } @else if (adultos().length === 0) {
+      <div style="padding:40px;text-align:center;color:#666">Aún no has registrado a ningún adulto mayor.</div>
+    } @else {
+      @for (a of adultos(); track a.idAdulto) {
       <div class="adulto-card">
         <div class="adulto-header">
           <div class="adulto-avatar" [style.background]="a.avatarColor">{{ a.initials }}</div>
           <div class="adulto-info">
-            <div class="adulto-nombre">{{ a.nombre }}</div>
+            <div class="adulto-nombre">{{ a.nombre }} {{ a.apellido }}</div>
             <div class="adulto-sub">{{ a.edad }} años · {{ a.relacion }}</div>
           </div>
         </div>
@@ -25,10 +30,10 @@
           <div class="info-row">
             <span class="info-label">Condiciones</span>
             <div class="tags">
-              @for (c of a.condiciones; track c) {
+              @for (c of a.condicionesArray; track c) {
                 <span class="tag tag-yellow">{{ c }}</span>
               }
-              @if (a.condiciones.length === 0) {
+              @if (a.condicionesArray.length === 0) {
                 <span class="info-val muted">Sin registrar</span>
               }
             </div>
@@ -60,13 +65,18 @@
         </div>
 
         <div class="adulto-actions">
-          <a [routerLink]="['/familiar/adultos', a.id]" class="btn-primary flex-1">Ver detalle</a>
-          <a [routerLink]="['/familiar/medicamentos']" [queryParams]="{adultoId: a.id}" class="btn-outline flex-1">Medicamentos</a>
+          <a [routerLink]="['/familiar/adultos', a.idAdulto]" class="btn-primary flex-1">Ver detalle</a>
+          <a [routerLink]="['/familiar/medicamentos']" [queryParams]="{adultoId: a.idAdulto}" class="btn-outline flex-1">Medicamentos</a>
         </div>
       </div>
+      }
     }
   </div>
 </div>
+
+@if (showModal()) {
+  <app-formulario-adulto (close)="cerrarModal($event)"></app-formulario-adulto>
+}
 
 @if (toast()) {
   <div class="toast toast-info">

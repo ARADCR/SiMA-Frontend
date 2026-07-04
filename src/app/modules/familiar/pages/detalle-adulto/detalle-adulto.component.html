@@ -6,32 +6,36 @@
     </a>
   </div>
 
-  <div class="profile-hero card">
-    <div class="hero-avatar">{{ iniciales() }}</div>
-    <div class="hero-info">
-      <h1>{{ adulto.nombre }} {{ adulto.apellido }}</h1>
-      <div class="hero-meta">
-        <span class="meta-chip">{{ adulto.edad }} años</span>
-        <span class="meta-chip">{{ adulto.curp }}</span>
-        <span class="badge" [class.badge-green]="adulto.activo" [class.badge-gray]="!adulto.activo">
-          {{ adulto.activo ? 'Activo' : 'Inactivo' }}
-        </span>
+  @if (cargando()) {
+    <div style="padding:40px;text-align:center;color:#666">Cargando información...</div>
+  } @else {
+    <div class="profile-hero card">
+      <div class="hero-avatar">{{ iniciales() }}</div>
+      <div class="hero-info">
+        <h1>{{ adulto.nombre }} {{ adulto.apellido }}</h1>
+        <div class="hero-meta">
+          <span class="meta-chip">{{ adulto.edad }} años</span>
+          @if (adulto.curp) { <span class="meta-chip">{{ adulto.curp }}</span> }
+          <span class="badge" [class.badge-green]="adulto.activo" [class.badge-gray]="!adulto.activo">
+            {{ adulto.activo ? 'Activo' : 'Inactivo' }}
+          </span>
+        </div>
+        <div class="hero-details">
+          <div class="detail-item">
+            <span class="detail-label">Condiciones</span>
+            <span class="detail-val">{{ adulto.condicionesMedicas || 'Ninguna registrada' }}</span>
+          </div>
+          <div class="detail-item">
+            <span class="detail-label">Contacto médico</span>
+            <span class="detail-val">{{ adulto.contactoMedico || 'No registrado' }}</span>
+          </div>
+        </div>
       </div>
-      <div class="hero-details">
-        <div class="detail-item">
-          <span class="detail-label">Condiciones</span>
-          <span class="detail-val">{{ adulto.condiciones }}</span>
-        </div>
-        <div class="detail-item">
-          <span class="detail-label">Contacto médico</span>
-          <span class="detail-val">{{ adulto.contactoMedico }}</span>
-        </div>
+      <div class="hero-actions" style="display:flex; flex-direction:column; gap:8px">
+        <button class="btn-primary" (click)="abrirModal()" style="width:100%">Editar Perfil</button>
+        <a [routerLink]="['/familiar/medicamentos']" class="btn-outline" style="text-decoration:none; text-align:center">Ver medicamentos</a>
       </div>
     </div>
-    <div class="hero-actions">
-      <a [routerLink]="['/familiar/medicamentos']" class="btn-outline">Ver medicamentos</a>
-    </div>
-  </div>
 
   <div class="tabs">
     @for (tab of tabs; track tab.id) {
@@ -131,7 +135,12 @@
       </div>
     }
   </div>
+  }
 </div>
+
+@if (showModal() && adulto) {
+  <app-formulario-adulto [idAdulto]="adulto.idAdulto" (close)="cerrarModal($event)"></app-formulario-adulto>
+}
 
 @if (toast()) {
   <div class="toast toast-success">
