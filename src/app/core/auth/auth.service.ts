@@ -5,7 +5,7 @@ import { BehaviorSubject, Observable, throwError } from 'rxjs';
 import { tap, catchError, map } from 'rxjs/operators';
 import { jwtDecode } from 'jwt-decode';
 import { environment } from '../../../environments/environment';
-import { CredencialesLogin, TokenPayload, RolUsuario } from '../models/usuario.model';
+import { CredencialesLogin, TokenPayload, NombreRol } from '../models/usuario.model';
 import { LoginResponse } from '../models/respuesta-api.model';
 
 @Injectable({
@@ -35,14 +35,14 @@ export class AuthService {
     return !this.tokenExpirado(token);
   }
 
-  get rolActual(): RolUsuario | null {
+  get rolActual(): NombreRol | null {
     return this.usuarioActual?.rol ?? null;
   }
 
   // ─── Autenticación ────────────────────────────────────────────────────────────
 
   login(credenciales: CredencialesLogin): Observable<any> {
-    const payload = { correo: credenciales.email, password: credenciales.password };
+    const payload = { correo: credenciales.correo, password: credenciales.password };
     return this.http.post<any>(this.loginUrl, payload).pipe(
       tap(resp => {
         // La API devuelve RespuestaApi con la data anidada
@@ -109,7 +109,7 @@ export class AuthService {
 
   // ─── Utilidades de rol ────────────────────────────────────────────────────────
 
-  tieneRol(rol: RolUsuario | RolUsuario[]): boolean {
+  tieneRol(rol: NombreRol | NombreRol[]): boolean {
     if (!this.rolActual) return false;
     if (Array.isArray(rol)) return rol.includes(this.rolActual);
     return this.rolActual === rol;
@@ -117,7 +117,7 @@ export class AuthService {
 
   /** Redirige al dashboard correspondiente al rol del usuario */
   redirigirPorRol(): void {
-    const rutas: Record<RolUsuario, string> = {
+    const rutas: Record<NombreRol, string> = {
       'Administrador': '/admin/dashboard',
       'Familiar':      '/familiar/dashboard',
       'Cuidador':      '/cuidador/dashboard',
