@@ -1,130 +1,102 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators, AbstractControl } from '@angular/forms';
+import { RouterModule } from '@angular/router';
 import { AdultoMayorService } from '../../../../core/services/adulto-mayor.service';
-import { AdultoMayor, AdultoMayorCreate, AdultoMayorUpdate } from '../../../../core/models/adulto-mayor.model';
+import { FormularioAdultoComponent } from '../formulario-adulto/formulario-adulto.component';
 
-type ModalMode = 'create' | 'edit' | null;
+interface AdultoCard {
+  id: number;
+  nombre: string;
+  initials: string;
+  avatarColor: string;
+  edad: number;
+  relacion: string;
+  condiciones: string[];
+  cuidador: string;
+  cuidadorTel: string;
+  dispositivoOnline: boolean;
+  medsCount: number;
+  cumplimiento: number;
+  cumplimientoColor: string;
+}
 
 @Component({
   selector: 'app-lista-adultos',
   standalone: true,
-  imports: [CommonModule, FormsModule, ReactiveFormsModule],
+  imports: [CommonModule, RouterModule, FormularioAdultoComponent],
   templateUrl: './lista-adultos.component.html',
-  styleUrl: './lista-adultos.component.scss'
+  styleUrls: ['./lista-adultos.component.scss']
 })
 export class ListaAdultosComponent implements OnInit {
-  private adultoSvc = inject(AdultoMayorService);
-  private fb = inject(FormBuilder);
+  private adultoService = inject(AdultoMayorService);
+  toast = signal<string | null>(null);
 
-  adultos = signal<AdultoMayor[]>([]);
-  loading = signal(true);
-  saving = signal(false);
-  error = signal<string | null>(null);
-  toast = signal<{ msg: string; type: 'success' | 'error' } | null>(null);
-  
-  modalMode = signal<ModalMode>(null);
-  selected = signal<AdultoMayor | null>(null);
-
-  form!: FormGroup;
+  adultos = signal<any[]>([]);
+  cargando = signal<boolean>(true);
+  showModal = signal<boolean>(false);
 
   ngOnInit(): void {
-    this.buildForm();
     this.cargarAdultos();
   }
 
-  private buildForm(): void {
-    this.form = this.fb.group({
-      nombre: ['', [Validators.required, Validators.minLength(2)]],
-      apellido: ['', [Validators.required, Validators.minLength(2)]],
-      fechaNacimiento: ['', Validators.required],
-      condicionesMedicas: [''],
-      contactoMedico: ['']
-    });
-  }
-
-  cargarAdultos(): void {
-    this.loading.set(true);
-    // Para Familiar, obtiene sus adultos. Asumiendo que el ID del familiar viene del token JWT
-    // getMisPacientes enviará la solicitud y el backend resolverá por token.
-    this.adultoSvc.getMisPacientes().subscribe({
+  private cargarAdultos(): void {
+    this.cargando.set(true);
+    this.adultoService.getMisPacientes().subscribe({
       next: (data) => {
-        this.adultos.set(data);
-        this.loading.set(false);
+        const mapeados = data.map(a => ({
+          ...a,
+          initials: (a.nombre.charAt(0) + a.apellido.charAt(0)).toUpperCase(),
+          avatarColor: this.getColorForId(a.idAdulto),
+          edad: this.calcularEdad(a.fechaNacimiento),
+          // Valores por defecto para HU futuras
+          relacion: 'Familiar',
+          condicionesArray: a.condicionesMedicas ? a.condicionesMedicas.split(',').map(s => s.trim()) : [],
+          cuidador: 'Sin asignar',
+          dispositivoOnline: false,
+          medsCount: 0,
+          cumplimiento: 0,
+          cumplimientoColor: '#999'
+        }));
+        this.adultos.set(mapeados);
+        this.cargando.set(false);
       },
-      error: (e) => {
-        this.error.set(e.mensaje ?? 'Error al cargar adultos mayores');
-        this.loading.set(false);
+      error: (err) => {
+        this.showToast('Error al cargar la lista de adultos mayores');
+        this.cargando.set(false);
       }
     });
   }
 
-  openCreate(): void {
-    this.form.reset();
-    this.selected.set(null);
-    this.modalMode.set('create');
-  }
-
-  openEdit(adulto: AdultoMayor): void {
-    this.selected.set(adulto);
-    this.form.patchValue({
-      nombre: adulto.nombre,
-      apellido: adulto.apellido,
-      fechaNacimiento: adulto.fechaNacimiento,
-      condicionesMedicas: adulto.condicionesMedicas,
-      contactoMedico: adulto.contactoMedico
-    });
-    this.modalMode.set('edit');
-  }
-
-  closeModal(): void {
-    this.modalMode.set(null);
-  }
-
-  guardar(): void {
-    if (this.form.invalid) {
-      this.form.markAllAsTouched();
-      return;
+  private calcularEdad(fecha: string): number {
+    const birthDate = new Date(fecha);
+    const today = new Date();
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const m = today.getMonth() - birthDate.getMonth();
+    if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+      age--;
     }
+    return age;
+  }
 
-    this.saving.set(true);
-    const val = this.form.value;
+  private getColorForId(id: number): string {
+    const colors = ['#2E86AB', '#52B788', '#E07A5F', '#F4A261', '#8338EC'];
+    return colors[id % colors.length];
+  }
 
-    if (this.modalMode() === 'create') {
-      const payload: AdultoMayorCreate = val;
-      this.adultoSvc.create(payload).subscribe({
-        next: () => {
-          this.showToast('Adulto mayor registrado', 'success');
-          this.closeModal();
-          this.cargarAdultos();
-        },
-        error: (e) => {
-          this.showToast(e.mensaje ?? 'Error', 'error');
-          this.saving.set(false);
-        }
-      });
-    } else if (this.modalMode() === 'edit' && this.selected()) {
-      const payload: AdultoMayorUpdate = val;
-      this.adultoSvc.update(this.selected()!.idAdulto, payload).subscribe({
-        next: () => {
-          this.showToast('Adulto mayor actualizado', 'success');
-          this.closeModal();
-          this.cargarAdultos();
-        },
-        error: (e) => {
-          this.showToast(e.mensaje ?? 'Error', 'error');
-          this.saving.set(false);
-        }
-      });
+  private showToast(msg: string): void {
+    this.toast.set(msg);
+    setTimeout(() => this.toast.set(null), 3500);
+  }
+
+  abrirModal(): void {
+    this.showModal.set(true);
+  }
+
+  cerrarModal(recargar: boolean): void {
+    this.showModal.set(false);
+    if (recargar) {
+      this.showToast('Adulto mayor registrado exitosamente');
+      this.cargarAdultos();
     }
   }
-
-  private showToast(msg: string, type: 'success' | 'error'): void {
-    this.saving.set(false);
-    this.toast.set({ msg, type });
-    setTimeout(() => this.toast.set(null), 4000);
-  }
-
-  f(name: string): AbstractControl { return this.form.get(name)!; }
-  isInvalid(name: string): boolean { const c = this.f(name); return c.invalid && c.touched; }
 }

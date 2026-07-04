@@ -17,6 +17,10 @@ export class AdultoMayorService {
     return this.api.getPaginado<AdultoMayor>(this.endpoint, params);
   }
 
+  getAllAdmin(): Observable<AdultoMayor[]> {
+    return this.api.get<AdultoMayor[]>(`${this.endpoint}/todos`).pipe(map(r => r.data));
+  }
+
   getById(id: number): Observable<AdultoMayor> {
     return this.api.get<AdultoMayor>(`${this.endpoint}/${id}`).pipe(map(r => r.data));
   }

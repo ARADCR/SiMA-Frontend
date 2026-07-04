@@ -1,0 +1,168 @@
+<div class="page">
+  <div class="header">
+    <div>
+      <h1 class="title">Mis Observaciones</h1>
+      <p class="sub">Notas clínicas y seguimiento de pacientes</p>
+    </div>
+    <button class="btn-primary" (click)="modalOpen.set(true)">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+      Nueva observación
+    </button>
+  </div>
+
+  <div class="filters">
+    <div class="search-wrap">
+      <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>
+      </svg>
+      <input class="search-input" type="text" placeholder="Buscar observaciones..." [(ngModel)]="busqueda">
+    </div>
+    <select class="select-input" [(ngModel)]="pacienteFiltro">
+      <option value="">Todos los pacientes</option>
+      <option>Elena Rodríguez</option>
+      <option>José Martínez</option>
+      <option>Rosa Pérez</option>
+      <option>Luis García</option>
+    </select>
+    <select class="select-input" [(ngModel)]="urgenciaFiltro">
+      <option value="">Todas las urgencias</option>
+      <option value="normal">Normal</option>
+      <option value="importante">Importante</option>
+      <option value="urgente">Urgente</option>
+    </select>
+    <button class="btn-reset" (click)="resetFiltros()">Limpiar</button>
+  </div>
+
+  <div class="obs-list">
+    @for (obs of obsFiltradas(); track obs.id) {
+      <div class="card obs-card">
+        <div class="obs-header">
+          <div class="obs-author">
+            <div class="avatar" [style.background]="obs.color">{{ obs.initials }}</div>
+            <div>
+              <div class="obs-paciente">{{ obs.paciente }}</div>
+              <div class="obs-fecha">{{ obs.fecha }} · {{ obs.hora }}</div>
+            </div>
+          </div>
+          <div class="obs-actions">
+            <span [class]="urgenciaBadgeClass(obs.urgencia)">{{ urgenciaLabel(obs.urgencia) }}</span>
+            <button class="icon-btn icon-btn-red" (click)="solicitarEliminar(obs.id)" title="Eliminar">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+        <p class="obs-texto">{{ obs.texto }}</p>
+        @if (hasVitales(obs)) {
+          <div class="vitales">
+            @if (obs.vitales?.ta) {
+              <span class="vital-chip"><span class="vital-lbl">TA:</span> {{ obs.vitales!.ta }}</span>
+            }
+            @if (obs.vitales?.fc) {
+              <span class="vital-chip"><span class="vital-lbl">FC:</span> {{ obs.vitales!.fc }}</span>
+            }
+            @if (obs.vitales?.temp) {
+              <span class="vital-chip"><span class="vital-lbl">Temp:</span> {{ obs.vitales!.temp }}</span>
+            }
+          </div>
+        }
+      </div>
+    } @empty {
+      <div class="empty-state">
+        <svg width="48" height="48" viewBox="0 0 24 24" fill="currentColor" class="empty-icon">
+          <path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/>
+        </svg>
+        <p class="empty-text">No hay observaciones registradas</p>
+      </div>
+    }
+  </div>
+
+  @if (modalOpen()) {
+    <div class="modal-overlay" (click)="cerrarSiEsOverlay($event)">
+      <div class="modal">
+        <div class="modal-header">
+          <h2>Nueva observación</h2>
+          <button class="icon-btn" (click)="modalOpen.set(false)">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+            </svg>
+          </button>
+        </div>
+        <div class="modal-body">
+          <div class="form-group">
+            <label>Paciente</label>
+            <select class="select-input" [(ngModel)]="nuevaObs.paciente">
+              <option value="">Seleccionar paciente</option>
+              <option>Elena Rodríguez</option>
+              <option>José Martínez</option>
+              <option>Rosa Pérez</option>
+              <option>Luis García</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Nivel de urgencia</label>
+            <select class="select-input" [(ngModel)]="nuevaObs.urgencia">
+              <option value="normal">Normal</option>
+              <option value="importante">Importante</option>
+              <option value="urgente">Urgente</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Observación</label>
+            <textarea class="textarea-input" rows="4"
+              placeholder="Describe el estado del paciente, síntomas observados, reacciones a medicamentos..."
+              [(ngModel)]="nuevaObs.texto"></textarea>
+          </div>
+          <div class="vitales-form">
+            <div class="vitales-title">Signos vitales (opcional)</div>
+            <div class="vitales-row">
+              <div class="form-group">
+                <label>TA (mmHg)</label>
+                <input class="input-field" type="text" placeholder="ej. 130/85" [(ngModel)]="nuevaObs.ta">
+              </div>
+              <div class="form-group">
+                <label>FC (BPM)</label>
+                <input class="input-field" type="text" placeholder="ej. 72" [(ngModel)]="nuevaObs.fc">
+              </div>
+              <div class="form-group">
+                <label>Temp (°C)</label>
+                <input class="input-field" type="text" placeholder="ej. 36.5" [(ngModel)]="nuevaObs.temp">
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn-secondary" (click)="modalOpen.set(false)">Cancelar</button>
+          <button class="btn-primary" (click)="guardar()">Guardar observación</button>
+        </div>
+      </div>
+    </div>
+  }
+
+  @if (confirmDeleteId() !== null) {
+    <div class="modal-overlay" (click)="cerrarSiEsOverlay($event)">
+      <div class="modal modal-sm">
+        <div class="modal-header">
+          <h2>Confirmar eliminación</h2>
+        </div>
+        <div class="modal-body">
+          <p class="confirm-text">¿Estás seguro de que deseas eliminar esta observación? Esta acción no se puede deshacer.</p>
+        </div>
+        <div class="modal-footer">
+          <button class="btn-secondary" (click)="confirmDeleteId.set(null)">Cancelar</button>
+          <button class="btn-danger" (click)="confirmarEliminar()">Eliminar</button>
+        </div>
+      </div>
+    </div>
+  }
+
+  @if (toast()) {
+    <div class="toast toast-success">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+      </svg>
+      {{ toast() }}
+    </div>
+  }
+</div>

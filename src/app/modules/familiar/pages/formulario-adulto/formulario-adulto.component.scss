@@ -1,0 +1,152 @@
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(27,43,58,0.4);
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: fadeIn 0.2s ease;
+}
+
+.modal {
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.12);
+  width: 520px;
+  max-width: 90vw;
+  max-height: 90vh;
+  overflow-y: auto;
+  animation: slideIn 0.3s ease;
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 24px 24px 0;
+  margin-bottom: 20px;
+
+  h2 { font-size: 20px; font-weight: 600; color: #1B2B3A; margin: 0; }
+}
+
+.modal-close {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: none;
+  background: transparent;
+  color: #9CABB8;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  &:hover { background: #F7FAFC; color: #5C6B7A; }
+}
+
+.modal-body {
+  padding: 0 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.modal-footer {
+  padding: 16px 24px;
+  border-top: 1px solid #E2EAF0;
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+
+  label {
+    font-size: 13px;
+    font-weight: 500;
+    color: #1B2B3A;
+  }
+
+  input, select, textarea {
+    padding: 10px 14px;
+    border: 1px solid #E2EAF0;
+    border-radius: 8px;
+    font-size: 14px;
+    font-family: inherit;
+    color: #1B2B3A;
+    outline: none;
+    transition: border-color 0.2s;
+
+    &:focus { border-color: #2E86AB; box-shadow: 0 0 0 3px rgba(46,134,171,0.1); }
+    &::placeholder { color: #9CABB8; }
+  }
+
+  textarea { resize: vertical; }
+  
+  /* Additional styles for validation */
+  input.error, select.error, textarea.error {
+    border-color: #E76F51;
+  }
+}
+
+.field-hint { font-size: 11px; color: #9CABB8; }
+.field-error { font-size: 11px; color: #E76F51; }
+.required { color: #E76F51; margin-left: 2px; }
+
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 9px 18px;
+  background: #2E86AB;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.2s;
+
+  &:hover:not(:disabled) { background: #256E8F; }
+  &:disabled { opacity: 0.6; cursor: not-allowed; }
+}
+
+.btn-secondary {
+  padding: 9px 18px;
+  background: white;
+  color: #5C6B7A;
+  border: 1px solid #E2EAF0;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+
+  &:hover { background: #F7FAFC; }
+}
+
+.btn-spinner {
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(255,255,255,0.4);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+  display: inline-block;
+}
+
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes slideIn { from { opacity: 0; transform: scale(0.96); } to { opacity: 1; transform: scale(1); } }
+@keyframes spin { to { transform: rotate(360deg); } }
