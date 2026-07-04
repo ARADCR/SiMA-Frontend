@@ -42,7 +42,7 @@ export class AuthService {
   // ─── Autenticación ────────────────────────────────────────────────────────────
 
   login(credenciales: CredencialesLogin): Observable<any> {
-    const payload = { correo: credenciales.correo, password: credenciales.password };
+    const payload = { correo: credenciales.email, password: credenciales.password };
     return this.http.post<any>(this.loginUrl, payload).pipe(
       tap(resp => {
         // La API devuelve RespuestaApi con la data anidada
