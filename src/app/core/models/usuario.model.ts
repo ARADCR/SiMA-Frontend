@@ -42,7 +42,7 @@ export interface UsuarioUpdate {
 }
 
 export interface CredencialesLogin {
-  correo: string;
+  email: string;
   password: string;
 }
 
