@@ -49,11 +49,11 @@
     </div>
   } @else {
     <div class="med-list">
-      @for (m of medsFiltrados(); track m.id; let i = $index) {
+      @for (m of medsFiltrados(); track m.idMedicamento; let i = $index) {
         <div class="med-card" [class.inactive]="!m.activo" [style.animation-delay]="(i * 50) + 'ms'">
 
           <!-- Indicador de frecuencia -->
-          <div class="med-freq-bar" [attr.data-freq]="m.frecuencia"></div>
+          <div class="med-freq-bar" [attr.data-freq]="m.frecuenciaHoras"></div>
 
           <div class="med-card-body">
             <!-- Left: info principal -->
@@ -63,9 +63,6 @@
               </div>
               <div>
                 <h3 class="med-nombre">{{ m.nombre }}</h3>
-                @if (m.principioActivo) {
-                  <p class="med-principio">{{ m.principioActivo }}</p>
-                }
               </div>
             </div>
 
@@ -77,12 +74,12 @@
               </div>
               <div class="detail-chip">
                 <svg viewBox="0 0 24 24" fill="currentColor"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67V7z"/></svg>
-                <span>{{ frecuenciaLabel(m.frecuencia) }}</span>
+                <span>Cada {{ m.frecuenciaHoras }}h</span>
               </div>
-              @if (m.horasToma?.length) {
+              @if (m.horarios?.length) {
                 <div class="detail-chip horas">
                   <svg viewBox="0 0 24 24" fill="currentColor"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67V7z"/></svg>
-                  <span>{{ formatHoras(m.horasToma) }}</span>
+                  <span>{{ formatHoras(m.horarios) }}</span>
                 </div>
               }
               @if (m.prescritoPor) {
@@ -122,10 +119,7 @@
 
           <!-- Fechas -->
           <div class="med-dates">
-            <span>Inicio: <strong>{{ m.fechaInicio | date:'dd/MM/yyyy' }}</strong></span>
-            @if (m.fechaFin) {
-              <span>Fin: <strong>{{ m.fechaFin | date:'dd/MM/yyyy' }}</strong></span>
-            }
+            <span>Inicio: <strong>{{ m.creadoEn | date:'dd/MM/yyyy' }}</strong></span>
           </div>
         </div>
       }
@@ -174,12 +168,38 @@
           </div>
         </div>
 
-        <div class="form-group">
-          <label for="m-horas">Horarios de toma</label>
-          <input id="m-horas" type="text" [ngModel]="horasInput()" (ngModelChange)="horasInput.set($event)"
-                 [ngModelOptions]="{standalone: true}"
-                 placeholder="Ej: 8:00, 14:00, 20:00  (separados por comas)">
-          <span class="field-hint">Ingresa las horas del día en que se debe tomar, separadas por comas.</span>
+        <div class="form-group" [class.error]="form.get('horarios')?.invalid && form.get('horarios')?.touched">
+          <label>Horarios de toma <span class="required">*</span></label>
+          
+          <div formArrayName="horarios" class="horarios-list">
+            @for (horaCtrl of horariosArray.controls; track $index) {
+              <div class="horario-row">
+                <input type="time" [formControlName]="$index" class="time-input">
+                @if (horariosArray.length > 1) {
+                  <button type="button" class="btn-remove" (click)="removeHorario($index)" aria-label="Eliminar horario">
+                    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+                  </button>
+                }
+              </div>
+            }
+          </div>
+          
+          @if (horariosArray.length < 10) {
+            <button type="button" class="btn-add-horario" (click)="addHorario()">
+              <svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+              Añadir horario
+            </button>
+          }
+
+          @if (form.get('horarios')?.hasError('requerido') && form.get('horarios')?.touched) {
+            <span class="field-error">Se requiere al menos 1 horario.</span>
+          }
+          @if (form.get('horarios')?.hasError('maximo')) {
+            <span class="field-error">Máximo 10 horarios permitidos.</span>
+          }
+          @if (form.get('horarios')?.hasError('duplicado')) {
+            <span class="field-error">No puede haber horarios duplicados.</span>
+          }
         </div>
 
         <div class="form-row">
