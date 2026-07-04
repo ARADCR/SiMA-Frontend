@@ -25,8 +25,8 @@
     </div>
     <select class="filter-select" [ngModel]="filtroRol()" (ngModelChange)="filtroRol.set($event)">
       <option value="">Todos los roles</option>
-      @for (r of roles; track r) {
-        <option [value]="r">{{ r }}</option>
+      @for (r of rolesDisponibles; track r.idRol) {
+        <option [value]="r.nombreRol">{{ r.nombreRol }}</option>
       }
     </select>
     <select class="filter-select" [ngModel]="filtroEstado()" (ngModelChange)="filtroEstado.set($event)">
@@ -53,54 +53,59 @@
           </tr>
         </thead>
         <tbody>
-          @for (u of usuariosFiltrados(); track u.id; let i = $index) {
-            <tr class="table-row">
-              <td class="td-num">{{ i + 1 }}</td>
-              <td>
-                <div class="user-cell">
-                  <div class="avatar" [style.background]="avatarBg(u)">{{ iniciales(u) }}</div>
-                  <span class="user-name">{{ u.nombre }} {{ u.apellido }}</span>
-                </div>
-              </td>
-              <td class="td-muted">{{ u.email }}</td>
-              <td>
-                <span class="badge" [style.background]="rolBadge(u.rol).bg" [style.color]="rolBadge(u.rol).color">{{ u.rol }}</span>
-              </td>
-              <td class="td-center">
-                @if (u.wechat) {
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="#52B788"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
-                } @else {
-                  <span style="color:#9CABB8">—</span>
-                }
-              </td>
-              <td class="td-muted">{{ u.createdAt }}</td>
-              <td class="td-muted">{{ u.ultimoAcceso }}</td>
-              <td class="td-center">
-                <button
-                  class="toggle-btn"
-                  [class.active]="u.activo"
-                  (click)="toggleActivo(u)"
-                  [attr.aria-label]="u.activo ? 'Desactivar' : 'Activar'">
-                  <span class="toggle-dot"></span>
-                </button>
-              </td>
-              <td class="td-right">
-                <div class="action-btns">
-                  <button class="icon-btn" title="Editar" (click)="openEdit(u)">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
+          @if (isLoading()) {
+            <tr><td colspan="9" style="text-align:center;padding:2rem;color:#9CABB8">Cargando usuarios…</td></tr>
+          } @else if (usuariosFiltrados().length === 0) {
+            <tr><td colspan="9" style="text-align:center;padding:2rem;color:#9CABB8">No se encontraron usuarios.</td></tr>
+          } @else {
+            @for (u of usuariosFiltrados(); track u.idUsuario; let i = $index) {
+              <tr class="table-row">
+                <td class="td-num">{{ i + 1 }}</td>
+                <td>
+                  <div class="user-cell">
+                    <div class="avatar" [style.background]="avatarBg(u)">{{ iniciales(u) }}</div>
+                    <span class="user-name">{{ u.nombre }} {{ u.apellido }}</span>
+                  </div>
+                </td>
+                <td class="td-muted">{{ u.correo }}</td>
+                <td>
+                  <span class="badge" [style.background]="rolBadge(u.nombreRol).bg" [style.color]="rolBadge(u.nombreRol).color">{{ u.nombreRol }}</span>
+                </td>
+                <td class="td-center">
+                  @if (u.wechatOpenid) {
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="#52B788"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+                  } @else {
+                    <span style="color:#9CABB8">—</span>
+                  }
+                </td>
+                <td class="td-muted">{{ u.creadoEn | date:'dd/MM/yyyy' }}</td>
+                <td class="td-muted">{{ u.ultimoAcceso ? (u.ultimoAcceso | date:'dd/MM/yyyy') : 'Nunca' }}</td>
+                <td class="td-center">
+                  <button
+                    class="toggle-btn"
+                    [class.active]="u.activo"
+                    [disabled]="!u.activo"
+                    (click)="confirmarDesactivar(u)"
+                    [attr.aria-label]="u.activo ? 'Desactivar' : 'Inactivo'">
+                    <span class="toggle-dot"></span>
                   </button>
-                  <button class="icon-btn" title="Ver detalle">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>
-                  </button>
-                </div>
-              </td>
-            </tr>
+                </td>
+                <td class="td-right">
+                  <div class="action-btns">
+                    <button class="icon-btn" title="Editar" (click)="openEdit(u)" [disabled]="!u.activo">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            }
           }
         </tbody>
       </table>
     </div>
     <div class="card-footer">
       <span class="footer-text">Mostrando {{ usuariosFiltrados().length }} de {{ usuarios().length }} usuarios</span>
+      @if (isLoading()) { <span class="footer-text" style="margin-left:1rem;color:#9CABB8">actualizando…</span> }
     </div>
   </div>
 
@@ -128,13 +133,13 @@
         </div>
         <div class="form-group">
           <label>Correo electrónico</label>
-          <input type="email" placeholder="correo@ejemplo.com" [ngModel]="form().email" (ngModelChange)="setField('email', $event)">
+          <input type="email" placeholder="correo@ejemplo.com" [ngModel]="form().correo" (ngModelChange)="setField('correo', $event)">
         </div>
         <div class="form-group">
           <label>Rol</label>
-          <select [ngModel]="form().rol" (ngModelChange)="setField('rol', $event)">
-            @for (r of roles; track r) {
-              <option [value]="r">{{ r }}</option>
+          <select [ngModel]="form().idRol" (ngModelChange)="setField('idRol', +$event)">
+            @for (r of rolesDisponibles; track r.idRol) {
+              <option [value]="r.idRol">{{ r.nombreRol }}</option>
             }
           </select>
         </div>
@@ -150,7 +155,7 @@
         </div>
         <div class="form-group">
           <label>OpenID de WeChat <span class="optional">(opcional)</span></label>
-          <input type="text" placeholder="wx_openid_xxxxx" class="mono-input" [ngModel]="form().wechatOpenId" (ngModelChange)="setField('wechatOpenId', $event)">
+          <input type="text" placeholder="wx_openid_xxxxx" class="mono-input" [ngModel]="form().wechatOpenid" (ngModelChange)="setField('wechatOpenid', $event)">
           <span class="field-hint">Vincular WeChat permite recibir notificaciones de alertas y recordatorios.</span>
         </div>
       </div>

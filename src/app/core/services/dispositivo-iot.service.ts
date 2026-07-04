@@ -1,59 +1,43 @@
 import { Injectable } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { map } from 'rxjs/operators';
-import { ApiService } from './api.service';
-import { DispositivoIot, DispositivoCreate, LecturaDispositivo } from '../models/dispositivo-iot.model';
-import { RespuestaPaginada } from '../models/respuesta-api.model';
+import { environment } from '../../../environments/environment';
+import { RespuestaApi } from '../models/respuesta-api.model';
+import { DispositivoIot, DispositivoIotRequest } from '../models/dispositivo-iot.model';
 
 @Injectable({
   providedIn: 'root'
 })
 export class DispositivoIotService {
-  private readonly endpoint = '/dispositivos';
+  private apiUrl = `${environment.apiUrl}/dispositivos`;
 
-  constructor(private api: ApiService) {}
+  constructor(private http: HttpClient) {}
 
-  getAll(params?: Record<string, unknown>): Observable<any> {
-    return this.api.get<any[]>(this.endpoint, params).pipe(
-      map(r => ({ data: (r.data || []).map(this.mapBackendToFrontend) }))
-    );
+  listar(): Observable<RespuestaApi<DispositivoIot[]>> {
+    return this.http.get<RespuestaApi<DispositivoIot[]>>(this.apiUrl);
   }
 
-  getByAdulto(adultoId: number): Observable<DispositivoIot[]> {
-    return this.api.get<any[]>(`${this.endpoint}/adulto/${adultoId}`).pipe(
-      map(r => (r.data || []).map(this.mapBackendToFrontend))
-    );
+  listarSinAsignar(): Observable<RespuestaApi<DispositivoIot[]>> {
+    return this.http.get<RespuestaApi<DispositivoIot[]>>(`${this.apiUrl}/sin-asignar`);
   }
 
-  getById(id: number): Observable<DispositivoIot> {
-    return this.api.get<any>(`${this.endpoint}/${id}`).pipe(map(r => this.mapBackendToFrontend(r.data)));
+  listarPorAdulto(idAdulto: number): Observable<RespuestaApi<DispositivoIot[]>> {
+    return this.http.get<RespuestaApi<DispositivoIot[]>>(`${this.apiUrl}/adulto/${idAdulto}`);
   }
 
-  create(dispositivo: any): Observable<DispositivoIot> {
-    return this.api.post<any>(this.endpoint, dispositivo).pipe(map(r => this.mapBackendToFrontend(r.data)));
+  registrar(request: DispositivoIotRequest): Observable<RespuestaApi<DispositivoIot>> {
+    return this.http.post<RespuestaApi<DispositivoIot>>(this.apiUrl, request);
   }
 
-  update(id: number, datos: any): Observable<DispositivoIot> {
-    return this.api.put<any>(`${this.endpoint}/${id}`, datos).pipe(map(r => this.mapBackendToFrontend(r.data)));
+  actualizar(id: number, request: DispositivoIotRequest): Observable<RespuestaApi<DispositivoIot>> {
+    return this.http.put<RespuestaApi<DispositivoIot>>(`${this.apiUrl}/${id}`, request);
   }
 
-  private mapBackendToFrontend(d: any): DispositivoIot {
-    return {
-      id: d.idDispositivo,
-      nombre: `Dispositivo ${d.identificadorFisico}`, // Backend doesnt store nombre, we use ID Fisico
-      tipo: d.tipoDispositivo === 'pulsera_inteligente' ? 'pulsera' : 'sensor_cama',
-      numeroSerie: d.identificadorFisico,
-      estado: d.activo ? 'activo' : 'inactivo',
-      adultoMayorId: d.idAdulto,
-      adultoMayorNombre: d.nombreAdulto,
-    } as DispositivoIot;
+  asignar(id: number, idAdulto: number): Observable<RespuestaApi<DispositivoIot>> {
+    return this.http.put<RespuestaApi<DispositivoIot>>(`${this.apiUrl}/${id}/asignar`, { idAdulto });
   }
 
-  delete(id: number): Observable<void> {
-    return this.api.delete<void>(`${this.endpoint}/${id}`).pipe(map(() => void 0));
-  }
-
-  getLecturas(dispositivoId: number, params?: { desde?: string; hasta?: string; limit?: number }): Observable<LecturaDispositivo[]> {
-    return this.api.get<LecturaDispositivo[]>(`${this.endpoint}/${dispositivoId}/lecturas`, params).pipe(map(r => r.data));
+  desasignar(id: number): Observable<RespuestaApi<VoidFunction>> {
+    return this.http.put<RespuestaApi<VoidFunction>>(`${this.apiUrl}/${id}/desasignar`, {});
   }
 }
