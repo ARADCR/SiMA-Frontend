@@ -1,7 +1,7 @@
 import { inject } from '@angular/core';
 import { CanActivateFn, Router } from '@angular/router';
 import { AuthService } from './auth.service';
-import { RolUsuario } from '../models/usuario.model';
+import { NombreRol } from '../models/usuario.model';
 
 export const roleGuard: CanActivateFn = (route, state) => {
   const auth   = inject(AuthService);
@@ -12,7 +12,7 @@ export const roleGuard: CanActivateFn = (route, state) => {
     return false;
   }
 
-  const rolRequerido = route.data?.['role'] as RolUsuario | RolUsuario[] | undefined;
+  const rolRequerido = route.data?.['role'] as NombreRol | NombreRol[] | undefined;
 
   if (!rolRequerido) return true; // sin restricción de rol
 

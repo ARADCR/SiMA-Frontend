@@ -1,6 +1,7 @@
 export interface RespuestaApi<T = unknown> {
   success: boolean;
   mensaje?: string;
+  message?: string;
   data: T;
   timestamp?: string;
 }

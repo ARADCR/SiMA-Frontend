@@ -1,25 +1,9 @@
-import { Component, signal, computed } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-
-type TipoDispositivo = 'pastillero_esp32' | 'pulsera_inteligente';
-type EstadoDispositivo = 'en_linea' | 'fuera_de_linea' | 'sin_asignar';
-
-interface Dispositivo {
-  id: number;
-  mac: string;
-  tipo: TipoDispositivo;
-  adulto: string;
-  estado: EstadoDispositivo;
-  fechaRegistro: string;
-  ultimaSync: string;
-}
-
-interface DispositivoForm {
-  mac: string;
-  tipo: TipoDispositivo;
-  adulto: string;
-}
+import { DispositivoIotService } from '../../../../core/services/dispositivo-iot.service';
+import { DispositivoIot, DispositivoIotRequest } from '../../../../core/models/dispositivo-iot.model';
+import { AdultoMayorService } from '../../../../core/services/adulto-mayor.service';
 
 @Component({
   selector: 'app-gestion-dispositivos',
@@ -28,90 +12,138 @@ interface DispositivoForm {
   templateUrl: './gestion-dispositivos.component.html',
   styleUrls: ['./gestion-dispositivos.component.scss']
 })
-export class GestionDispositivosComponent {
-  tabActivo = signal<'todos' | 'sin_asignar'>('todos');
-  modalMode = signal<'crear' | null>(null);
-  selectedTipo = signal<TipoDispositivo>('pastillero_esp32');
-  toast = signal<{ msg: string; type: 'success' | 'error' } | null>(null);
+export class GestionDispositivosComponent implements OnInit {
+  dispositivos: DispositivoIot[] = [];
+  adultos: any[] = [];
+  filtroActual: 'todos' | 'asignados' | 'libres' = 'todos';
+  
+  // Modals state
+  showModal = false;
+  isEdit = false;
+  modalDispositivoId: number | null = null;
+  
+  // Form state
+  identificadorFisico = '';
+  tipoDispositivo: 'pastillero_esp32' | 'pulsera_inteligente' = 'pastillero_esp32';
+  idAdulto: number | null = null;
+  
+  toastMsg = '';
 
-  form = signal<DispositivoForm>({ mac: '', tipo: 'pastillero_esp32', adulto: '' });
+  constructor(
+    private dispositivoService: DispositivoIotService,
+    private adultoService: AdultoMayorService
+  ) {}
 
-  dispositivos = signal<Dispositivo[]>([
-    { id: 1, mac: 'AA:BB:CC:11:22:33', tipo: 'pastillero_esp32',    adulto: 'Elena Rodríguez', estado: 'en_linea',       fechaRegistro: '01/03/2026', ultimaSync: 'Hace 5 min'  },
-    { id: 2, mac: 'DD:EE:FF:44:55:66', tipo: 'pulsera_inteligente', adulto: 'José Martínez',   estado: 'en_linea',       fechaRegistro: '05/03/2026', ultimaSync: 'Hace 12 min' },
-    { id: 3, mac: 'GG:HH:II:77:88:99', tipo: 'pastillero_esp32',    adulto: 'Luis García',     estado: 'fuera_de_linea', fechaRegistro: '10/04/2026', ultimaSync: 'Hace 3 h'    },
-    { id: 4, mac: 'JJ:KK:LL:00:11:22', tipo: 'pulsera_inteligente', adulto: 'Manuel Herrera',  estado: 'en_linea',       fechaRegistro: '15/04/2026', ultimaSync: 'Hace 2 min'  },
-    { id: 5, mac: 'MM:NN:OO:33:44:55', tipo: 'pastillero_esp32',    adulto: '',                estado: 'sin_asignar',    fechaRegistro: '20/05/2026', ultimaSync: '—'           },
-    { id: 6, mac: 'PP:QQ:RR:66:77:88', tipo: 'pulsera_inteligente', adulto: '',                estado: 'sin_asignar',    fechaRegistro: '01/06/2026', ultimaSync: '—'           },
-  ]);
+  ngOnInit(): void {
+    this.cargarDispositivos();
+    this.cargarAdultos();
+  }
 
-  dispositivosFiltrados = computed(() => {
-    const tab = this.tabActivo();
-    if (tab === 'sin_asignar') return this.dispositivos().filter(d => d.estado === 'sin_asignar');
-    return this.dispositivos();
-  });
+  cargarDispositivos() {
+    this.dispositivoService.listar().subscribe({
+      next: (res) => {
+        if (res.success && res.data) {
+          this.dispositivos = res.data;
+        }
+      },
+      error: (err) => this.mostrarToast(err.error?.mensaje || 'Error al cargar dispositivos')
+    });
+  }
 
-  stats = computed(() => {
-    const all = this.dispositivos();
-    return {
-      total:       all.length,
-      enLinea:     all.filter(d => d.estado === 'en_linea').length,
-      fueraLinea:  all.filter(d => d.estado === 'fuera_de_linea').length,
-      sinAsignar:  all.filter(d => d.estado === 'sin_asignar').length,
+  cargarAdultos() {
+    this.adultoService.getAllAdmin().subscribe({
+      next: (adultos) => {
+        if (adultos) {
+          this.adultos = adultos;
+        }
+      },
+      error: (err) => this.mostrarToast('Error al cargar adultos')
+    });
+  }
+
+  get dispositivosFiltrados() {
+    if (this.filtroActual === 'asignados') {
+      return this.dispositivos.filter(d => d.idAdulto !== null);
+    }
+    if (this.filtroActual === 'libres') {
+      return this.dispositivos.filter(d => d.idAdulto === null);
+    }
+    return this.dispositivos;
+  }
+
+  setFiltro(filtro: 'todos' | 'asignados' | 'libres') {
+    this.filtroActual = filtro;
+  }
+
+  abrirModalRegistro() {
+    this.isEdit = false;
+    this.modalDispositivoId = null;
+    this.identificadorFisico = '';
+    this.tipoDispositivo = 'pastillero_esp32';
+    this.idAdulto = null;
+    this.showModal = true;
+  }
+
+  abrirModalEdicion(dispositivo: DispositivoIot) {
+    this.isEdit = true;
+    this.modalDispositivoId = dispositivo.idDispositivo;
+    this.identificadorFisico = dispositivo.identificadorFisico;
+    this.tipoDispositivo = dispositivo.tipoDispositivo;
+    this.idAdulto = dispositivo.idAdulto || null;
+    this.showModal = true;
+  }
+
+  cerrarModal() {
+    this.showModal = false;
+  }
+
+  guardarDispositivo() {
+    if (!this.identificadorFisico.trim()) {
+      this.mostrarToast('El identificador físico es obligatorio');
+      return;
+    }
+
+    const req: DispositivoIotRequest = {
+      identificadorFisico: this.identificadorFisico,
+      tipoDispositivo: this.tipoDispositivo,
+      idAdulto: this.idAdulto
     };
-  });
 
-  tipoLabel(t: TipoDispositivo): string {
-    return t === 'pastillero_esp32' ? 'Pastillero ESP32' : 'Pulsera inteligente';
+    if (this.isEdit && this.modalDispositivoId) {
+      this.dispositivoService.actualizar(this.modalDispositivoId, req).subscribe({
+        next: (res) => {
+          this.mostrarToast(res.message || res.mensaje || 'Dispositivo actualizado exitosamente');
+          this.cerrarModal();
+          this.cargarDispositivos();
+        },
+        error: (err) => this.mostrarToast(err.error?.mensaje || 'Error al actualizar')
+      });
+    } else {
+      this.dispositivoService.registrar(req).subscribe({
+        next: (res) => {
+          this.mostrarToast(res.message || res.mensaje || 'Dispositivo registrado exitosamente');
+          this.cerrarModal();
+          this.cargarDispositivos();
+        },
+        error: (err) => this.mostrarToast(err.error?.mensaje || 'Error al registrar')
+      });
+    }
   }
 
-  estadoLabel(e: EstadoDispositivo): string {
-    return { en_linea: 'En línea', fuera_de_linea: 'Fuera de línea', sin_asignar: 'Sin asignar' }[e];
+  desasignar(dispositivo: DispositivoIot) {
+    if (confirm('¿Confirmar desasignación? El dispositivo quedará libre para ser reasignado.')) {
+      this.dispositivoService.desasignar(dispositivo.idDispositivo).subscribe({
+        next: (res) => {
+          this.mostrarToast(res.message || res.mensaje || 'Dispositivo desasignado');
+          this.cargarDispositivos();
+        },
+        error: (err) => this.mostrarToast(err.error?.mensaje || 'Error al desasignar')
+      });
+    }
   }
 
-  estadoBadgeClass(e: EstadoDispositivo): string {
-    return { en_linea: 'badge--green', fuera_de_linea: 'badge--red', sin_asignar: 'badge--yellow' }[e];
-  }
-
-  accionLabel(d: Dispositivo): string {
-    return d.estado === 'sin_asignar' ? 'Asignar' : 'Editar';
-  }
-
-  openModal(): void {
-    this.form.set({ mac: '', tipo: 'pastillero_esp32', adulto: '' });
-    this.selectedTipo.set('pastillero_esp32');
-    this.modalMode.set('crear');
-  }
-
-  setField<K extends keyof DispositivoForm>(key: K, value: DispositivoForm[K]): void {
-    this.form.update(f => ({ ...f, [key]: value }));
-  }
-
-  closeModal(): void { this.modalMode.set(null); }
-
-  selectTipo(t: TipoDispositivo): void {
-    this.selectedTipo.set(t);
-    this.form.update(f => ({ ...f, tipo: t }));
-  }
-
-  registrar(): void {
-    const f = this.form();
-    if (!f.mac.trim()) return;
-    this.dispositivos.update(list => [...list, {
-      id: list.length + 1,
-      mac: f.mac,
-      tipo: f.tipo,
-      adulto: f.adulto,
-      estado: f.adulto ? 'en_linea' : 'sin_asignar',
-      fechaRegistro: new Date().toLocaleDateString('es-MX'),
-      ultimaSync: '—'
-    }]);
-    this.showToast('Dispositivo registrado correctamente', 'success');
-    this.closeModal();
-  }
-
-  private showToast(msg: string, type: 'success' | 'error'): void {
-    this.toast.set({ msg, type });
-    setTimeout(() => this.toast.set(null), 4000);
+  mostrarToast(msg: string) {
+    this.toastMsg = msg;
+    setTimeout(() => this.toastMsg = '', 4000);
   }
 }

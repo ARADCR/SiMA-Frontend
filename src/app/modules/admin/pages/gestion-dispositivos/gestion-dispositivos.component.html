@@ -1,175 +1,123 @@
 <div class="page">
-
   <div class="page-header">
     <div>
-      <h1 class="page-title">Dispositivos IoT</h1>
-      <p class="page-sub">Administración / Dispositivos</p>
+      <h1>Gestión de Dispositivos IoT</h1>
+      <p>Administra los dispositivos físicos y asígnalos a los adultos mayores</p>
     </div>
-    <button class="btn-primary" (click)="openModal()">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
-      Registrar dispositivo
+    <button class="btn-primary" (click)="abrirModalRegistro()">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="12" y1="5" x2="12" y2="19"></line>
+        <line x1="5" y1="12" x2="19" y2="12"></line>
+      </svg>
+      Nuevo Dispositivo
     </button>
   </div>
 
-  <div class="stats-row">
-    <div class="stat-card stat-card--blue">
-      <div class="stat-icon stat-icon--blue">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M17 1H7c-1.1 0-2 .9-2 2v18c0 1.1.9 2 2 2h10c1.1 0 2-.9 2-2V3c0-1.1-.9-2-2-2zm0 18H7V5h10v14zm-5-4c.83 0 1.5-.67 1.5-1.5S12.83 12 12 12s-1.5.67-1.5 1.5S11.17 15 12 15z"/></svg>
-      </div>
-      <div>
-        <div class="stat-val">{{ stats().total }}</div>
-        <div class="stat-lbl">Total registrados</div>
-      </div>
-    </div>
-    <div class="stat-card stat-card--green">
-      <div class="stat-icon stat-icon--green">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M1 9l2 2c4.97-4.97 13.03-4.97 18 0l2-2C16.93 2.93 7.08 2.93 1 9zm8 8l3 3 3-3a4.237 4.237 0 0 0-6 0zm-4-4 2 2a7.074 7.074 0 0 1 10 0l2-2C15.14 9.14 8.87 9.14 5 13z"/></svg>
-      </div>
-      <div>
-        <div class="stat-val">{{ stats().enLinea }}</div>
-        <div class="stat-lbl">En línea</div>
-      </div>
-    </div>
-    <div class="stat-card stat-card--red">
-      <div class="stat-icon stat-icon--red">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M22.99 9C19.15 5.16 13.8 3.76 8.84 4.78L11 6.94c3.6-.41 7.35.74 10.12 3.51L22.99 9zm-4 4c-1.29-1.29-2.84-2.13-4.49-2.56L16 11.94c1.2.36 2.32.97 3.12 1.87L18.99 13zm-4 4c-.28-.28-1.04-.65-1.9-.82L15.22 19c-.06-.06-.12-.13-.18-.2.01.01.02.02-.05-.01V22l-4-4 4-4v3.07c.34.07.68.17 1.01.3L14.99 17zm-6.24-4.24L12 11.51V8.5L8 12.5l4 4v-2.67l-1.93-1.93c-.12.35-.18.73-.18 1.1 0 .35.05.68.14 1.02L9.14 12 8.75 12.76z"/></svg>
-      </div>
-      <div>
-        <div class="stat-val">{{ stats().fueraLinea }}</div>
-        <div class="stat-lbl">Fuera de línea</div>
-      </div>
-    </div>
-    <div class="stat-card stat-card--yellow">
-      <div class="stat-icon stat-icon--yellow">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
-      </div>
-      <div>
-        <div class="stat-val">{{ stats().sinAsignar }}</div>
-        <div class="stat-lbl">Sin asignar</div>
-      </div>
-    </div>
+  <div class="filters">
+    <button class="chip" [class.active]="filtroActual === 'todos'" (click)="setFiltro('todos')">Todos</button>
+    <button class="chip" [class.active]="filtroActual === 'asignados'" (click)="setFiltro('asignados')">Asignados</button>
+    <button class="chip" [class.active]="filtroActual === 'libres'" (click)="setFiltro('libres')">Sin Asignar</button>
   </div>
 
-  <div class="tabs">
-    <button class="tab-btn" [class.tab-btn--active]="tabActivo() === 'todos'" (click)="tabActivo.set('todos')">
-      Todos los dispositivos
-    </button>
-    <button class="tab-btn" [class.tab-btn--active]="tabActivo() === 'sin_asignar'" (click)="tabActivo.set('sin_asignar')">
-      Sin asignar
-    </button>
+  <div class="table-container">
+    <table class="iot-table">
+      <thead>
+        <tr>
+          <th>IDENTIFICADOR FÍSICO</th>
+          <th>TIPO</th>
+          <th>ESTADO</th>
+          <th>ASIGNADO A</th>
+          <th>FECHA REGISTRO</th>
+          <th>ACCIONES</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let disp of dispositivosFiltrados">
+          <td class="font-mono">{{ disp.identificadorFisico }}</td>
+          <td>
+            <div class="device-type">
+              <svg *ngIf="disp.tipoDispositivo === 'pastillero_esp32'" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="3" y="10" width="18" height="10" rx="2" ry="2"></rect>
+                <line x1="7" y1="10" x2="7" y2="20"></line>
+                <line x1="12" y1="10" x2="12" y2="20"></line>
+                <line x1="17" y1="10" x2="17" y2="20"></line>
+                <path d="M15 10V6a3 3 0 0 0-6 0v4"></path>
+              </svg>
+              <svg *ngIf="disp.tipoDispositivo === 'pulsera_inteligente'" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="6" y="5" width="12" height="14" rx="2" ry="2"></rect>
+                <line x1="9" y1="9" x2="15" y2="9"></line>
+                <line x1="9" y1="15" x2="15" y2="15"></line>
+              </svg>
+              {{ disp.tipoDispositivo === 'pastillero_esp32' ? 'Pastillero ESP32' : 'Pulsera Inteligente' }}
+            </div>
+          </td>
+          <td>
+            <span class="badge" [class.badge-green]="disp.idAdulto" [class.badge-gray]="!disp.idAdulto">
+              {{ disp.idAdulto ? 'En Uso' : 'Disponible' }}
+            </span>
+          </td>
+          <td>
+            <div class="assigned-user" *ngIf="disp.idAdulto && disp.nombreAdulto">
+              <div class="avatar">{{ disp.nombreAdulto.charAt(0) }}</div>
+              <span>{{ disp.nombreAdulto }}</span>
+            </div>
+            <span class="muted" *ngIf="!disp.idAdulto">—</span>
+          </td>
+          <td class="muted">{{ disp.fechaRegistro | date:'dd/MM/yyyy HH:mm' }}</td>
+          <td>
+            <div class="actions">
+              <button class="btn-icon" (click)="abrirModalEdicion(disp)" title="Editar">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+              </button>
+              <button class="btn-icon text-red" *ngIf="disp.idAdulto" (click)="desasignar(disp)" title="Desasignar">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18.36 6.64a9 9 0 1 1-12.73 0"></path><line x1="12" y1="2" x2="12" y2="12"></line></svg>
+              </button>
+            </div>
+          </td>
+        </tr>
+        <tr *ngIf="dispositivosFiltrados.length === 0">
+          <td colspan="6" class="empty-state">
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#CBD5E1" stroke-width="1.5"><rect x="3" y="10" width="18" height="10" rx="2" ry="2"></rect><path d="M15 10V6a3 3 0 0 0-6 0v4"></path></svg>
+            <p>No hay dispositivos en esta categoría.</p>
+          </td>
+        </tr>
+      </tbody>
+    </table>
   </div>
-
-  <div class="card table-card">
-    <div class="table-wrap">
-      <table class="table">
-        <thead>
-          <tr>
-            <th>Identificador</th>
-            <th>Tipo</th>
-            <th>Adulto asignado</th>
-            <th class="th-center">Estado</th>
-            <th>Registro</th>
-            <th>Última sync</th>
-            <th class="th-right">Acciones</th>
-          </tr>
-        </thead>
-        <tbody>
-          @for (d of dispositivosFiltrados(); track d.id) {
-            <tr class="table-row">
-              <td class="td-mac">{{ d.mac }}</td>
-              <td>
-                <span class="tipo-badge" [class.tipo-badge--cpu]="d.tipo === 'pastillero_esp32'" [class.tipo-badge--watch]="d.tipo === 'pulsera_inteligente'">
-                  @if (d.tipo === 'pastillero_esp32') {
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M17 1H7c-1.1 0-2 .9-2 2v18c0 1.1.9 2 2 2h10c1.1 0 2-.9 2-2V3c0-1.1-.9-2-2-2z"/></svg>
-                  } @else {
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M12 1C8.14 1 5 4.14 5 8c0 5.25 7 13 7 13s7-7.75 7-13c0-3.86-3.14-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5S10.62 5.5 12 5.5s2.5 1.12 2.5 2.5S13.38 10.5 12 10.5z"/></svg>
-                  }
-                  {{ tipoLabel(d.tipo) }}
-                </span>
-              </td>
-              <td [class.td-muted]="!d.adulto" [class.td-italic]="!d.adulto">
-                {{ d.adulto || 'Sin asignar' }}
-              </td>
-              <td class="td-center">
-                <span class="badge" [class]="estadoBadgeClass(d.estado)">{{ estadoLabel(d.estado) }}</span>
-              </td>
-              <td class="td-muted">{{ d.fechaRegistro }}</td>
-              <td class="td-muted">{{ d.ultimaSync }}</td>
-              <td class="td-right">
-                <button class="btn-action">{{ accionLabel(d) }}</button>
-              </td>
-            </tr>
-          }
-        </tbody>
-      </table>
-    </div>
-  </div>
-
 </div>
 
-@if (modalMode()) {
-  <div class="modal-overlay" (click)="closeModal()">
-    <div class="modal" (click)="$event.stopPropagation()" role="dialog">
-      <div class="modal-header">
-        <h2>Registrar dispositivo</h2>
-        <button class="modal-close" (click)="closeModal()" aria-label="Cerrar">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
-        </button>
-      </div>
-      <div class="modal-body">
-        <div class="form-group">
-          <label>Identificador físico (MAC)</label>
-          <input type="text" placeholder="AA:BB:CC:DD:EE:FF" class="mono-input"
-            [ngModel]="form().mac" (ngModelChange)="setField('mac', $event)">
-        </div>
+<!-- Modal -->
+<div class="modal-backdrop" *ngIf="showModal" (click)="cerrarModal()">
+  <div class="modal-content" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h2>{{ isEdit ? 'Editar Dispositivo' : 'Registrar Dispositivo IoT' }}</h2>
+      <button class="close-btn" (click)="cerrarModal()">&times;</button>
+    </div>
+    <div class="modal-body form-group">
+      <label>Identificador Físico (MAC / UUID)</label>
+      <input type="text" [(ngModel)]="identificadorFisico" placeholder="Ej: 00:1B:44:11:3A:B7">
+      
+      <label>Tipo de Dispositivo</label>
+      <select [(ngModel)]="tipoDispositivo" [disabled]="isEdit">
+        <option value="pastillero_esp32">Pastillero Inteligente (ESP32)</option>
+        <option value="pulsera_inteligente">Pulsera de Signos Vitales</option>
+      </select>
 
-        <div class="form-group">
-          <label>Tipo de dispositivo</label>
-          <div class="tipo-selector">
-            <div class="tipo-option" [class.tipo-option--selected]="selectedTipo() === 'pastillero_esp32'" (click)="selectTipo('pastillero_esp32')">
-              <div class="tipo-option-icon tipo-option-icon--blue">
-                <svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor"><path d="M17 1H7c-1.1 0-2 .9-2 2v18c0 1.1.9 2 2 2h10c1.1 0 2-.9 2-2V3c0-1.1-.9-2-2-2zm0 18H7V5h10v14zm-5-4c.83 0 1.5-.67 1.5-1.5S12.83 12 12 12s-1.5.67-1.5 1.5S11.17 15 12 15z"/></svg>
-              </div>
-              <div class="tipo-option-name">Pastillero ESP32</div>
-              <div class="tipo-option-desc">Detecta apertura de compartimentos</div>
-            </div>
-            <div class="tipo-option" [class.tipo-option--selected]="selectedTipo() === 'pulsera_inteligente'" (click)="selectTipo('pulsera_inteligente')">
-              <div class="tipo-option-icon tipo-option-icon--green">
-                <svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor"><path d="M12 1C8.14 1 5 4.14 5 8c0 5.25 7 13 7 13s7-7.75 7-13c0-3.86-3.14-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5S10.62 5.5 12 5.5s2.5 1.12 2.5 2.5S13.38 10.5 12 10.5z"/></svg>
-              </div>
-              <div class="tipo-option-name">Pulsera inteligente</div>
-              <div class="tipo-option-desc">Ritmo cardíaco y detección de caídas</div>
-            </div>
-          </div>
-        </div>
-
-        <div class="form-group">
-          <label>Asignar a adulto mayor <span class="optional">(opcional)</span></label>
-          <select [ngModel]="form().adulto" (ngModelChange)="setField('adulto', $event)">
-            <option value="">Sin asignar por ahora</option>
-            <option>Elena Rodríguez</option>
-            <option>José Martínez</option>
-            <option>Rosa Pérez</option>
-            <option>Luis García</option>
-            <option>Manuel Herrera</option>
-          </select>
-        </div>
-      </div>
-      <div class="modal-footer">
-        <button class="btn-secondary" (click)="closeModal()">Cancelar</button>
-        <button class="btn-primary" (click)="registrar()">Registrar</button>
-      </div>
+      <label>Adulto Mayor (Asignación)</label>
+      <select [(ngModel)]="idAdulto">
+        <option [ngValue]="null">-- Sin asignar --</option>
+        <option *ngFor="let a of adultos" [ngValue]="a.idAdulto">
+          {{ a.nombre }} {{ a.apellido }}
+        </option>
+      </select>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-outline" (click)="cerrarModal()">Cancelar</button>
+      <button class="btn-primary" (click)="guardarDispositivo()">Guardar</button>
     </div>
   </div>
-}
+</div>
 
-@if (toast()) {
-  <div class="toast" [class.toast-success]="toast()!.type === 'success'" [class.toast-error]="toast()!.type === 'error'" role="alert">
-    @if (toast()!.type === 'success') {
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
-    } @else {
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
-    }
-    {{ toast()!.msg }}
-  </div>
-}
+<div class="toast toast-info" *ngIf="toastMsg">
+  {{ toastMsg }}
+</div>
