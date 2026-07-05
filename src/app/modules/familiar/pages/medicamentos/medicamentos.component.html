@@ -1,117 +1,290 @@
-<div class="page">
+<div class="page-container">
+
+  <!-- ══ HEADER ══ -->
   <div class="page-header">
     <div>
-      <h1>{{ adultoSel() }} — Medicamentos</h1>
-      <p>Monitoreo / Medicamentos</p>
+      @if (adultoActual()) {
+        <div class="breadcrumb">
+          <a routerLink="/familiar/adultos" class="breadcrumb-link">Mis adultos</a>
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>
+          <span>{{ adultoActual()!.nombre }} {{ adultoActual()!.apellido }}</span>
+        </div>
+      }
+      <h1>Agenda de medicamentos</h1>
+      <p>Gestiona los medicamentos y horarios de toma{{ adultoActual() ? ' de ' + adultoActual()!.nombre : '' }}</p>
     </div>
-    <div class="header-actions">
-      <select class="select-input" [ngModel]="adultoSel()" (ngModelChange)="adultoSel.set($event)">
-        @for (a of adultos; track a) {
-          <option [value]="a">{{ a }}</option>
-        }
-      </select>
-      <button class="btn-primary" (click)="openCrear()">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-        Agregar medicamento
-      </button>
+    <button class="btn-primary" (click)="openCreate()">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+      Agregar medicamento
+    </button>
+  </div>
+
+  <!-- ══ FILTRO ══ -->
+  <div class="search-bar">
+    <div class="search-wrap">
+      <svg class="search-icon" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>
+      </svg>
+      <input class="search-input" type="text" placeholder="Buscar medicamento o principio activo…"
+             [ngModel]="filtroTexto()" (ngModelChange)="filtroTexto.set($event)">
     </div>
   </div>
 
-  <div class="meds-grid">
-    @for (m of medsFiltrados(); track m.id) {
-      <div class="med-card" [class.inactive]="m.estado === 'inactivo'">
-        <div class="med-top">
-          <div class="med-icon-wrap" [style.background]="m.iconBg" [style.color]="m.iconColor">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M6.5 10h-2v5h2v-5zm4 0h-2v5h2v-5zm8.5 7H4v2h15v-2zm-4.5-7h-2v5h2v-5zM11.5 1L2 6v2h19V6l-9.5-5z"/></svg>
-          </div>
-          <div class="med-title">
-            <div class="med-nombre">{{ m.nombre }}</div>
-            <div class="med-dosis">{{ m.dosis }}</div>
-          </div>
-          <div class="med-top-right">
-            <span class="badge" [class.badge-green]="m.estado === 'activo'" [class.badge-gray]="m.estado === 'inactivo'">
-              {{ m.estado === 'activo' ? 'Activo' : 'Inactivo' }}
-            </span>
-            <div class="med-actions">
-              <button class="icon-btn edit" (click)="openEditar(m)" title="Editar">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-              </button>
-              <button class="icon-btn delete" (click)="eliminar(m)" title="Eliminar">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
-              </button>
+  <!-- ══ LISTA ══ -->
+  @if (loading()) {
+    <div class="loading-state">
+      <div class="spinner"></div>
+      <span>Cargando medicamentos…</span>
+    </div>
+  } @else if (error()) {
+    <div class="empty-card error-card">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
+      <p>{{ error() }}</p>
+    </div>
+  } @else if (medsFiltrados().length === 0) {
+    <div class="empty-card">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M6.5 10h-2v5h2v-5zm4 0h-2v5h2v-5zm8.5 7H4v2h15v-2zm-4.5-7h-2v5h2v-5zM11.5 1L2 6v2h19V6l-9.5-5z"/></svg>
+      <p>No hay medicamentos registrados</p>
+      <button class="btn-primary" (click)="openCreate()">Agregar el primero</button>
+    </div>
+  } @else {
+    <div class="med-list">
+      @for (m of medsFiltrados(); track m.idMedicamento; let i = $index) {
+        <div class="med-card" [class.inactive]="!m.activo" [style.animation-delay]="(i * 50) + 'ms'">
+
+          <!-- Indicador de frecuencia -->
+          <div class="med-freq-bar" [attr.data-freq]="m.frecuenciaHoras"></div>
+
+          <div class="med-card-body">
+            <!-- Left: info principal -->
+            <div class="med-main">
+              <div class="med-icon-wrap">
+                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M6.5 10h-2v5h2v-5zm4 0h-2v5h2v-5zm8.5 7H4v2h15v-2zm-4.5-7h-2v5h2v-5zM11.5 1L2 6v2h19V6l-9.5-5z"/></svg>
+              </div>
+              <div>
+                <h3 class="med-nombre">{{ m.nombre }}</h3>
+              </div>
+            </div>
+
+            <!-- Center: detalles -->
+            <div class="med-details">
+              <div class="detail-chip">
+                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 5c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 13c-2.67 0-5.05-1.22-6.6-3.12.02-2.01 4-3.12 6.6-3.12 2.59 0 6.58 1.11 6.6 3.12C17.05 18.78 14.67 20 12 20z"/></svg>
+                <span>{{ m.dosis }}</span>
+              </div>
+              <div class="detail-chip">
+                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67V7z"/></svg>
+                <span>Cada {{ m.frecuenciaHoras }}h</span>
+              </div>
+              @if (m.horarios?.length) {
+                <div class="detail-chip horas">
+                  <svg viewBox="0 0 24 24" fill="currentColor"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67V7z"/></svg>
+                  <span>{{ formatHoras(m.horarios) }}</span>
+                </div>
+              }
+              @if (m.prescritoPor) {
+                <div class="detail-chip">
+                  <svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 3H5c-1.1 0-1.99.9-1.99 2L3 19c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 3c1.93 0 3.5 1.57 3.5 3.5S13.93 13 12 13s-3.5-1.57-3.5-3.5S10.07 6 12 6z"/></svg>
+                  <span>Dr. {{ m.prescritoPor }}</span>
+                </div>
+              }
+            </div>
+
+            <!-- Right: estado + acciones -->
+            <div class="med-right">
+              <div class="med-meta-col">
+                <span class="badge" [class.badge-success]="m.activo" [class.badge-warning]="!m.activo">
+                  {{ m.activo ? 'Activo' : 'Inactivo' }}
+                </span>
+                @if (stockAlerta(m)) {
+                  <span class="stock-alerta">
+                    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/></svg>
+                    Stock bajo
+                  </span>
+                }
+                @if (m.stockActual !== undefined) {
+                  <span class="stock-info">{{ m.stockActual }} unidades</span>
+                }
+              </div>
+              <div class="med-actions">
+                <button class="icon-btn edit" (click)="openEdit(m)" aria-label="Editar medicamento">
+                  <svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
+                </button>
+                <button class="icon-btn delete" (click)="pedirConfirmacion(m)" aria-label="Eliminar medicamento">
+                  <svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+                </button>
+              </div>
             </div>
           </div>
+
+          <!-- Fechas -->
+          <div class="med-dates">
+            <span>Inicio: <strong>{{ m.creadoEn | date:'dd/MM/yyyy' }}</strong></span>
+          </div>
         </div>
-
-        <div class="med-frecuencia">{{ m.frecuencia }}</div>
-
-        <div class="horarios">
-          @for (h of m.horarios; track h) {
-            <span class="horario-chip">{{ h }}</span>
-          }
-        </div>
-
-        @if (m.notas) {
-          <div class="med-notas">{{ m.notas }}</div>
-        }
-      </div>
-    }
-  </div>
+      }
+    </div>
+  }
 </div>
 
+<!-- ══ MODAL ══ -->
 @if (modalMode()) {
   <div class="modal-overlay" (click)="closeModal()">
-    <div class="modal" (click)="$event.stopPropagation()">
+    <div class="modal" (click)="$event.stopPropagation()" role="dialog">
       <div class="modal-header">
-        <h2>{{ modalMode() === 'crear' ? 'Agregar medicamento' : 'Editar medicamento' }}</h2>
-        <button class="modal-close" (click)="closeModal()">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        <h2>{{ modalMode() === 'create' ? 'Agregar medicamento' : 'Editar medicamento' }}</h2>
+        <button class="modal-close" (click)="closeModal()" aria-label="Cerrar">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
         </button>
       </div>
-      <div class="modal-body">
-        <div class="form-group">
-          <label>Nombre del medicamento <span class="required">*</span></label>
-          <input type="text" [(ngModel)]="form.nombre" placeholder="Ej: Losartán 50mg">
-        </div>
+
+      <form [formGroup]="form" (ngSubmit)="guardar()" class="modal-body" novalidate>
+
         <div class="form-row">
-          <div class="form-group">
-            <label>Dosis <span class="required">*</span></label>
-            <input type="text" [(ngModel)]="form.dosis" placeholder="Ej: 1 tableta">
+          <div class="form-group" [class.error]="isInvalid('nombre')">
+            <label for="m-nombre">Nombre del medicamento <span class="required">*</span></label>
+            <input id="m-nombre" formControlName="nombre" type="text" placeholder="Ej: Metformina">
+            @if (isInvalid('nombre')) { <span class="field-error">Nombre requerido</span> }
           </div>
           <div class="form-group">
-            <label>Frecuencia</label>
-            <select [(ngModel)]="form.frecuencia">
-              <option value="diario">Diario</option>
-              <option value="semanal">Semanal</option>
-              <option value="cada_8h">Cada 8 horas</option>
-              <option value="cada_12h">Cada 12 horas</option>
+            <label for="m-principio">Principio activo</label>
+            <input id="m-principio" formControlName="principioActivo" type="text" placeholder="Ej: Clorhidrato de Metformina">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group" [class.error]="isInvalid('dosis')">
+            <label for="m-dosis">Dosis <span class="required">*</span></label>
+            <input id="m-dosis" formControlName="dosis" type="text" placeholder="Ej: 500mg">
+            @if (isInvalid('dosis')) { <span class="field-error">Dosis requerida</span> }
+          </div>
+          <div class="form-group">
+            <label for="m-frecuencia">Frecuencia <span class="required">*</span></label>
+            <select id="m-frecuencia" formControlName="frecuencia">
+              @for (f of frecuencias; track f.value) {
+                <option [value]="f.value">{{ f.label }}</option>
+              }
             </select>
           </div>
         </div>
-        <div class="form-group">
-          <label>Horarios de toma</label>
-          <input type="text" [(ngModel)]="form.horasInput" placeholder="Ej: 08:00, 14:00, 20:00">
-          <span class="field-hint">Separados por comas</span>
+
+        <div class="form-group" [class.error]="form.get('horarios')?.invalid && form.get('horarios')?.touched">
+          <label>Horarios de toma <span class="required">*</span></label>
+          
+          <div formArrayName="horarios" class="horarios-list">
+            @for (horaCtrl of horariosArray.controls; track $index) {
+              <div class="horario-row">
+                <input type="time" [formControlName]="$index" class="time-input">
+                @if (horariosArray.length > 1) {
+                  <button type="button" class="btn-remove" (click)="removeHorario($index)" aria-label="Eliminar horario">
+                    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+                  </button>
+                }
+              </div>
+            }
+          </div>
+          
+          @if (horariosArray.length < 10) {
+            <button type="button" class="btn-add-horario" (click)="addHorario()">
+              <svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+              Añadir horario
+            </button>
+          }
+
+          @if (form.get('horarios')?.hasError('requerido') && form.get('horarios')?.touched) {
+            <span class="field-error">Se requiere al menos 1 horario.</span>
+          }
+          @if (form.get('horarios')?.hasError('maximo')) {
+            <span class="field-error">Máximo 10 horarios permitidos.</span>
+          }
+          @if (form.get('horarios')?.hasError('duplicado')) {
+            <span class="field-error">No puede haber horarios duplicados.</span>
+          }
         </div>
-        <div class="form-group">
-          <label>Notas / instrucciones</label>
-          <textarea [(ngModel)]="form.notas" rows="3" placeholder="Indicaciones especiales..."></textarea>
+
+        <div class="form-row">
+          <div class="form-group" [class.error]="isInvalid('fechaInicio')">
+            <label for="m-inicio">Fecha inicio <span class="required">*</span></label>
+            <input id="m-inicio" formControlName="fechaInicio" type="date">
+            @if (isInvalid('fechaInicio')) { <span class="field-error">Fecha requerida</span> }
+          </div>
+          <div class="form-group">
+            <label for="m-fin">Fecha fin</label>
+            <input id="m-fin" formControlName="fechaFin" type="date">
+          </div>
         </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="m-stock">Stock actual</label>
+            <input id="m-stock" formControlName="stockActual" type="number" min="0" placeholder="Unidades">
+          </div>
+          <div class="form-group">
+            <label for="m-stock-min">Stock mínimo</label>
+            <input id="m-stock-min" formControlName="stockMinimo" type="number" min="0" placeholder="Alerta bajo este valor">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="m-medico">Prescrito por</label>
+          <input id="m-medico" formControlName="prescritoPor" type="text" placeholder="Nombre del médico tratante">
+        </div>
+
+        <div class="form-group">
+          <label for="m-instrucciones">Instrucciones especiales</label>
+          <textarea id="m-instrucciones" formControlName="instrucciones" rows="2"
+                    placeholder="Ej: Tomar con alimentos, evitar alcohol…"></textarea>
+        </div>
+
+        @if (!adultoActual()) {
+          <div class="form-group">
+            <label for="m-adulto">Adulto mayor <span class="required">*</span></label>
+            <select id="m-adulto" formControlName="adultoMayorId">
+              <option value="">— Selecciona —</option>
+              @for (a of adultos(); track a.idAdulto) {
+                <option [value]="a.idAdulto">{{ a.nombre }} {{ a.apellido }}</option>
+              }
+            </select>
+          </div>
+        }
+
+        <div class="modal-footer">
+          <button type="button" class="btn-secondary" (click)="closeModal()">Cancelar</button>
+          <button type="submit" class="btn-primary" [disabled]="saving()">
+            @if (saving()) { <span class="btn-spinner"></span> }
+            {{ saving() ? 'Guardando…' : (modalMode() === 'create' ? 'Agregar' : 'Guardar cambios') }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+}
+
+<!-- ══ CONFIRM DELETE ══ -->
+@if (confirmDelete()) {
+  <div class="modal-overlay" (click)="cancelarEliminar()">
+    <div class="modal modal-sm" (click)="$event.stopPropagation()" role="alertdialog">
+      <div class="confirm-icon danger">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
       </div>
+      <h3>Eliminar medicamento</h3>
+      <p>¿Deseas eliminar <strong>{{ confirmDelete()!.nombre }}</strong> de la agenda? Esta acción no se puede deshacer.</p>
       <div class="modal-footer">
-        <button class="btn-secondary" (click)="closeModal()">Cancelar</button>
-        <button class="btn-primary" (click)="guardar()" [disabled]="saving() || !form.nombre || !form.dosis">
-          @if (saving()) { <span class="btn-spinner"></span> }
-          {{ saving() ? 'Guardando…' : (modalMode() === 'crear' ? 'Agregar' : 'Guardar cambios') }}
-        </button>
+        <button class="btn-secondary" (click)="cancelarEliminar()">Cancelar</button>
+        <button class="btn-danger" (click)="confirmarEliminar()">Eliminar</button>
       </div>
     </div>
   </div>
 }
 
+<!-- ══ TOAST ══ -->
 @if (toast()) {
-  <div class="toast toast-success">
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
-    {{ toast() }}
+  <div class="toast" [class.toast-success]="toast()!.type === 'success'" [class.toast-error]="toast()!.type === 'error'" role="alert" aria-live="polite">
+    @if (toast()!.type === 'success') {
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+    } @else {
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
+    }
+    {{ toast()!.msg }}
   </div>
 }
