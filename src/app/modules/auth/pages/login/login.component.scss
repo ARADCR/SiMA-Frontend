@@ -1,5 +1,6 @@
 @use '../../../../../assets/styles/variables' as v;
 @use '../../../../../assets/styles/mixins' as m;
+@use '../../../../../assets/styles/responsive' as r;
 
 .login-page {
   display: flex;
@@ -122,6 +123,10 @@
   align-items: center;
   justify-content: center;
   padding: 48px;
+
+  @include r.respond(sm) {
+    padding: 24px 16px;
+  }
 }
 
 .form-card {

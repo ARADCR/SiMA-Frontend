@@ -53,8 +53,7 @@ export class MedicamentosComponent implements OnInit {
   medsFiltrados = computed(() => {
     const txt = this.filtroTexto().toLowerCase();
     return this.medicamentos().filter(m =>
-      !txt || m.nombre.toLowerCase().includes(txt) ||
-      (m.principioActivo ?? '').toLowerCase().includes(txt)
+      !txt || m.nombre.toLowerCase().includes(txt)
     );
   });
 

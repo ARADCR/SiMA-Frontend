@@ -1,5 +1,7 @@
+@use '../../../../../assets/styles/responsive' as r;
 :host { display: block; }
-.page { padding: 32px; background: #F7FAFC; height: calc(100vh - 64px); display: flex; flex-direction: column; }
+.page { padding: 32px;
+  @include r.respond(sm) { padding: 16px; } background: #F7FAFC; height: calc(100vh - 64px); display: flex; flex-direction: column; }
 .card { background: #fff; border-radius: 12px; box-shadow: 0 2px 12px rgba(0,0,0,0.06); }
 .chat-layout { display: grid; grid-template-columns: 280px 1fr; gap: 16px; flex: 1; min-height: 0; }
 .chat-sidebar { display: flex; flex-direction: column; overflow: hidden; }

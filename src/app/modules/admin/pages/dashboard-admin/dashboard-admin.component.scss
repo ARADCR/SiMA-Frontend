@@ -1,10 +1,17 @@
+@use '../../../../../assets/styles/responsive' as r;
+
 :host { display: block; }
 
 .page {
   padding: 32px;
+  @include r.respond(sm) { padding: 16px; }
   background: #F7FAFC;
   min-height: calc(100vh - 64px);
   animation: fadeIn 0.4s ease;
+
+  @include r.respond(sm) {
+    padding: 16px;
+  }
 }
 
 .page-header {
@@ -22,6 +29,10 @@
   color: #1B2B3A;
   letter-spacing: -0.5px;
   margin: 0;
+  
+  @include r.respond(sm) {
+    font-size: 24px;
+  }
 }
 
 .page-sub {
@@ -55,7 +66,8 @@
   gap: 16px;
   margin-bottom: 28px;
 
-  @media (max-width: 900px) { grid-template-columns: repeat(2, 1fr); }
+  @include r.respond(lg) { grid-template-columns: repeat(2, 1fr); }
+  @include r.respond(sm) { grid-template-columns: 1fr; }
 }
 
 .stat-card {
@@ -105,7 +117,7 @@
   grid-template-columns: 3fr 2fr;
   gap: 20px;
 
-  @media (max-width: 1024px) { grid-template-columns: 1fr; }
+  @include r.respond(lg) { grid-template-columns: 1fr; }
 }
 
 .card {

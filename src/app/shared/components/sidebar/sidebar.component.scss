@@ -1,5 +1,6 @@
 @use '../../../../assets/styles/variables' as v;
 @use '../../../../assets/styles/mixins' as m;
+@use '../../../../assets/styles/responsive' as r;
 
 .sidebar {
   position: fixed;
@@ -16,6 +17,13 @@
   overflow: hidden;
   box-shadow: v.$shadow;
 
+  // Mobile drawer hidden by default
+  @include r.respond(md) {
+    width: 100%;
+    transform: translateX(-100%);
+    transition: transform v.$transition-base;
+  }
+
   &.collapsed {
     width: v.$sidebar-collapsed;
 
@@ -27,6 +35,63 @@
     .user-info {
       justify-content: center;
     }
+  }
+}
+
+/* Open state for mobile */
+.sidebar.open {
+  @include r.respond(md) {
+    transform: translateX(0);
+  }
+}
+
+/* Close button for mobile drawer */
+.close-btn-mobile {
+  display: none;
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  width: 40px;
+  height: 40px;
+  background: #FFFFFF;
+  border: 1px solid #E2EAF0;
+  border-radius: 12px;
+  color: #5C6B7A;
+  cursor: pointer;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: 10;
+
+  @include r.respond(md) {
+    display: flex;
+  }
+
+  &:hover {
+    background: #FDE8E0;
+    color: #E76F51;
+    border-color: #E76F51;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(231, 111, 81, 0.15);
+  }
+
+  &:active {
+    transform: scale(0.96);
+    box-shadow: none;
+  }
+}
+
+/* Overlay when drawer open */
+.overlay {
+  display: none;
+  @include r.respond(md) {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.4);
+    z-index: 99;
   }
 }
 
@@ -118,6 +183,7 @@
   position: relative;
   cursor: pointer;
   text-decoration: none;
+  min-height: 44px;
 
   &:hover {
     background: #EBF5FB;

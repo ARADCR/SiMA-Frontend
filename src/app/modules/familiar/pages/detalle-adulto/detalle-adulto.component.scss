@@ -1,7 +1,9 @@
+@use '../../../../../assets/styles/responsive' as r;
 :host { display: block; }
 
 .page {
   padding: 32px;
+  @include r.respond(sm) { padding: 16px; }
   background: #F7FAFC;
   min-height: calc(100vh - 64px);
 }
@@ -274,6 +276,7 @@
   text-align: center;
   color: #9CABB8;
   padding: 32px;
+  @include r.respond(sm) { padding: 20px; }
   font-size: 14px;
 }
 

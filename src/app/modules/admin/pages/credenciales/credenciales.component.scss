@@ -1,6 +1,8 @@
+@use '../../../../../assets/styles/responsive' as r;
 :host { display: block; }
 
-.page { padding: 32px; background: #F7FAFC; min-height: calc(100vh - 64px); }
+.page { padding: 32px;
+  @include r.respond(sm) { padding: 16px; } background: #F7FAFC; min-height: calc(100vh - 64px); }
 
 .header { margin-bottom: 24px; }
 .header-left { display: flex; align-items: center; gap: 12px; }

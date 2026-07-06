@@ -1,10 +1,17 @@
+@use '../../../../../assets/styles/responsive' as r;
+
 :host { display: block; }
 
 .page {
   padding: 32px;
+  @include r.respond(sm) { padding: 16px; }
   background: #F7FAFC;
   min-height: calc(100vh - 64px);
   animation: fadeIn 0.4s ease;
+
+  @include r.respond(sm) {
+    padding: 16px;
+  }
 }
 
 .page-header {
@@ -121,7 +128,7 @@
 }
 
 .table-card { }
-.table-wrap { overflow-x: auto; }
+.table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
 
 .table {
   width: 100%;

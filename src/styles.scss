@@ -1,6 +1,9 @@
 // Estilos globales de la aplicación SiMA
 // @use SIEMPRE primero (regla de Dart Sass)
 @use './assets/styles/global';
+@use './assets/styles/responsive';
+@use './assets/styles/utilities';
+@use './assets/styles/animations';
 
 // Google Fonts — después de @use
 @import url('https://fonts.googleapis.com/css2?family=Figtree:wght@300;400;500;600;700;800&family=Noto+Sans:wght@300;400;500;600;700&display=swap');
