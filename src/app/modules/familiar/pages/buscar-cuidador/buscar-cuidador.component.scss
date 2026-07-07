@@ -51,3 +51,18 @@
 .badge-green { background: #D8F3DC; color: #1A7A4A; }
 .badge-gray { background: #F0F4F8; color: #9CABB8; }
 .empty-state { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 48px; }
+
+/* ---- Responsive Enhancements for Familiar Components ---- */
+
+/* Buscar Cuidador responsive layout */
+@include r.respond(sm) {
+  .main-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Utility class for tables that may overflow */
+.table-responsive {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}

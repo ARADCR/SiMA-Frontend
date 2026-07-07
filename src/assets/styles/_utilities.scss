@@ -65,3 +65,11 @@ $spacing: (
 
 
 
+
+/* Utility for responsive tables */
+.table-responsive {
+  width: 100%;
+  display: block;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}

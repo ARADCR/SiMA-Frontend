@@ -22,7 +22,7 @@ export class SidebarComponent {
   @Input() collapsed = false;
   // Mobile drawer state
   isOpen = false;
-  isMobile = window.innerWidth <= 768;
+  isMobile = typeof window !== 'undefined' ? window.innerWidth <= 768 : false;
 
   protected auth = inject(AuthService);
   private router = inject(Router);
@@ -85,9 +85,11 @@ export class SidebarComponent {
 
   @HostListener('window:resize')
   onResize() {
-    this.isMobile = window.innerWidth <= 768;
-    if (!this.isMobile) {
-      this.isOpen = false;
+    if (typeof window !== 'undefined') {
+      this.isMobile = window.innerWidth <= 768;
+      if (!this.isMobile) {
+        this.isOpen = false;
+      }
     }
   }
 

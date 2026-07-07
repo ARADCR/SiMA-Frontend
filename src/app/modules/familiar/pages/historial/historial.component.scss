@@ -56,3 +56,19 @@
 .page-btn { width: 32px; height: 32px; border-radius: 7px; border: 1px solid #E2EAF0; background: white; color: #5C6B7A; display: flex; align-items: center; justify-content: center; cursor: pointer; }
 .page-btn:disabled { color: #D0D8E0; cursor: not-allowed; }
 .page-info { font-size: 13px; color: #9CABB8; }
+
+/* ---- Responsive Enhancements for Historial ---- */
+@include r.respond(sm) {
+  .filters-bar {
+    flex-direction: column;
+    gap: 8px;
+  }
+  .table-responsive {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    min-width: 600px;
+  }
+  .table {
+    min-width: 600px;
+  }
+}

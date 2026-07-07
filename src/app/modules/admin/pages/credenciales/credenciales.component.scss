@@ -10,7 +10,16 @@
 .count-badge { padding: 4px 12px; border-radius: 20px; font-size: 14px; font-weight: 700; background: #FDE8E0; color: #E76F51; }
 
 .card { background: #fff; border-radius: 12px; box-shadow: 0 2px 12px rgba(0,0,0,0.06); }
-.two-panel { display: grid; grid-template-columns: 340px 1fr; gap: 20px; min-height: 500px; }
+.two-panel { 
+  display: grid; 
+  grid-template-columns: 340px 1fr; 
+  gap: 20px; 
+  min-height: 500px; 
+  
+  @media (max-width: 900px) {
+    grid-template-columns: 1fr;
+  }
+}
 
 .list-panel { display: flex; flex-direction: column; overflow: hidden; }
 .list-header { padding: 16px 20px; border-bottom: 1px solid #E2EAF0; flex-shrink: 0; }
@@ -33,7 +42,16 @@
 .detail-header { display: flex; align-items: flex-start; justify-content: space-between; padding: 20px 24px; border-bottom: 1px solid #E2EAF0; gap: 12px; }
 .detail-title { font-size: 16px; font-weight: 600; color: #1B2B3A; }
 .detail-sub { font-size: 12px; color: #9CABB8; margin-top: 4px; }
-.detail-body { display: grid; grid-template-columns: 1fr 1fr; flex: 1; min-height: 400px; }
+.detail-body { 
+  display: grid; 
+  grid-template-columns: 1fr 1fr; 
+  flex: 1; 
+  min-height: 400px; 
+
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+  }
+}
 
 .doc-viewer { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 24px; border-right: 1px solid #E2EAF0; background: #F7FAFC; gap: 16px; }
 .doc-card { width: 200px; background: white; border-radius: 10px; box-shadow: 0 2px 12px rgba(0,0,0,0.08); padding: 24px 20px; display: flex; flex-direction: column; align-items: center; text-align: center; }
@@ -53,7 +71,15 @@
   resize: vertical;
   &:focus { outline: none; border-color: #2E86AB; }
 }
-.form-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.form-grid-2 { 
+  display: grid; 
+  grid-template-columns: 1fr 1fr; 
+  gap: 10px; 
+  
+  @media (max-width: 576px) {
+    grid-template-columns: 1fr;
+  }
+}
 
 .action-buttons { display: flex; gap: 10px; margin-top: 4px; }
 .btn-reject { flex: 1; padding: 10px; background: white; color: #E76F51; border: 1px solid #E76F51; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit; &:hover { background: #FDE8E0; } }

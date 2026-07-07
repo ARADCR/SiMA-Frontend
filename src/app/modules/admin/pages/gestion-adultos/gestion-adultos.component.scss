@@ -71,6 +71,7 @@
   margin-bottom: 20px;
 
   @media (max-width: 900px) { grid-template-columns: repeat(2, 1fr); }
+  @media (max-width: 576px) { grid-template-columns: 1fr; }
 }
 
 .stat-card {

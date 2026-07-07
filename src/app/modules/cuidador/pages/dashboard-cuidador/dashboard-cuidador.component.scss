@@ -359,6 +359,10 @@
   .bottom-grid { grid-template-columns: 1fr; }
 }
 
+@media (max-width: 576px) {
+  .quick-grid { grid-template-columns: 1fr; }
+}
+
 @media (max-width: 900px) {
   .patient-row {
     grid-template-columns: 40px 1fr 80px;
