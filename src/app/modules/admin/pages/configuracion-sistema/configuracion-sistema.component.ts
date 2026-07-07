@@ -1,25 +1,43 @@
-import { Component } from '@angular/core';
+import { Component, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
+
+interface Suscripcion { id: number; familiar: string; adulto: string; habilitado: boolean; ultimaNotif: string; }
 
 @Component({
   selector: 'app-configuracion-sistema',
   standalone: true,
-  imports: [CommonModule],
-  template: `
-    <div class="page-container">
-      <div class="page-header">
-        <h1>Configuración del Sistema</h1>
-        <p>Ajustes globales de la plataforma SiMA</p>
-      </div>
-      <div class="sima-card">
-        <p style="color:#94a3b8; text-align:center; padding:2rem;">
-          ⚙️ Módulo en construcción — Parámetros y configuración global
-        </p>
-      </div>
-    </div>
-  `,
-  styles: [`.page-container { padding: 2rem; max-width: 1400px; margin: 0 auto; } .page-header { margin-bottom: 2rem; }
-    .page-header h1 { font-size: 1.875rem; font-weight: 800; color: #f1f5f9; margin-bottom: 0.5rem; }
-    .page-header p { color: #94a3b8; } .sima-card { background: #1e293b; border: 1px solid #475569; border-radius: 0.75rem; padding: 1.5rem; }`]
+  imports: [CommonModule, FormsModule],
+  templateUrl: './configuracion-sistema.component.html',
+  styleUrls: ['./configuracion-sistema.component.scss']
 })
-export class ConfiguracionSistemaComponent {}
+export class ConfiguracionSistemaComponent {
+  toleranciaMed = signal(30);
+  reintentosMed = signal(3);
+  umbralCaidas  = signal(2.5);
+  freqVerif     = signal(15);
+  wechatAppId   = signal('wx_sima2026prod01');
+  wechatSecret  = signal('••••••••••••••••');
+  wechatConectado = signal(true);
+  toast = signal<string | null>(null);
+
+  suscripciones: Suscripcion[] = [
+    { id: 1, familiar: 'Ana García',      adulto: 'Elena Rodríguez', habilitado: true,  ultimaNotif: 'Hace 3 horas' },
+    { id: 2, familiar: 'Pedro García',    adulto: 'Elena Rodríguez', habilitado: true,  ultimaNotif: 'Hace 1 día' },
+    { id: 3, familiar: 'Marta Jiménez',   adulto: 'José Rodríguez',  habilitado: false, ultimaNotif: 'Hace 5 días' },
+    { id: 4, familiar: 'Roberto López',   adulto: 'Rosa Martínez',   habilitado: true,  ultimaNotif: 'Hace 2 horas' },
+  ];
+
+  probarWechat(): void {
+    this.showToast('Conexión con WeChat verificada correctamente');
+  }
+
+  guardar(): void {
+    this.showToast('Configuración guardada correctamente');
+  }
+
+  private showToast(msg: string): void {
+    this.toast.set(msg);
+    setTimeout(() => this.toast.set(null), 3500);
+  }
+}

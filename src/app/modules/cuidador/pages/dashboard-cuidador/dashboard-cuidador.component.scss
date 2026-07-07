@@ -1,0 +1,367 @@
+@use '../../../../../assets/styles/responsive' as r;
+:host { display: block; }
+
+.page {
+  padding: 32px;
+  @include r.respond(sm) { padding: 16px; }
+  background: #F7FAFC;
+  min-height: calc(100vh - 64px);
+}
+
+.header {
+  margin-bottom: 28px;
+}
+
+.title {
+  font-size: 28px;
+  font-weight: 700;
+  color: #1B2B3A;
+  letter-spacing: -0.5px;
+}
+
+.sub {
+  font-size: 14px;
+  color: #5C6B7A;
+  margin-top: 4px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.turno-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 10px;
+  background: #D8F3DC;
+  color: #1A7A4A;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.quick-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.quick-card {
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+  padding: 24px;
+  text-decoration: none;
+  display: block;
+  transition: box-shadow 0.2s, transform 0.15s;
+  cursor: pointer;
+
+  &:hover {
+    box-shadow: 0 4px 20px rgba(0,0,0,0.10);
+    transform: translateY(-2px);
+  }
+}
+
+.quick-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 16px;
+  position: relative;
+}
+
+.alert-badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #E76F51;
+  color: white;
+  font-size: 11px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid white;
+}
+
+.quick-label {
+  font-size: 16px;
+  font-weight: 600;
+  color: #1B2B3A;
+  margin-bottom: 6px;
+}
+
+.quick-sub {
+  font-size: 13px;
+  color: #5C6B7A;
+  line-height: 1.5;
+  margin-bottom: 16px;
+}
+
+.quick-btn {
+  display: inline-block;
+  padding: 9px 18px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.quick-btn-blue { background: #2E86AB; color: white; }
+.quick-btn-green { background: #52B788; color: white; }
+.quick-btn-orange { background: #E76F51; color: white; }
+
+.card {
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+}
+
+.patients-card {
+  margin-bottom: 20px;
+}
+
+.card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px 16px;
+}
+
+.card-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #1B2B3A;
+}
+
+.link-action {
+  font-size: 13px;
+  color: #2E86AB;
+  font-weight: 600;
+  text-decoration: none;
+
+  &:hover { text-decoration: underline; }
+}
+
+.patient-list {
+  padding: 0 24px 8px;
+}
+
+.patient-row {
+  display: grid;
+  grid-template-columns: 40px 1fr 160px 130px 90px 72px;
+  gap: 16px;
+  align-items: center;
+  padding: 14px 0;
+  border-bottom: 1px solid #F0F4F8;
+
+  &:last-child { border-bottom: none; }
+}
+
+.patient-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 600;
+  color: white;
+  flex-shrink: 0;
+}
+
+.patient-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1B2B3A;
+}
+
+.patient-meta {
+  font-size: 12px;
+  color: #9CABB8;
+  margin-top: 2px;
+}
+
+.progress-label {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  color: #5C6B7A;
+  margin-bottom: 4px;
+}
+
+.progress-count {
+  font-weight: 600;
+  color: #1B2B3A;
+}
+
+.progress-bar {
+  height: 5px;
+  background: #E2EAF0;
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background: #52B788;
+  border-radius: 3px;
+  transition: width 0.3s;
+}
+
+.next-label {
+  font-size: 11px;
+  color: #9CABB8;
+}
+
+.next-time {
+  font-size: 14px;
+  font-weight: 700;
+  color: #1B2B3A;
+}
+
+.next-med {
+  font-size: 12px;
+  color: #5C6B7A;
+}
+
+.badge {
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.badge-green { background: #D8F3DC; color: #1A7A4A; }
+.badge-yellow { background: #FEF3E2; color: #B47B12; }
+.badge-red { background: #FDE8E0; color: #C0452A; }
+
+.patient-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.action-btn {
+  width: 30px;
+  height: 30px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  transition: all 0.15s;
+
+  &.blue { background: #EBF5FB; color: #2E86AB; }
+  &.blue:hover { background: #2E86AB; color: white; }
+  &.green { background: #D8F3DC; color: #52B788; }
+  &.green:hover { background: #52B788; color: white; }
+}
+
+.bottom-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.obs-list {
+  padding: 0 24px 16px;
+}
+
+.obs-item {
+  padding: 14px 0;
+  border-bottom: 1px solid #F0F4F8;
+
+  &:last-child { border-bottom: none; }
+}
+
+.obs-item-top {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.avatar-sm {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: 600;
+  color: white;
+  flex-shrink: 0;
+}
+
+.obs-paciente {
+  font-size: 13px;
+  font-weight: 600;
+  color: #1B2B3A;
+}
+
+.obs-hora {
+  font-size: 12px;
+  color: #9CABB8;
+  margin-left: auto;
+}
+
+.obs-texto {
+  font-size: 13px;
+  color: #5C6B7A;
+  line-height: 1.6;
+  margin: 0;
+}
+
+.compliance-card {
+  .card-header { padding: 20px 24px 12px; }
+}
+
+.compliance-grid {
+  display: flex;
+  gap: 8px;
+  justify-content: space-between;
+  padding: 0 24px 20px;
+}
+
+.compliance-day {
+  flex: 1;
+  text-align: center;
+}
+
+.compliance-cell {
+  aspect-ratio: 1;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+
+.compliance-label {
+  font-size: 11px;
+  color: #9CABB8;
+  font-weight: 500;
+}
+
+@media (max-width: 1200px) {
+  .quick-grid { grid-template-columns: repeat(2, 1fr); }
+  .bottom-grid { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 900px) {
+  .patient-row {
+    grid-template-columns: 40px 1fr 80px;
+    .patient-progress, .patient-next, .patient-estado { display: none; }
+  }
+}

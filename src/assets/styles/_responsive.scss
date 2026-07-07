@@ -1,0 +1,33 @@
+@use 'variables' as v;
+
+// Responsive mixins
+// Usage: @include respond(sm) { ... }
+@mixin respond($size) {
+  @if $size == xs {
+    @media (max-width: v.$bp-xs) { @content; }
+  } @else if $size == sm {
+    @media (max-width: v.$bp-sm) { @content; }
+  } @else if $size == md {
+    @media (max-width: v.$bp-md) { @content; }
+  } @else if $size == lg {
+    @media (max-width: v.$bp-lg) { @content; }
+  } @else if $size == xl {
+    @media (max-width: v.$bp-xl) { @content; }
+  }
+}
+
+// Mobile-first mixin
+// Usage: @include respond-up(sm) { ... }
+@mixin respond-up($size) {
+  @if $size == xs {
+    @media (min-width: (v.$bp-xs + 1px)) { @content; }
+  } @else if $size == sm {
+    @media (min-width: (v.$bp-sm + 1px)) { @content; }
+  } @else if $size == md {
+    @media (min-width: (v.$bp-md + 1px)) { @content; }
+  } @else if $size == lg {
+    @media (min-width: (v.$bp-lg + 1px)) { @content; }
+  } @else if $size == xl {
+    @media (min-width: (v.$bp-xl + 1px)) { @content; }
+  }
+}

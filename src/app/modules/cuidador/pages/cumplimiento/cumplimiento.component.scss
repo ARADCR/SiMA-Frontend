@@ -1,0 +1,287 @@
+@use '../../../../../assets/styles/responsive' as r;
+:host { display: block; }
+
+.page {
+  padding: 32px;
+  @include r.respond(sm) { padding: 16px; }
+  background: #F7FAFC;
+  min-height: calc(100vh - 64px);
+}
+
+.header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 28px;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.title {
+  font-size: 28px;
+  font-weight: 700;
+  color: #1B2B3A;
+  letter-spacing: -0.5px;
+}
+
+.sub {
+  font-size: 14px;
+  color: #5C6B7A;
+  margin-top: 4px;
+}
+
+.date-range {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.date-input {
+  padding: 9px 14px;
+  border: 1px solid #E2EAF0;
+  border-radius: 8px;
+  font-size: 14px;
+  color: #5C6B7A;
+  background: white;
+  outline: none;
+
+  &:focus { border-color: #2E86AB; }
+}
+
+.date-sep {
+  color: #9CABB8;
+  font-size: 16px;
+}
+
+.card {
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 32px;
+}
+
+.stat-card {
+  padding: 20px;
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+  transition: box-shadow 0.2s;
+
+  &:hover { box-shadow: 0 4px 20px rgba(0,0,0,0.10); }
+}
+
+.stat-icon-wrap {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.stat-body { flex: 1; }
+
+.stat-val {
+  font-size: 26px;
+  font-weight: 700;
+  color: #1B2B3A;
+  line-height: 1.1;
+}
+
+.stat-lbl {
+  font-size: 13px;
+  color: #5C6B7A;
+  margin-top: 2px;
+}
+
+.stat-bar {
+  height: 5px;
+  background: #E2EAF0;
+  border-radius: 3px;
+  margin-top: 8px;
+  overflow: hidden;
+}
+
+.stat-bar-fill {
+  height: 100%;
+  border-radius: 3px;
+}
+
+.section-heading {
+  font-size: 18px;
+  font-weight: 700;
+  color: #1B2B3A;
+  margin: 0 0 16px;
+}
+
+.patients-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 32px;
+}
+
+.patient-compliance-card {
+  padding: 20px 24px;
+}
+
+.pc-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 12px;
+}
+
+.pc-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 600;
+  color: white;
+  flex-shrink: 0;
+}
+
+.pc-info {
+  min-width: 180px;
+}
+
+.pc-nombre {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1B2B3A;
+}
+
+.pc-pct {
+  font-size: 22px;
+  font-weight: 700;
+}
+
+.pc-dots {
+  display: flex;
+  gap: 12px;
+  margin-left: auto;
+}
+
+.dot-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.dot {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+}
+
+.dot-green { background: #52B788; }
+.dot-red { background: #E76F51; }
+.dot-gray { background: #E2EAF0; }
+
+.dot-label {
+  font-size: 10px;
+  color: #9CABB8;
+  font-weight: 600;
+}
+
+.pc-bar-wrap {
+  padding: 0 56px 0 56px;
+}
+
+.pc-bar {
+  height: 6px;
+  background: #E2EAF0;
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.pc-bar-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.4s;
+}
+
+.trend-card {
+  overflow: hidden;
+}
+
+.trend-table {
+  width: 100%;
+  border-collapse: collapse;
+
+  th {
+    text-align: left;
+    padding: 12px 20px;
+    font-size: 11px;
+    font-weight: 600;
+    color: #9CABB8;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-bottom: 1px solid #E2EAF0;
+  }
+
+  td {
+    padding: 14px 20px;
+    border-bottom: 1px solid #F0F4F8;
+    font-size: 13px;
+  }
+
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: #F7FAFC; }
+}
+
+.trend-name-col { width: 220px; }
+
+.trend-patient-cell {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.avatar-xs {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: 700;
+  color: white;
+  flex-shrink: 0;
+}
+
+.trend-patient span {
+  font-size: 13px;
+  font-weight: 500;
+  color: #1B2B3A;
+}
+
+.pct-chip {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+@media (max-width: 1100px) {
+  .stats-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (max-width: 700px) {
+  .pc-dots { display: none; }
+  .pc-bar-wrap { padding: 0; }
+}

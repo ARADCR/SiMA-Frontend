@@ -21,5 +21,20 @@ export const CUIDADOR_ROUTES: Routes = [
     path: 'cumplimiento',
     loadComponent: () => import('./pages/cumplimiento/cumplimiento.component').then(m => m.CumplimientoComponent),
     title: 'Cumplimiento — SiMA'
+  },
+  {
+    path: 'historial',
+    loadComponent: () => import('./pages/historial-cuidador/historial-cuidador.component').then(m => m.HistorialCuidadorComponent),
+    title: 'Historial — SiMA'
+  },
+  {
+    path: 'perfil',
+    loadComponent: () => import('./pages/perfil-cuidador/perfil-cuidador.component').then(m => m.PerfilCuidadorComponent),
+    title: 'Mi Perfil — SiMA'
+  },
+  {
+    path: 'chatbot',
+    loadComponent: () => import('./pages/chatbot/chatbot-cuidador.component').then(m => m.ChatbotCuidadorComponent),
+    title: 'Chatbot IA — SiMA'
   }
 ];

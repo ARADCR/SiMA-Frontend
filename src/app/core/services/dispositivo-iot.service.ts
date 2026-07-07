@@ -1,43 +1,43 @@
 import { Injectable } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { map } from 'rxjs/operators';
-import { ApiService } from './api.service';
-import { DispositivoIot, DispositivoCreate, LecturaDispositivo } from '../models/dispositivo-iot.model';
-import { RespuestaPaginada } from '../models/respuesta-api.model';
+import { environment } from '../../../environments/environment';
+import { RespuestaApi } from '../models/respuesta-api.model';
+import { DispositivoIot, DispositivoIotRequest } from '../models/dispositivo-iot.model';
 
 @Injectable({
   providedIn: 'root'
 })
 export class DispositivoIotService {
-  private readonly endpoint = '/dispositivos';
+  private apiUrl = `${environment.apiUrl}/dispositivos`;
 
-  constructor(private api: ApiService) {}
+  constructor(private http: HttpClient) {}
 
-  getAll(params?: Record<string, unknown>): Observable<RespuestaPaginada<DispositivoIot>> {
-    return this.api.getPaginado<DispositivoIot>(this.endpoint, params);
+  listar(): Observable<RespuestaApi<DispositivoIot[]>> {
+    return this.http.get<RespuestaApi<DispositivoIot[]>>(this.apiUrl);
   }
 
-  getByAdulto(adultoMayorId: number): Observable<DispositivoIot[]> {
-    return this.api.get<DispositivoIot[]>(`/adultos-mayores/${adultoMayorId}/dispositivos`).pipe(map(r => r.data));
+  listarSinAsignar(): Observable<RespuestaApi<DispositivoIot[]>> {
+    return this.http.get<RespuestaApi<DispositivoIot[]>>(`${this.apiUrl}/sin-asignar`);
   }
 
-  getById(id: number): Observable<DispositivoIot> {
-    return this.api.get<DispositivoIot>(`${this.endpoint}/${id}`).pipe(map(r => r.data));
+  listarPorAdulto(idAdulto: number): Observable<RespuestaApi<DispositivoIot[]>> {
+    return this.http.get<RespuestaApi<DispositivoIot[]>>(`${this.apiUrl}/adulto/${idAdulto}`);
   }
 
-  create(dispositivo: DispositivoCreate): Observable<DispositivoIot> {
-    return this.api.post<DispositivoIot>(this.endpoint, dispositivo).pipe(map(r => r.data));
+  registrar(request: DispositivoIotRequest): Observable<RespuestaApi<DispositivoIot>> {
+    return this.http.post<RespuestaApi<DispositivoIot>>(this.apiUrl, request);
   }
 
-  update(id: number, datos: Partial<DispositivoCreate>): Observable<DispositivoIot> {
-    return this.api.put<DispositivoIot>(`${this.endpoint}/${id}`, datos).pipe(map(r => r.data));
+  actualizar(id: number, request: DispositivoIotRequest): Observable<RespuestaApi<DispositivoIot>> {
+    return this.http.put<RespuestaApi<DispositivoIot>>(`${this.apiUrl}/${id}`, request);
   }
 
-  delete(id: number): Observable<void> {
-    return this.api.delete<void>(`${this.endpoint}/${id}`).pipe(map(() => void 0));
+  asignar(id: number, idAdulto: number): Observable<RespuestaApi<DispositivoIot>> {
+    return this.http.put<RespuestaApi<DispositivoIot>>(`${this.apiUrl}/${id}/asignar`, { idAdulto });
   }
 
-  getLecturas(dispositivoId: number, params?: { desde?: string; hasta?: string; limit?: number }): Observable<LecturaDispositivo[]> {
-    return this.api.get<LecturaDispositivo[]>(`${this.endpoint}/${dispositivoId}/lecturas`, params).pipe(map(r => r.data));
+  desasignar(id: number): Observable<RespuestaApi<VoidFunction>> {
+    return this.http.put<RespuestaApi<VoidFunction>>(`${this.apiUrl}/${id}/desasignar`, {});
   }
 }

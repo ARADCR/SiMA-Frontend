@@ -1,0 +1,67 @@
+@use './_variables' as v;
+@use './responsive' as r;
+
+// Define spacing map for available space variables
+$spacing: (
+  0: 0,
+  1: v.$space-1,
+  2: v.$space-2,
+  3: v.$space-3,
+  4: v.$space-4,
+  5: v.$space-5,
+  6: v.$space-6,
+  8: v.$space-8,
+  10: v.$space-10,
+  12: v.$space-12
+);
+
+// Margin utilities generated from spacing map
+@each $i, $val in $spacing {
+  .m-#{$i} { margin: $val !important; }
+  .mt-#{$i} { margin-top: $val !important; }
+  .mr-#{$i} { margin-right: $val !important; }
+  .mb-#{$i} { margin-bottom: $val !important; }
+  .ml-#{$i} { margin-left: $val !important; }
+}
+
+// Padding utilities generated from spacing map
+@each $i, $val in $spacing {
+  .p-#{$i} { padding: $val !important; }
+  .pt-#{$i} { padding-top: $val !important; }
+  .pr-#{$i} { padding-right: $val !important; }
+  .pb-#{$i} { padding-bottom: $val !important; }
+  .pl-#{$i} { padding-left: $val !important; }
+}
+
+// Flex helpers
+.flex-center { display: flex; align-items: center; justify-content: center; }
+.flex-between { display: flex; align-items: center; justify-content: space-between; }
+.flex-wrap { flex-wrap: wrap; }
+
+// Text utilities
+.text-center { text-align: center !important; }
+.text-ellipsis { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+// Width/height utilities (percentage based)
+.w-100 { width: 100% !important; }
+.h-100 { height: 100% !important; }
+
+
+
+// Display utilities
+.d-none { display: none !important; }
+
+@include r.respond(xs) { .d-none-xs { display: none !important; } }
+@include r.respond(sm) { .d-none-sm { display: none !important; } }
+@include r.respond(md) { .d-none-md { display: none !important; } }
+@include r.respond(lg) { .d-none-lg { display: none !important; } }
+
+// Fluid grid utility (auto-fit minmax)
+.grid-auto-fit {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(clamp(250px, 30vw, 320px), 1fr));
+  gap: clamp(12px, 2vw, 24px);
+}
+
+
+

@@ -1,6 +1,6 @@
 import { Component, OnInit, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators, AbstractControl } from '@angular/forms';
+import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators, AbstractControl, FormArray, ValidatorFn, ValidationErrors } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
 import { MedicamentoService } from '../../../../core/services/medicamento.service';
 import { AdultoMayorService } from '../../../../core/services/adulto-mayor.service';
@@ -9,6 +9,10 @@ import { AdultoMayor } from '../../../../core/models/adulto-mayor.model';
 
 type ModalMode = 'create' | 'edit' | null;
 
+/**
+ * Componente para agregar, editar o eliminar medicamentos de la agenda.
+ * Implementación para HU-08: Agregar o editar agenda de medicamentos del adulto.
+ */
 @Component({
   selector: 'app-medicamentos',
   standalone: true,
@@ -49,8 +53,7 @@ export class MedicamentosComponent implements OnInit {
   medsFiltrados = computed(() => {
     const txt = this.filtroTexto().toLowerCase();
     return this.medicamentos().filter(m =>
-      !txt || m.nombre.toLowerCase().includes(txt) ||
-      (m.principioActivo ?? '').toLowerCase().includes(txt)
+      !txt || m.nombre.toLowerCase().includes(txt)
     );
   });
 
@@ -65,13 +68,23 @@ export class MedicamentosComponent implements OnInit {
     const adultoId = Number(this.route.snapshot.queryParamMap.get('adultoId')
                   ?? this.route.snapshot.paramMap.get('id'));
 
-    this.adultoSvc.getAll().subscribe({ next: r => this.adultos.set(r.data ?? []) });
+    this.adultoSvc.getAll().subscribe({ 
+      next: r => {
+        const list = r.data ?? [];
+        this.adultos.set(list);
+        if (!adultoId && list.length > 0) {
+          this.adultoActual.set(list[0]);
+          this.cargarMedicamentos(list[0].idAdulto);
+        } else if (!adultoId) {
+          this.loading.set(false);
+        }
+      }
+    });
 
     if (adultoId) {
       this.adultoSvc.getById(adultoId).subscribe({ next: a => this.adultoActual.set(a) });
       this.cargarMedicamentos(adultoId);
-    } else {
-      this.loading.set(false);
+
     }
   }
 
@@ -81,7 +94,7 @@ export class MedicamentosComponent implements OnInit {
       principioActivo:[''],
       dosis:          ['', Validators.required],
       frecuencia:     ['diario', Validators.required],
-      horasToma:      [''],
+      horarios:       this.fb.array([], this.horariosValidator()),
       fechaInicio:    [new Date().toISOString().substring(0, 10), Validators.required],
       fechaFin:       [''],
       instrucciones:  [''],
@@ -90,6 +103,32 @@ export class MedicamentosComponent implements OnInit {
       prescritoPor:   [''],
       adultoMayorId:  [''],
     });
+  }
+
+  get horariosArray(): FormArray {
+    return this.form.get('horarios') as FormArray;
+  }
+
+  addHorario(hora: string = '08:00'): void {
+    if (this.horariosArray.length >= 10) return;
+    this.horariosArray.push(this.fb.control(hora, Validators.required));
+  }
+
+  removeHorario(index: number): void {
+    this.horariosArray.removeAt(index);
+  }
+
+  horariosValidator(): ValidatorFn {
+    return (formArray: AbstractControl): ValidationErrors | null => {
+      if (!(formArray instanceof FormArray)) return null;
+      const values = formArray.controls.map(c => c.value);
+      if (values.length === 0) return { requerido: true };
+      if (values.length > 10) return { maximo: true };
+      
+      const unique = new Set(values);
+      if (unique.size !== values.length) return { duplicado: true };
+      return null;
+    };
   }
 
   cargarMedicamentos(adultoId: number): void {
@@ -104,24 +143,38 @@ export class MedicamentosComponent implements OnInit {
   openCreate(): void {
     this.form.reset({ frecuencia: 'diario', fechaInicio: new Date().toISOString().substring(0, 10),
                       adultoMayorId: this.adultoActual()?.idAdulto ?? '' });
-    this.horasInput.set('');
+    this.horariosArray.clear();
+    this.addHorario();
     this.selected.set(null);
     this.modalMode.set('create');
   }
 
   openEdit(m: Medicamento): void {
     this.selected.set(m);
+    
+    let freq = 'cada_X_horas';
+    if (m.frecuenciaHoras === 24) freq = 'diario';
+    else if (m.frecuenciaHoras === 168) freq = 'semanal';
+
     this.form.patchValue({
-      nombre: m.nombre, principioActivo: m.principioActivo ?? '',
-      dosis: m.dosis, frecuencia: m.frecuencia,
-      fechaInicio: m.fechaInicio?.substring(0, 10) ?? '',
-      fechaFin: m.fechaFin?.substring(0, 10) ?? '',
-      instrucciones: m.instrucciones ?? '',
+      nombre: m.nombre, principioActivo: '',
+      dosis: m.dosis, frecuencia: freq,
+      fechaInicio: m.creadoEn ? m.creadoEn.substring(0, 10) : new Date().toISOString().substring(0, 10),
+      fechaFin: '',
+      instrucciones: m.observaciones ?? '',
       stockActual: m.stockActual ?? null, stockMinimo: m.stockMinimo ?? null,
       prescritoPor: m.prescritoPor ?? '',
-      adultoMayorId: m.adultoMayorId,
+      adultoMayorId: m.idAdulto || '',
     });
-    this.horasInput.set((m.horasToma ?? []).map(h => `${h}:00`).join(', '));
+    
+    this.horariosArray.clear();
+    const horas = m.horarios ?? [];
+    if (horas.length > 0) {
+      horas.forEach((h: any) => this.addHorario(h.horaProgramada.substring(0, 5)));
+    } else {
+      this.addHorario();
+    }
+
     this.modalMode.set('edit');
   }
 
@@ -132,18 +185,21 @@ export class MedicamentosComponent implements OnInit {
     this.saving.set(true);
     const val = this.form.value;
 
-    const horasToma = this.horasInput()
-      .split(',').map(h => parseInt(h.trim().split(':')[0], 10)).filter(n => !isNaN(n));
+    const horasToma = (val.horarios || [])
+      .map((h: string) => parseInt(h.split(':')[0], 10))
+      .filter((n: number) => !isNaN(n));
 
-    const payload: MedicamentoCreate = {
-      nombre: val.nombre, principioActivo: val.principioActivo || undefined,
-      dosis: val.dosis, frecuencia: val.frecuencia,
-      horasToma: horasToma.length ? horasToma : undefined,
-      fechaInicio: val.fechaInicio, fechaFin: val.fechaFin || undefined,
-      instrucciones: val.instrucciones || undefined,
-      stockActual: val.stockActual ?? undefined, stockMinimo: val.stockMinimo ?? undefined,
-      adultoMayorId: Number(val.adultoMayorId || this.adultoActual()?.idAdulto),
-      prescritoPor: val.prescritoPor || undefined,
+    let freqHoras = 24;
+    if (val.frecuencia === 'semanal') freqHoras = 168;
+    else if (val.frecuencia === 'cada_X_horas') freqHoras = 8; // fallback razonable
+
+    const payload: any = {
+      idAdulto: Number(val.adultoMayorId || this.adultoActual()?.idAdulto),
+      nombre: val.nombre,
+      dosis: val.dosis,
+      frecuenciaHoras: freqHoras,
+      observaciones: val.instrucciones || undefined,
+      horarios: horasToma.length ? horasToma.map((h: number) => ({ horaProgramada: `${h.toString().padStart(2, '0')}:00` })) : []
     };
 
     if (this.modalMode() === 'create') {
@@ -152,7 +208,8 @@ export class MedicamentosComponent implements OnInit {
         error: e  => { this.showToast(e.mensaje ?? 'Error', 'error'); this.saving.set(false); }
       });
     } else {
-      this.medSvc.update(this.selected()!.id, payload).subscribe({
+      const idMed = this.selected()!.idMedicamento;
+      this.medSvc.update(idMed, payload).subscribe({
         next: () => { this.showToast('Medicamento actualizado', 'success'); this.closeModal(); this.recargar(); },
         error: e  => { this.showToast(e.mensaje ?? 'Error', 'error'); this.saving.set(false); }
       });
@@ -169,7 +226,8 @@ export class MedicamentosComponent implements OnInit {
   confirmarEliminar(): void {
     const m = this.confirmDelete();
     if (!m) return;
-    this.medSvc.delete(m.id).subscribe({
+    const idMed = m.idMedicamento;
+    this.medSvc.delete(idMed).subscribe({
       next: () => { this.showToast('Medicamento eliminado', 'success'); this.confirmDelete.set(null); this.recargar(); },
       error: e  => { this.showToast(e.mensaje ?? 'Error', 'error'); this.confirmDelete.set(null); }
     });
@@ -189,9 +247,9 @@ export class MedicamentosComponent implements OnInit {
     return this.frecuencias.find(x => x.value === f)?.label ?? f;
   }
 
-  formatHoras(horas?: number[]): string {
-    if (!horas?.length) return '—';
-    return horas.map(h => `${h.toString().padStart(2,'0')}:00`).join(' · ');
+  formatHoras(horarios?: any[]): string {
+    if (!horarios?.length) return '—';
+    return horarios.map(h => h.horaProgramada.substring(0, 5)).join(' · ');
   }
 
   stockAlerta(m: Medicamento): boolean {

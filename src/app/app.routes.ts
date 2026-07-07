@@ -40,14 +40,6 @@ export const routes: Routes = [
     loadChildren: () => import('./modules/cuidador/cuidador.routes').then(m => m.CUIDADOR_ROUTES)
   },
 
-  // Módulo Adulto Mayor
-  {
-    path: 'adulto',
-    canActivate: [authGuard, roleGuard],
-    data: { role: 'Adulto Mayor' },
-    loadChildren: () => import('./modules/adulto-mayor/adulto.routes').then(m => m.ADULTO_ROUTES)
-  },
-
   // Wildcard → login
   {
     path: '**',

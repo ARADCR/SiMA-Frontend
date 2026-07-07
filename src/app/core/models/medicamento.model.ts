@@ -1,22 +1,25 @@
 export type FrecuenciaMedicamento = 'diario' | 'semanal' | 'mensual' | 'cada_X_horas';
 export type EstadoToma = 'pendiente' | 'tomado' | 'omitido' | 'retrasado';
 
+export interface HorarioMedicamento {
+  idHorario: number;
+  horaProgramada: string;
+  activo: boolean;
+}
+
 export interface Medicamento {
-  id: number;
+  idMedicamento: number;
+  idAdulto: number;
   nombre: string;
-  principioActivo?: string;
   dosis: string;
-  frecuencia: FrecuenciaMedicamento;
-  horasToma?: number[];       // e.g. [8, 14, 20]
-  fechaInicio: string;
-  fechaFin?: string;
-  instrucciones?: string;
+  frecuenciaHoras: number;
+  activo: boolean;
+  observaciones?: string;
+  creadoEn: string;
+  horarios?: HorarioMedicamento[];
   stockActual?: number;
   stockMinimo?: number;
-  activo: boolean;
-  adultoMayorId: number;
   prescritoPor?: string;
-  createdAt?: string;
 }
 
 export interface Toma {

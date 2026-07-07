@@ -12,7 +12,7 @@ html, body {
   font-family: v.$font-family;
   background-color: v.$color-bg;
   color: v.$color-text;
-  font-size: 16px;
+  font-size: clamp(14px, 1vw + 12px, 16px);
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -77,20 +77,26 @@ h1, h2, h3, h4, h5, h6 {
   transition: margin-left v.$transition-base;
   min-height: 100vh;
   background: v.$color-bg;
+  
+  // Mobile responsive layout: remove left margin since sidebar will be offcanvas or hidden
+  @media (max-width: v.$bp-md) {
+    margin-left: 0 !important;
+  }
 
   &.sidebar-collapsed {
     margin-left: v.$sidebar-collapsed;
+    @media (max-width: v.$bp-md) {
+      margin-left: 0 !important;
+    }
   }
 }
 
 // --- Page containers ---
 .page-container {
-  padding: v.$space-8;
+  padding: clamp(v.$space-4, 4vw, v.$space-8);
   max-width: 1400px;
   margin: 0 auto;
   animation: fadeIn 0.3s ease;
-
-  @media (max-width: v.$bp-md) { padding: v.$space-4; }
 }
 
 .page-header {

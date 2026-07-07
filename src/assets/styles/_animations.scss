@@ -1,0 +1,32 @@
+// _animations.scss – micro‑animaciones reutilizables
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideInUp {
+  from { transform: translateY(20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes hoverLift {
+  from { transform: translateY(0); }
+  to { transform: translateY(-3px); }
+}
+
+// Mixins to apply the animations
+@mixin fade-in($duration: 0.3s) {
+  animation: fadeIn $duration ease forwards;
+}
+
+@mixin slide-in-up($duration: 0.4s) {
+  animation: slideInUp $duration ease forwards;
+}
+
+@mixin hover-lift {
+  transition: transform 0.2s ease;
+  &:hover {
+    animation: hoverLift 0.2s ease forwards;
+  }
+}
