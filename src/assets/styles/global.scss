@@ -72,6 +72,7 @@ h1, h2, h3, h4, h5, h6 {
 
 .main-content {
   flex: 1;
+  min-width: 0; /* Fix flexbox overflow bug */
   margin-left: v.$sidebar-width;
   padding-top: v.$navbar-height;
   transition: margin-left v.$transition-base;

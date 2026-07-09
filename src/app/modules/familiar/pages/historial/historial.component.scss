@@ -8,7 +8,7 @@
 .btn-outline { display: inline-flex; align-items: center; gap: 7px; padding: 9px 18px; background: white; color: #5C6B7A; border: 1px solid #E2EAF0; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit; }
 .btn-outline:hover { border-color: #2E86AB; color: #2E86AB; }
 
-.card { background: #fff; border-radius: 12px; box-shadow: 0 2px 12px rgba(0,0,0,0.06); }
+.card { background: #fff; border-radius: 12px; box-shadow: 0 2px 12px rgba(0,0,0,0.06); min-width: 0; }
 
 .filters-bar { display: flex; align-items: center; gap: 14px; padding: 14px 18px; margin-bottom: 16px; flex-wrap: wrap; }
 .date-chip { display: flex; align-items: center; gap: 7px; padding: 7px 14px; background: #EBF5FB; border-radius: 20px; font-size: 13px; color: #2E86AB; font-weight: 500; cursor: pointer; }
@@ -58,17 +58,53 @@
 .page-info { font-size: 13px; color: #9CABB8; }
 
 /* ---- Responsive Enhancements for Historial ---- */
+@include r.respond(md) {
+  .header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 16px;
+  }
+}
 @include r.respond(sm) {
+  .page {
+    padding: 16px;
+  }
   .filters-bar {
     flex-direction: column;
-    gap: 8px;
+    align-items: stretch;
+    gap: 12px;
+  }
+  .type-pills {
+    justify-content: center;
+  }
+  .circles-row {
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 16px;
+  }
+  .circle-wrap {
+    flex: 0 0 calc(25% - 16px);
   }
   .table-responsive {
+    width: 100%;
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
-    min-width: 600px;
   }
   .table {
     min-width: 600px;
+  }
+  .pagination {
+    flex-wrap: wrap;
+  }
+}
+@include r.respond(xs) {
+  .page {
+    padding: 12px;
+  }
+  .title {
+    font-size: 24px;
+  }
+  .circle-wrap {
+    flex: 0 0 calc(33.33% - 16px);
   }
 }
