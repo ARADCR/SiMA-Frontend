@@ -37,8 +37,7 @@
 .badge { padding: 3px 10px; border-radius: 20px; font-size: 12px; font-weight: 500; }
 .badge-green { background: #D8F3DC; color: #1A7A4A; }
 .badge-yellow { background: #FEF3E2; color: #B47B12; }
-@use '../../../../../assets/styles/responsive' as r;
-@use '../../../../../assets/styles/utilities' as *;
+
 :host { display: block; }
 .page { padding: 32px;
   @include r.respond(sm) { padding: 16px; } background: #F7FAFC; min-height: calc(100vh - 64px); }

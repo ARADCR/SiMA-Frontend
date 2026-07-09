@@ -27,8 +27,8 @@
       <div class="device-stats">
         <div class="dstat">
           <div class="dstat-lbl">Batería</div>
-          <div class="dstat-val" style="color:#52B788">78%</div>
-          <div class="battery-bar"><div class="battery-fill" style="width:78%; background:#52B788"></div></div>
+          <div class="dstat-val" style="color:#52B788">{{ bateriaPastillero() }}%</div>
+          <div class="battery-bar"><div class="battery-fill" [style.width.%]="bateriaPastillero()" style="background:#52B788"></div></div>
         </div>
         <div class="dstat">
           <div class="dstat-lbl">Última sincronización</div>
@@ -63,27 +63,27 @@
       <div class="device-stats">
         <div class="dstat">
           <div class="dstat-lbl">Batería</div>
-          <div class="dstat-val" style="color:#F4A261">34%</div>
-          <div class="battery-bar"><div class="battery-fill" style="width:34%; background:#F4A261"></div></div>
+          <div class="dstat-val" style="color:#F4A261">{{ bateriaPulsera() }}%</div>
+          <div class="battery-bar"><div class="battery-fill" [style.width.%]="bateriaPulsera()" style="background:#F4A261"></div></div>
         </div>
         <div class="vitals-grid">
           <div class="vital">
-            <div class="vital-val">72</div>
+            <div class="vital-val">{{ bpm() }}</div>
             <div class="vital-lbl">BPM</div>
             <div style="font-size:10px; color:#52B788; margin-top:2px">Normal</div>
           </div>
           <div class="vital">
-            <div class="vital-val">98.2</div>
+            <div class="vital-val">{{ spo2() }}</div>
             <div class="vital-lbl">SpO₂ %</div>
             <div style="font-size:10px; color:#52B788; margin-top:2px">Normal</div>
           </div>
           <div class="vital">
-            <div class="vital-val">36.5</div>
+            <div class="vital-val">{{ temp() }}</div>
             <div class="vital-lbl">Temp °C</div>
             <div style="font-size:10px; color:#52B788; margin-top:2px">Normal</div>
           </div>
           <div class="vital">
-            <div class="vital-val">2,340</div>
+            <div class="vital-val">{{ pasos() | number }}</div>
             <div class="vital-lbl">Pasos</div>
             <div style="font-size:10px; color:#2E86AB; margin-top:2px">Hoy</div>
           </div>

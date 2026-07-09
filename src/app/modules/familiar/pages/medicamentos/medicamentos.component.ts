@@ -157,10 +157,10 @@ export class MedicamentosComponent implements OnInit {
     else if (m.frecuenciaHoras === 168) freq = 'semanal';
 
     this.form.patchValue({
-      nombre: m.nombre, principioActivo: '',
+      nombre: m.nombre, principioActivo: (m as any).principioActivo ?? '',
       dosis: m.dosis, frecuencia: freq,
       fechaInicio: m.creadoEn ? m.creadoEn.substring(0, 10) : new Date().toISOString().substring(0, 10),
-      fechaFin: '',
+      fechaFin: (m as any).fechaFin ?? '',
       instrucciones: m.observaciones ?? '',
       stockActual: m.stockActual ?? null, stockMinimo: m.stockMinimo ?? null,
       prescritoPor: m.prescritoPor ?? '',
@@ -199,7 +199,12 @@ export class MedicamentosComponent implements OnInit {
       dosis: val.dosis,
       frecuenciaHoras: freqHoras,
       observaciones: val.instrucciones || undefined,
-      horarios: horasToma.length ? horasToma.map((h: number) => ({ horaProgramada: `${h.toString().padStart(2, '0')}:00` })) : []
+      horarios: horasToma.length ? horasToma.map((h: number) => ({ horaProgramada: `${h.toString().padStart(2, '0')}:00` })) : [],
+      principioActivo: val.principioActivo || undefined,
+      fechaFin: val.fechaFin || undefined,
+      stockActual: val.stockActual || null,
+      stockMinimo: val.stockMinimo || null,
+      prescritoPor: val.prescritoPor || undefined
     };
 
     if (this.modalMode() === 'create') {
