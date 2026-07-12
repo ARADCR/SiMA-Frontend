@@ -1,35 +1,38 @@
 <div class="page">
 
+  <!-- ─── Header ──────────────────────────────────────────── -->
   <div class="page-header">
     <div>
       <h1 class="page-title">Adultos Mayores</h1>
       <p class="page-sub">Administración / Adultos Mayores</p>
     </div>
-    <button class="btn-primary" (click)="abrirModal('crear')">
+    <button class="btn-primary" (click)="abrirModalCrear()" id="btn-registrar-adulto">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
       Registrar adulto
     </button>
   </div>
 
+  <!-- ─── Estadísticas ────────────────────────────────────── -->
   <div class="stats-row">
     <div class="stat-card stat-card--blue">
-      <div class="stat-val">{{ adultos().length }}</div>
+      <div class="stat-val">{{ totalRegistrados }}</div>
       <div class="stat-lbl">Total registrados</div>
     </div>
     <div class="stat-card stat-card--green">
-      <div class="stat-val">{{ totalActivos() }}</div>
+      <div class="stat-val">{{ totalActivos }}</div>
       <div class="stat-lbl">Activos</div>
     </div>
     <div class="stat-card stat-card--orange">
-      <div class="stat-val">{{ conDispositivo() }}</div>
-      <div class="stat-lbl">Con dispositivo IoT</div>
+      <div class="stat-val">{{ conFamiliar }}</div>
+      <div class="stat-lbl">Con familiar asignado</div>
     </div>
     <div class="stat-card stat-card--red">
-      <div class="stat-val">{{ sinCuidador() }}</div>
-      <div class="stat-lbl">Sin cuidador</div>
+      <div class="stat-val">{{ totalInactivos }}</div>
+      <div class="stat-lbl">Inactivos</div>
     </div>
   </div>
 
+  <!-- ─── Toolbar ─────────────────────────────────────────── -->
   <div class="toolbar">
     <div class="search-wrap">
       <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
@@ -38,134 +41,155 @@
       <input
         class="search-input"
         type="text"
-        placeholder="Buscar por nombre o CURP..."
-        [ngModel]="busqueda()"
-        (ngModelChange)="busqueda.set($event)" />
+        placeholder="Buscar por nombre, familiar o condición..."
+        [(ngModel)]="busqueda"
+        id="search-adultos" />
     </div>
-    <select class="filter-select" [ngModel]="estadoFiltro()" (ngModelChange)="estadoFiltro.set($event)">
-      <option value="">Todos los estados</option>
+    <select class="filter-select" [(ngModel)]="estadoFiltro" (change)="setFiltro(estadoFiltro)">
+      <option value="todos">Todos los estados</option>
       <option value="activo">Activos</option>
       <option value="inactivo">Inactivos</option>
     </select>
   </div>
 
+  <!-- ─── Tarjetas de adultos mayores ─────────────────────── -->
   <div class="cards-grid">
-    @for (a of adultosFiltrados(); track a.id) {
-      <div class="adulto-card">
-        <div class="adulto-card-top">
-          <div class="adulto-avatar" [style.background]="a.avatarBg">{{ a.initials }}</div>
-          <div>
-            <div class="adulto-name">{{ a.nombre }}</div>
-            <div class="adulto-age">{{ a.edad }} años</div>
-          </div>
-          <span class="estado-badge" [class.estado-badge--active]="a.activo" [class.estado-badge--inactive]="!a.activo">
-            {{ a.activo ? 'Activo' : 'Inactivo' }}
+    <div class="adulto-card" *ngFor="let a of adultosFiltrados; let i = index">
+      <div class="adulto-card-top">
+        <div class="adulto-avatar" [style.background]="getAvatarColor(a)">{{ getInitials(a) }}</div>
+        <div>
+          <div class="adulto-name">{{ a.nombre }} {{ a.apellido }}</div>
+          <div class="adulto-age">{{ a.edad ? a.edad + ' años' : 'Edad desconocida' }}</div>
+        </div>
+        <span class="estado-badge" [class.estado-badge--active]="a.activo" [class.estado-badge--inactive]="!a.activo">
+          {{ a.activo ? 'Activo' : 'Inactivo' }}
+        </span>
+      </div>
+
+      <div class="adulto-meta">
+        <div class="meta-row">
+          <span class="meta-label">Familiar responsable</span>
+          <span class="meta-value" [class.meta-value--empty]="!a.familiarNombre">{{ a.familiarNombre || 'Sin asignar' }}</span>
+        </div>
+        <div class="meta-row">
+          <span class="meta-label">Condiciones médicas</span>
+          <span class="meta-value" [class.meta-value--empty]="!a.condicionesMedicas" [title]="a.condicionesMedicas || ''">
+            {{ (a.condicionesMedicas && a.condicionesMedicas.length > 25) ? (a.condicionesMedicas | slice:0:25) + '...' : (a.condicionesMedicas || 'Ninguna') }}
           </span>
         </div>
-
-        <div class="adulto-meta">
-          <div class="meta-row">
-            <span class="meta-label">Familiar responsable</span>
-            <span class="meta-value">{{ a.familiar }}</span>
-          </div>
-          <div class="meta-row">
-            <span class="meta-label">Cuidador asignado</span>
-            <span class="meta-value" [class.meta-value--empty]="!a.cuidador">{{ a.cuidador || 'Sin asignar' }}</span>
-          </div>
-          <div class="meta-row">
-            <span class="meta-label">CURP</span>
-            <span class="meta-value meta-value--mono">{{ a.curp }}</span>
-          </div>
-          <div class="meta-row">
-            <span class="meta-label">Dispositivo IoT</span>
-            @if (a.dispositivo) {
-              <span class="badge-device">{{ a.dispositivo }}</span>
-            } @else {
-              <span class="meta-value--empty">Sin asignar</span>
-            }
-          </div>
+        <div class="meta-row">
+          <span class="meta-label">Contacto médico</span>
+          <span class="meta-value" [class.meta-value--empty]="!a.contactoMedico">{{ a.contactoMedico || 'Sin registrar' }}</span>
         </div>
-
-        <div class="compliance-wrap">
-          <div class="compliance-header">
-            <span class="compliance-lbl">Cumplimiento semanal</span>
-            <span class="compliance-val" [style.color]="complianceColor(a.compliance)" [style.background]="complianceBg(a.compliance)">{{ a.compliance }}%</span>
-          </div>
-          <div class="compliance-bar">
-            <div class="compliance-fill" [style.width]="a.compliance + '%'" [style.background]="complianceBarColor(a.compliance)"></div>
-          </div>
-        </div>
-
-        <div class="adulto-actions">
-          <button class="btn-outline" (click)="abrirModal('editar', a)">Ver detalle</button>
-          <button class="btn-ghost" (click)="toggleEstado(a)">{{ a.activo ? 'Desactivar' : 'Activar' }}</button>
+        <div class="meta-row">
+          <span class="meta-label">Registro</span>
+          <span class="meta-value meta-value--mono">{{ a.creadoEn | date:'dd/MM/yyyy' }}</span>
         </div>
       </div>
-    }
+
+      <div class="adulto-actions">
+        <button class="btn-outline" (click)="abrirModalEditar(a)">Editar</button>
+        <button class="btn-ghost" *ngIf="a.activo" (click)="abrirModalEstado(a)">Desactivar</button>
+        <button class="btn-ghost" *ngIf="!a.activo" (click)="abrirModalEstado(a)" style="color: #16A34A; border-color: #BBF7D0;">Activar</button>
+      </div>
+    </div>
+  </div>
+
+  <div *ngIf="adultosFiltrados.length === 0" class="empty-state-cards">
+    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#CBD5E1" stroke-width="1.5">
+      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+      <circle cx="9" cy="7" r="4"></circle>
+      <line x1="23" y1="11" x2="17" y2="11"></line>
+    </svg>
+    <p>No se encontraron adultos mayores.</p>
   </div>
 
   <div class="table-footer-text">
-    Mostrando {{ adultosFiltrados().length }} de {{ adultos().length }} registros
+    Mostrando {{ adultosFiltrados.length }} de {{ totalRegistrados }} registros
   </div>
 
 </div>
 
-@if (modal()) {
-  <div class="modal-overlay" (click)="cerrarModal()">
-    <div class="modal" (click)="$event.stopPropagation()" role="dialog">
-      <div class="modal-header">
-        <h2>{{ modal() === 'crear' ? 'Registrar adulto mayor' : 'Editar adulto mayor' }}</h2>
-        <button class="modal-close" (click)="cerrarModal()" aria-label="Cerrar">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
-        </button>
-      </div>
-      <div class="modal-body">
-        <div class="form-row">
-          <div class="form-group">
-            <label>Nombre completo</label>
-            <input type="text" placeholder="Ej. Elena Rodríguez" [ngModel]="form().nombre" (ngModelChange)="setField('nombre', $event)">
-          </div>
-          <div class="form-group">
-            <label>Fecha de nacimiento</label>
-            <input type="date" [ngModel]="form().fechaNac" (ngModelChange)="setField('fechaNac', $event)">
-          </div>
+<!-- ===== Modal Crear / Editar ===== -->
+<div class="modal-overlay" *ngIf="showModal" (click)="cerrarModal()">
+  <div class="modal" (click)="$event.stopPropagation()" role="dialog" aria-modal="true">
+    <div class="modal-header">
+      <h2>{{ isEdit ? 'Editar adulto mayor' : 'Registrar adulto mayor' }}</h2>
+      <button class="modal-close" (click)="cerrarModal()" aria-label="Cerrar">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div class="form-row">
+        <div class="form-group">
+          <label>Nombre <span class="required">*</span></label>
+          <input type="text" placeholder="Ej. Elena" [(ngModel)]="form.nombre" id="input-nombre">
         </div>
         <div class="form-group">
-          <label>CURP</label>
-          <input type="text" placeholder="XXXX000000XXXXXXXX00" class="mono-input" [ngModel]="form().curp" (ngModelChange)="setField('curp', $event)">
-        </div>
-        <div class="form-row">
-          <div class="form-group">
-            <label>Familiar responsable</label>
-            <select [ngModel]="form().familiar" (ngModelChange)="setField('familiar', $event)">
-              <option value="">Seleccionar...</option>
-              <option>María García</option>
-              <option>Pedro López</option>
-              <option>Ana Torres</option>
-              <option>Juan Flores</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label>Cuidador asignado</label>
-            <select [ngModel]="form().cuidador" (ngModelChange)="setField('cuidador', $event)">
-              <option value="">Sin asignar</option>
-              <option>Carlos Andrade</option>
-              <option>Laura Vega</option>
-            </select>
-          </div>
+          <label>Apellido <span class="required">*</span></label>
+          <input type="text" placeholder="Ej. Rodríguez" [(ngModel)]="form.apellido" id="input-apellido">
         </div>
       </div>
-      <div class="modal-footer">
-        <button class="btn-secondary" (click)="cerrarModal()">Cancelar</button>
-        <button class="btn-primary" (click)="guardar()">{{ modal() === 'crear' ? 'Registrar' : 'Guardar cambios' }}</button>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Fecha de nacimiento</label>
+          <input type="date" [(ngModel)]="form.fechaNacimiento" id="input-fecha-nac">
+        </div>
+        <div class="form-group">
+          <label>Contacto médico</label>
+          <input type="text" placeholder="Dr. / Clínica / Teléfono" [(ngModel)]="form.contactoMedico" id="input-contacto-medico">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Condiciones médicas</label>
+        <textarea placeholder="Diabetes, hipertensión, etc." [(ngModel)]="form.condicionesMedicas" rows="3" id="input-condiciones"></textarea>
       </div>
     </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" (click)="cerrarModal()">Cancelar</button>
+      <button class="btn-primary" (click)="guardar()" [disabled]="guardando" id="btn-guardar-adulto">
+        <span class="spinner" *ngIf="guardando"></span>
+        {{ guardando ? 'Guardando...' : (isEdit ? 'Guardar cambios' : 'Registrar') }}
+      </button>
+    </div>
   </div>
-}
+</div>
 
-@if (toast()) {
-  <div class="toast toast-success" role="alert">
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
-    {{ toast() }}
+<!-- ===== Modal Confirmar Eliminación / Desactivación ===== -->
+<div class="modal-overlay" *ngIf="showDeleteModal" (click)="cerrarModalEstado()">
+  <div class="modal modal--sm" (click)="$event.stopPropagation()" role="dialog" aria-modal="true" style="text-align: center;">
+    <div class="modal-body" style="padding: 32px 24px 16px;">
+      <div class="delete-icon-wrap" [style.background]="adultoParaEliminar?.activo ? '#FEF2F2' : '#DCFCE7'" [style.color]="adultoParaEliminar?.activo ? '#EF4444' : '#16A34A'">
+        <svg *ngIf="adultoParaEliminar?.activo" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+          <line x1="12" y1="9" x2="12" y2="13"></line>
+          <line x1="12" y1="17" x2="12.01" y2="17"></line>
+        </svg>
+        <svg *ngIf="!adultoParaEliminar?.activo" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+          <polyline points="22 4 12 14.01 9 11.01"></polyline>
+        </svg>
+      </div>
+      <h3 class="delete-title">{{ adultoParaEliminar?.activo ? 'Desactivar Cuenta' : 'Reactivar Cuenta' }}</h3>
+      <p class="delete-msg">
+        ¿Estás seguro de que deseas {{ adultoParaEliminar?.activo ? 'desactivar' : 'reactivar' }} la cuenta de
+        <strong>{{ adultoParaEliminar?.nombre }} {{ adultoParaEliminar?.apellido }}</strong>?
+      </p>
+      <p class="delete-sub">{{ adultoParaEliminar?.activo ? 'El perfil del familiar asociado no se desactivará, solo se desactiva el perfil de este adulto mayor.' : 'La cuenta volverá a estar activa y visible para el familiar.' }}</p>
+    </div>
+    <div class="modal-footer modal-footer--center">
+      <button class="btn-secondary" (click)="cerrarModalEstado()">Cancelar</button>
+      <button class="btn-danger" (click)="confirmarEstado()" [disabled]="eliminando" [style.background]="adultoParaEliminar?.activo ? '#EF4444' : '#16A34A'" id="btn-confirmar-estado">
+        <span class="spinner" *ngIf="eliminando"></span>
+        {{ eliminando ? 'Procesando...' : (adultoParaEliminar?.activo ? 'Sí, desactivar' : 'Sí, reactivar') }}
+      </button>
+    </div>
   </div>
-}
+</div>
+
+<!-- ===== Toast ===== -->
+<div class="toast" [class.toast-success]="toastTipo === 'success'" [class.toast-error]="toastTipo === 'error'" *ngIf="toastMsg" role="alert">
+  <svg *ngIf="toastTipo === 'success'" width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+  <svg *ngIf="toastTipo === 'error'" width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
+  {{ toastMsg }}
+</div>

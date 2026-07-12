@@ -43,4 +43,8 @@ export class AdultoMayorService {
   delete(id: number): Observable<void> {
     return this.api.delete<void>(`${this.endpoint}/${id}`).pipe(map(() => void 0));
   }
+
+  reactivar(id: number): Observable<void> {
+    return this.api.put<void>(`${this.endpoint}/${id}/reactivar`, {}).pipe(map(() => void 0));
+  }
 }

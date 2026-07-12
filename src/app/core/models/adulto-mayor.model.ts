@@ -8,6 +8,8 @@ export interface AdultoMayor {
   contactoMedico?: string;
   activo: boolean;
   creadoEn?: string;
+  familiarId?: number;
+  familiarNombre?: string;
 }
 
 export interface AdultoMayorCreate {

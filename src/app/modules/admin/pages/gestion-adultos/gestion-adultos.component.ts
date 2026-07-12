@@ -1,28 +1,15 @@
-import { Component, signal, computed } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-
-interface AdultoMayor {
-  id: number;
-  nombre: string;
-  initials: string;
-  avatarBg: string;
-  edad: number;
-  fechaNac: string;
-  curp: string;
-  familiar: string;
-  cuidador: string;
-  dispositivo: string;
-  compliance: number;
-  activo: boolean;
-}
+import { AdultoMayorService } from '../../../../core/services/adulto-mayor.service';
+import { AdultoMayor, AdultoMayorCreate, AdultoMayorUpdate } from '../../../../core/models/adulto-mayor.model';
 
 interface AdultoForm {
   nombre: string;
-  fechaNac: string;
-  curp: string;
-  familiar: string;
-  cuidador: string;
+  apellido: string;
+  fechaNacimiento: string;
+  condicionesMedicas: string;
+  contactoMedico: string;
 }
 
 @Component({
@@ -32,103 +19,213 @@ interface AdultoForm {
   templateUrl: './gestion-adultos.component.html',
   styleUrls: ['./gestion-adultos.component.scss']
 })
-export class GestionAdultosComponent {
-  busqueda = signal('');
-  estadoFiltro = signal<'activo' | 'inactivo' | ''>('');
-  modal = signal<'crear' | 'editar' | null>(null);
-  toast = signal<string | null>(null);
-  form = signal<AdultoForm>({ nombre: '', fechaNac: '', curp: '', familiar: '', cuidador: '' });
+export class GestionAdultosComponent implements OnInit {
+  adultos: AdultoMayor[] = [];
+  busqueda = '';
+  estadoFiltro: 'todos' | 'activo' | 'inactivo' = 'todos';
 
-  adultos = signal<AdultoMayor[]>([
-    { id: 1, nombre: 'Elena Rodríguez', initials: 'ER', avatarBg: '#2E86AB', edad: 78, fechaNac: '12/03/1948', curp: 'ROEE480312MDFDRX01', familiar: 'María García',  cuidador: 'Carlos Andrade', dispositivo: 'ESP32-001', compliance: 92, activo: true  },
-    { id: 2, nombre: 'José Martínez',   initials: 'JM', avatarBg: '#52B788', edad: 82, fechaNac: '05/07/1944', curp: 'MARJ440705HDFRTX02', familiar: 'Pedro López',   cuidador: 'Laura Vega',     dispositivo: 'ESP32-003', compliance: 78, activo: true  },
-    { id: 3, nombre: 'Rosa Pérez',      initials: 'RP', avatarBg: '#E76F51', edad: 75, fechaNac: '20/11/1951', curp: 'PERR511120MDFRZX03', familiar: 'Ana Torres',    cuidador: 'Carlos Andrade', dispositivo: '',          compliance: 65, activo: true  },
-    { id: 4, nombre: 'Luis García',     initials: 'LG', avatarBg: '#F4A261', edad: 80, fechaNac: '18/04/1946', curp: 'GALA460418HDFRCX04', familiar: 'Ana Torres',    cuidador: '',               dispositivo: 'ESP32-007', compliance: 88, activo: true  },
-    { id: 5, nombre: 'Carmen Flores',   initials: 'CF', avatarBg: '#9CABB8', edad: 73, fechaNac: '30/09/1953', curp: 'FLOC530930MDFRLX05', familiar: 'Juan Flores',   cuidador: '',               dispositivo: '',          compliance: 45, activo: false },
-    { id: 6, nombre: 'Manuel Herrera',  initials: 'MH', avatarBg: '#6C63FF', edad: 85, fechaNac: '14/02/1941', curp: 'HERM410214HDFRRX06', familiar: 'María García',  cuidador: 'Laura Vega',     dispositivo: 'ESP32-011', compliance: 95, activo: true  },
-  ]);
+  // Modal crear/editar
+  showModal = false;
+  isEdit = false;
+  editandoId: number | null = null;
+  form: AdultoForm = this.formVacio();
+  guardando = false;
 
-  adultosFiltrados = computed(() => {
-    const txt = this.busqueda().toLowerCase();
-    const est = this.estadoFiltro();
-    return this.adultos().filter(a => {
-      const matchTxt = !txt || a.nombre.toLowerCase().includes(txt) || a.curp.toLowerCase().includes(txt);
-      const matchEst = !est || (est === 'activo' ? a.activo : !a.activo);
+  // Modal eliminar
+  showDeleteModal = false;
+  adultoParaEliminar: AdultoMayor | null = null;
+  eliminando = false;
+
+  // Toast
+  toastMsg = '';
+  toastTipo: 'success' | 'error' = 'success';
+
+  constructor(private adultoService: AdultoMayorService) {}
+
+  ngOnInit(): void {
+    this.cargarAdultos();
+  }
+
+  cargarAdultos(): void {
+    this.adultoService.getAllAdmin().subscribe({
+      next: (data) => this.adultos = data,
+      error: (err) => this.mostrarToast(err.mensaje || 'Error al cargar adultos mayores', 'error')
+    });
+  }
+
+  // ── Filtros ──────────────────────────────────────────────────────
+
+  get adultosFiltrados(): AdultoMayor[] {
+    const txt = this.busqueda.toLowerCase();
+    return this.adultos.filter(a => {
+      const matchTxt = !txt
+        || `${a.nombre} ${a.apellido}`.toLowerCase().includes(txt)
+        || (a.familiarNombre || '').toLowerCase().includes(txt)
+        || (a.condicionesMedicas || '').toLowerCase().includes(txt);
+      const matchEst = this.estadoFiltro === 'todos'
+        || (this.estadoFiltro === 'activo' ? a.activo : !a.activo);
       return matchTxt && matchEst;
     });
-  });
-
-  totalActivos   = computed(() => this.adultos().filter(a => a.activo).length);
-  conDispositivo = computed(() => this.adultos().filter(a => !!a.dispositivo).length);
-  sinCuidador    = computed(() => this.adultos().filter(a => !a.cuidador && a.activo).length);
-
-  complianceColor(v: number): string {
-    if (v >= 80) return '#1A7A4A';
-    if (v >= 60) return '#B47B12';
-    return '#C0452A';
   }
 
-  complianceBg(v: number): string {
-    if (v >= 80) return '#D8F3DC';
-    if (v >= 60) return '#FEF3E2';
-    return '#FDE8E0';
+  get totalRegistrados(): number { return this.adultos.length; }
+  get totalActivos(): number { return this.adultos.filter(a => a.activo).length; }
+  get totalInactivos(): number { return this.adultos.filter(a => !a.activo).length; }
+  get conFamiliar(): number { return this.adultos.filter(a => !!a.familiarNombre).length; }
+
+  setFiltro(filtro: 'todos' | 'activo' | 'inactivo'): void {
+    this.estadoFiltro = filtro;
   }
 
-  complianceBarColor(v: number): string {
-    if (v >= 80) return '#52B788';
-    if (v >= 60) return '#F4A261';
-    return '#E76F51';
+  // ── Helpers ──────────────────────────────────────────────────────
+
+  getInitials(a: AdultoMayor): string {
+    return ((a.nombre?.[0] || '') + (a.apellido?.[0] || '')).toUpperCase();
   }
 
-  abrirModal(modo: 'crear' | 'editar', adulto?: AdultoMayor): void {
-    if (adulto) {
-      this.form.set({ nombre: adulto.nombre, fechaNac: adulto.fechaNac, curp: adulto.curp, familiar: adulto.familiar, cuidador: adulto.cuidador });
-    } else {
-      this.form.set({ nombre: '', fechaNac: '', curp: '', familiar: '', cuidador: '' });
-    }
-    this.modal.set(modo);
+  getAvatarColor(a: AdultoMayor): string {
+    const colors = ['#2E86AB', '#52B788', '#E76F51', '#F4A261', '#6C63FF', '#9B5DE5', '#00BBF9', '#00F5D4'];
+    return colors[(a.idAdulto || 0) % colors.length];
   }
 
-  setField<K extends keyof AdultoForm>(key: K, value: AdultoForm[K]): void {
-    this.form.update(f => ({ ...f, [key]: value }));
+  calcularEdad(fechaNac: string): number | null {
+    if (!fechaNac) return null;
+    const hoy = new Date();
+    const nac = new Date(fechaNac);
+    let edad = hoy.getFullYear() - nac.getFullYear();
+    const m = hoy.getMonth() - nac.getMonth();
+    if (m < 0 || (m === 0 && hoy.getDate() < nac.getDate())) edad--;
+    return edad;
   }
 
-  cerrarModal(): void { this.modal.set(null); }
+  // ── Modal Crear / Editar ─────────────────────────────────────────
+
+  abrirModalCrear(): void {
+    this.isEdit = false;
+    this.editandoId = null;
+    this.form = this.formVacio();
+    this.showModal = true;
+  }
+
+  abrirModalEditar(a: AdultoMayor): void {
+    this.isEdit = true;
+    this.editandoId = a.idAdulto;
+    this.form = {
+      nombre: a.nombre,
+      apellido: a.apellido,
+      fechaNacimiento: a.fechaNacimiento ? a.fechaNacimiento.substring(0, 10) : '',
+      condicionesMedicas: a.condicionesMedicas || '',
+      contactoMedico: a.contactoMedico || ''
+    };
+    this.showModal = true;
+  }
+
+  cerrarModal(): void {
+    this.showModal = false;
+    this.guardando = false;
+  }
 
   guardar(): void {
-    const f = this.form();
-    if (!f.nombre.trim()) return;
-    if (this.modal() === 'crear') {
-      const words = f.nombre.trim().split(' ');
-      const inits = (words[0]?.[0] ?? '') + (words[1]?.[0] ?? '');
-      const colors = ['#2E86AB', '#52B788', '#E76F51', '#F4A261', '#6C63FF'];
-      this.adultos.update(list => [...list, {
-        id: list.length + 1,
-        nombre: f.nombre,
-        initials: inits.toUpperCase(),
-        avatarBg: colors[list.length % colors.length],
-        edad: 0, fechaNac: f.fechaNac, curp: f.curp,
-        familiar: f.familiar, cuidador: f.cuidador,
-        dispositivo: '', compliance: 0, activo: true
-      }]);
-    } else {
-      const nombre = f.nombre;
-      this.adultos.update(list => list.map(x => {
-        if (x.nombre === nombre) return { ...x, ...f };
-        return x;
-      }));
+    if (!this.form.nombre.trim() || !this.form.apellido.trim()) {
+      this.mostrarToast('Nombre y apellido son obligatorios', 'error');
+      return;
     }
-    this.cerrarModal();
-    this.showToast('Adulto mayor guardado correctamente');
+    this.guardando = true;
+
+    if (this.isEdit && this.editandoId) {
+      const dto: AdultoMayorUpdate = {
+        nombre: this.form.nombre,
+        apellido: this.form.apellido,
+        fechaNacimiento: this.form.fechaNacimiento || undefined,
+        condicionesMedicas: this.form.condicionesMedicas || undefined,
+        contactoMedico: this.form.contactoMedico || undefined
+      };
+      this.adultoService.update(this.editandoId, dto).subscribe({
+        next: () => {
+          this.mostrarToast('Adulto mayor actualizado exitosamente', 'success');
+          this.cerrarModal();
+          this.cargarAdultos();
+        },
+        error: (err) => {
+          this.mostrarToast(err.mensaje || 'Error al actualizar', 'error');
+          this.guardando = false;
+        }
+      });
+    } else {
+      const dto: AdultoMayorCreate = {
+        nombre: this.form.nombre,
+        apellido: this.form.apellido,
+        fechaNacimiento: this.form.fechaNacimiento || undefined as any,
+        condicionesMedicas: this.form.condicionesMedicas || undefined,
+        contactoMedico: this.form.contactoMedico || undefined
+      };
+      this.adultoService.create(dto).subscribe({
+        next: () => {
+          this.mostrarToast('Adulto mayor registrado exitosamente', 'success');
+          this.cerrarModal();
+          this.cargarAdultos();
+        },
+        error: (err) => {
+          this.mostrarToast(err.mensaje || 'Error al registrar', 'error');
+          this.guardando = false;
+        }
+      });
+    }
   }
 
-  toggleEstado(a: AdultoMayor): void {
-    this.adultos.update(list => list.map(x => x.id === a.id ? { ...x, activo: !x.activo } : x));
-    this.showToast(`Adulto mayor ${a.activo ? 'desactivado' : 'activado'} correctamente`);
+  // ── Modal Estado (Activar/Desactivar) ──────────────────────────
+
+  abrirModalEstado(a: AdultoMayor): void {
+    this.adultoParaEliminar = a;
+    this.showDeleteModal = true;
   }
 
-  private showToast(msg: string): void {
-    this.toast.set(msg);
-    setTimeout(() => this.toast.set(null), 3500);
+  cerrarModalEstado(): void {
+    this.showDeleteModal = false;
+    this.adultoParaEliminar = null;
+    this.eliminando = false;
+  }
+
+  confirmarEstado(): void {
+    if (!this.adultoParaEliminar) return;
+    this.eliminando = true;
+    
+    if (this.adultoParaEliminar.activo) {
+      this.adultoService.delete(this.adultoParaEliminar.idAdulto).subscribe({
+        next: () => {
+          this.mostrarToast('Adulto mayor desactivado exitosamente', 'success');
+          this.cerrarModalEstado();
+          this.cargarAdultos();
+        },
+        error: (err) => {
+          this.mostrarToast(err.mensaje || 'Error al desactivar', 'error');
+          this.eliminando = false;
+        }
+      });
+    } else {
+      this.adultoService.reactivar(this.adultoParaEliminar.idAdulto).subscribe({
+        next: () => {
+          this.mostrarToast('Adulto mayor reactivado exitosamente', 'success');
+          this.cerrarModalEstado();
+          this.cargarAdultos();
+        },
+        error: (err) => {
+          this.mostrarToast(err.mensaje || 'Error al reactivar', 'error');
+          this.eliminando = false;
+        }
+      });
+    }
+  }
+
+  // ── Toast ────────────────────────────────────────────────────────
+
+  private mostrarToast(msg: string, tipo: 'success' | 'error' = 'success'): void {
+    this.toastMsg = msg;
+    this.toastTipo = tipo;
+    setTimeout(() => this.toastMsg = '', 4000);
+  }
+
+  private formVacio(): AdultoForm {
+    return { nombre: '', apellido: '', fechaNacimiento: '', condicionesMedicas: '', contactoMedico: '' };
   }
 }
