@@ -66,10 +66,15 @@
           <td class="muted">{{ disp.fechaRegistro | date:'dd/MM/yyyy HH:mm' }}</td>
           <td>
             <div class="actions">
+              <!-- Asignar rápido (solo si libre) -->
+              <button class="btn-icon" *ngIf="!disp.idAdulto" (click)="abrirModalAsignar(disp)" title="Asignar dispositivo" style="color: #16A34A;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><line x1="19" y1="8" x2="23" y2="8"></line><line x1="21" y1="6" x2="21" y2="10"></line></svg>
+              </button>
               <button class="btn-icon" (click)="abrirModalEdicion(disp)" title="Editar">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
               </button>
-              <button class="btn-icon text-red" *ngIf="disp.idAdulto" (click)="desasignar(disp)" title="Desasignar">
+              <!-- Desasignar (solo si asignado) -->
+              <button class="btn-icon btn-icon--danger" *ngIf="disp.idAdulto" (click)="abrirModalDesasignar(disp)" title="Desasignar dispositivo" id="btn-desasignar-{{ disp.idDispositivo }}">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18.36 6.64a9 9 0 1 1-12.73 0"></path><line x1="12" y1="2" x2="12" y2="12"></line></svg>
               </button>
             </div>
@@ -83,6 +88,80 @@
         </tr>
       </tbody>
     </table>
+  </div>
+</div>
+
+<!-- ===== Modal Confirmar Desasignación ===== -->
+<div class="modal-backdrop" *ngIf="showConfirmModal" (click)="cerrarModalDesasignar()">
+  <div class="modal-content modal-content--sm" (click)="$event.stopPropagation()" role="dialog" aria-modal="true" style="text-align: center; padding-top: 32px;">
+    
+    <div style="display: flex; align-items: center; justify-content: center; margin: 0 auto 20px; background: #FEF2F2; color: #EF4444; width: 60px; height: 60px; border-radius: 50%;">
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+        <line x1="12" y1="9" x2="12" y2="13"></line>
+        <line x1="12" y1="17" x2="12.01" y2="17"></line>
+      </svg>
+    </div>
+
+    <h2 style="color: #1B2B3A; font-size: 19px; font-weight: 700; margin: 0 0 10px;">Desasignar Dispositivo</h2>
+
+    <div class="modal-body" style="padding: 0 24px 24px;">
+      <p style="font-size: 14px; color: #5C6B7A; margin: 0 0 12px; line-height: 1.5;">
+        El dispositivo <strong style="color: #1B2B3A; font-family: 'Courier New', monospace; font-size: 14px; background: #F0F4F8; padding: 3px 6px; border-radius: 4px;">{{ dispositivoParaDesasignar?.identificadorFisico }}</strong> será desvinculado de su paciente actual.
+      </p>
+      <p style="font-size: 13px; color: #9CABB8; margin: 0;">
+        Esta acción no se puede deshacer.
+      </p>
+    </div>
+
+    <div class="modal-footer" style="background: #FAFAFA; justify-content: center; border-top: 1px solid #E2EAF0; padding: 16px 24px; display: flex; gap: 12px;">
+      <button class="btn-outline" (click)="cerrarModalDesasignar()" style="flex: 1; padding: 10px; font-weight: 600;">Cancelar</button>
+      <button class="btn-primary" style="background: #EF4444; border: none; flex: 1; padding: 10px; font-weight: 600;" (click)="confirmarDesasignacion()" [disabled]="desasignando">
+        <span class="spinner" *ngIf="desasignando"></span>
+        {{ desasignando ? 'Desasignando...' : 'Sí, desasignar' }}
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== Modal Asignar Rápido ===== -->
+<div class="modal-backdrop" *ngIf="showAsignarModal" (click)="cerrarModalAsignar()">
+  <div class="modal-content modal-content--sm" (click)="$event.stopPropagation()" role="dialog" aria-modal="true" style="text-align: center; padding-top: 32px;">
+    
+    <div style="display: flex; align-items: center; justify-content: center; margin: 0 auto 20px; background: #DCFCE7; color: #16A34A; width: 60px; height: 60px; border-radius: 50%;">
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+        <circle cx="9" cy="7" r="4"></circle>
+        <line x1="19" y1="8" x2="23" y2="8"></line>
+        <line x1="21" y1="6" x2="21" y2="10"></line>
+      </svg>
+    </div>
+
+    <h2 style="color: #1B2B3A; font-size: 19px; font-weight: 700; margin: 0 0 16px;">Asignar Dispositivo</h2>
+
+    <div class="modal-body form-group" style="padding: 0 24px 24px; text-align: left;">
+      <div style="background: #F0F4F8; padding: 12px; border-radius: 8px; margin-bottom: 20px;">
+        <p style="font-size: 12px; color: #5C6B7A; margin: 0 0 4px; font-weight: 600; text-transform: uppercase;">Dispositivo a asignar:</p>
+        <p style="font-size: 14px; color: #1B2B3A; font-family: 'Courier New', monospace; margin: 0; font-weight: bold;">{{ dispositivoParaAsignar?.identificadorFisico }}</p>
+      </div>
+
+      <label style="display: block; font-size: 13px; font-weight: 600; color: #3D4F5E; margin-bottom: 6px;">
+        Selecciona un paciente <span style="color: #EF4444;">*</span>
+      </label>
+      <select [(ngModel)]="idAdultoAsignar" style="width: 100%; padding: 10px 14px; border: 1.5px solid #CBD5E1; border-radius: 8px; font-size: 14px;">
+        <option [ngValue]="null">— Seleccionar paciente —</option>
+        <option *ngFor="let a of adultos" [ngValue]="a.idAdulto">
+          {{ a.nombre }} {{ a.apellido }}
+        </option>
+      </select>
+    </div>
+
+    <div class="modal-footer" style="background: #FAFAFA; justify-content: center; border-top: 1px solid #E2EAF0; padding: 16px 24px; display: flex; gap: 12px;">
+      <button class="btn-outline" (click)="cerrarModalAsignar()" style="flex: 1; padding: 10px; font-weight: 600;">Cancelar</button>
+      <button class="btn-primary" style="background: #16A34A; border: none; flex: 1; padding: 10px; font-weight: 600;" (click)="confirmarAsignacion()" [disabled]="!idAdultoAsignar">
+        Confirmar
+      </button>
+    </div>
   </div>
 </div>
 

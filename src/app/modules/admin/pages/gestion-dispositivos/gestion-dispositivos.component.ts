@@ -22,12 +22,27 @@ export class GestionDispositivosComponent implements OnInit {
   isEdit = false;
   modalDispositivoId: number | null = null;
   
+  // Modal de asignación rápida
+  showAsignarModal = false;
+  dispositivoParaAsignar: DispositivoIot | null = null;
+  idAdultoAsignar: number | null = null;
+  searchAdultoAsignar = '';
+  dropdownAdultoAsignarOpen = false;
+
+  // Modal confirmación desasignar
+  showConfirmModal = false;
+  dispositivoParaDesasignar: DispositivoIot | null = null;
+  desasignando = false;
+  
   // Form state
   identificadorFisico = '';
   tipoDispositivo: 'pastillero_esp32' | 'pulsera_inteligente' = 'pastillero_esp32';
   idAdulto: number | null = null;
+  searchAdultoRegistro = '';
+  dropdownAdultoRegistroOpen = false;
   
   toastMsg = '';
+  toastTipo: 'success' | 'error' | 'info' = 'info';
 
   constructor(
     private dispositivoService: DispositivoIotService,
@@ -61,6 +76,30 @@ export class GestionDispositivosComponent implements OnInit {
     });
   }
 
+  get adultosFiltradosAsignar() {
+    if (!this.searchAdultoAsignar) return this.adultos;
+    const term = this.searchAdultoAsignar.toLowerCase();
+    return this.adultos.filter(a => 
+      a.nombre.toLowerCase().includes(term) || 
+      a.apellido.toLowerCase().includes(term)
+    );
+  }
+
+  get adultosFiltradosRegistro() {
+    if (!this.searchAdultoRegistro) return this.adultos;
+    const term = this.searchAdultoRegistro.toLowerCase();
+    return this.adultos.filter(a => 
+      a.nombre.toLowerCase().includes(term) || 
+      a.apellido.toLowerCase().includes(term)
+    );
+  }
+
+  getNombreAdulto(id: number | null): string {
+    if (!id) return '— Seleccionar paciente —';
+    const a = this.adultos.find(x => x.idAdulto === id);
+    return a ? `${a.nombre} ${a.apellido}` : '— Seleccionar paciente —';
+  }
+
   get dispositivosFiltrados() {
     if (this.filtroActual === 'asignados') {
       return this.dispositivos.filter(d => d.idAdulto !== null);
@@ -81,6 +120,8 @@ export class GestionDispositivosComponent implements OnInit {
     this.identificadorFisico = '';
     this.tipoDispositivo = 'pastillero_esp32';
     this.idAdulto = null;
+    this.searchAdultoRegistro = '';
+    this.dropdownAdultoRegistroOpen = false;
     this.showModal = true;
   }
 
@@ -90,11 +131,20 @@ export class GestionDispositivosComponent implements OnInit {
     this.identificadorFisico = dispositivo.identificadorFisico;
     this.tipoDispositivo = dispositivo.tipoDispositivo;
     this.idAdulto = dispositivo.idAdulto || null;
+    this.searchAdultoRegistro = '';
+    this.dropdownAdultoRegistroOpen = false;
     this.showModal = true;
   }
 
   cerrarModal() {
     this.showModal = false;
+    this.dropdownAdultoRegistroOpen = false;
+  }
+
+  seleccionarAdultoRegistro(id: number | null) {
+    this.idAdulto = id;
+    this.dropdownAdultoRegistroOpen = false;
+    this.searchAdultoRegistro = '';
   }
 
   guardarDispositivo() {
@@ -130,16 +180,71 @@ export class GestionDispositivosComponent implements OnInit {
     }
   }
 
-  desasignar(dispositivo: DispositivoIot) {
-    if (confirm('¿Confirmar desasignación? El dispositivo quedará libre para ser reasignado.')) {
-      this.dispositivoService.desasignar(dispositivo.idDispositivo).subscribe({
-        next: (res) => {
-          this.mostrarToast(res.message || res.mensaje || 'Dispositivo desasignado');
-          this.cargarDispositivos();
-        },
-        error: (err) => this.mostrarToast(err.error?.mensaje || 'Error al desasignar')
-      });
+  abrirModalAsignar(dispositivo: DispositivoIot) {
+    this.dispositivoParaAsignar = dispositivo;
+    this.idAdultoAsignar = null;
+    this.searchAdultoAsignar = '';
+    this.dropdownAdultoAsignarOpen = false;
+    this.showAsignarModal = true;
+  }
+
+  cerrarModalAsignar() {
+    this.showAsignarModal = false;
+    this.dispositivoParaAsignar = null;
+    this.idAdultoAsignar = null;
+    this.dropdownAdultoAsignarOpen = false;
+  }
+
+  seleccionarAdultoAsignar(id: number | null) {
+    this.idAdultoAsignar = id;
+    this.dropdownAdultoAsignarOpen = false;
+    this.searchAdultoAsignar = '';
+  }
+
+  confirmarAsignacion() {
+    if (!this.dispositivoParaAsignar || !this.idAdultoAsignar) {
+      this.mostrarToast('Debe seleccionar un paciente');
+      return;
     }
+    
+    this.dispositivoService.asignar(this.dispositivoParaAsignar.idDispositivo, this.idAdultoAsignar).subscribe({
+      next: (res) => {
+        this.mostrarToast(res.message || res.mensaje || 'Dispositivo asignado exitosamente');
+        this.cerrarModalAsignar();
+        this.cargarDispositivos();
+      },
+      error: (err) => {
+        this.mostrarToast(err.error?.mensaje || 'Error al asignar');
+      }
+    });
+  }
+
+  abrirModalDesasignar(dispositivo: DispositivoIot) {
+    this.dispositivoParaDesasignar = dispositivo;
+    this.showConfirmModal = true;
+  }
+
+  cerrarModalDesasignar() {
+    this.showConfirmModal = false;
+    this.dispositivoParaDesasignar = null;
+    this.desasignando = false;
+  }
+
+  confirmarDesasignacion() {
+    if (!this.dispositivoParaDesasignar) return;
+    this.desasignando = true;
+    
+    this.dispositivoService.desasignar(this.dispositivoParaDesasignar.idDispositivo).subscribe({
+      next: (res) => {
+        this.mostrarToast(res.message || res.mensaje || 'Dispositivo desasignado exitosamente');
+        this.cerrarModalDesasignar();
+        this.cargarDispositivos();
+      },
+      error: (err) => {
+        this.mostrarToast(err.error?.mensaje || 'Error al desasignar');
+        this.desasignando = false;
+      }
+    });
   }
 
   mostrarToast(msg: string) {
