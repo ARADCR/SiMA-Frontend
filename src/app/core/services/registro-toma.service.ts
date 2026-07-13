@@ -1,7 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { ApiService } from './api.service';
 import { Observable } from 'rxjs';
-
+import { map } from 'rxjs/operators';
 export interface RegistroTomaResponse {
   idRegistro: number;
   horario: {
@@ -35,20 +35,26 @@ export class RegistroTomaService {
    * Obtiene las tomas del día para el adulto especificado.
    */
   getTomasDelDia(idAdulto: number): Observable<RegistroTomaResponse[]> {
-    return this.api.get<RegistroTomaResponse[]>(`/tomas/hoy/${idAdulto}`);
+    return this.api.get<RegistroTomaResponse[]>(`/tomas/hoy/${idAdulto}`).pipe(
+      map(res => res.data)
+    );
   }
 
   /**
    * Obtiene la próxima toma pendiente de un adulto.
    */
   getProximaToma(idAdulto: number): Observable<RegistroTomaResponse> {
-    return this.api.get<RegistroTomaResponse>(`/tomas/proxima/${idAdulto}`);
+    return this.api.get<RegistroTomaResponse>(`/tomas/proxima/${idAdulto}`).pipe(
+      map(res => res.data)
+    );
   }
 
   /**
    * Confirma una toma de medicamento.
    */
   confirmarToma(request: RegistroTomaRequest): Observable<RegistroTomaResponse> {
-    return this.api.post<RegistroTomaResponse>('/tomas/confirmar', request);
+    return this.api.post<RegistroTomaResponse>('/tomas/confirmar', request).pipe(
+      map(res => res.data)
+    );
   }
 }
