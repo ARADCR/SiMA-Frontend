@@ -1,81 +1,109 @@
 <div class="page">
   <div class="header">
     <div>
-      <h1 class="title">Historial de Tomas</h1>
-      <p class="sub">Registro histórico del cumplimiento de medicamentos</p>
+      <h1 class="title">Historial de Salud</h1>
+      <p class="sub">Registro histórico del cumplimiento de medicamentos, alertas y actividad física</p>
     </div>
-    <button class="btn-outline">
-      <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
-      Exportar
-    </button>
+    
+    <!-- Adult Selector -->
+    @if (adultos().length > 1) {
+      <div class="adult-select-wrapper">
+        <label for="adultSelect" class="select-label">Paciente:</label>
+        <select id="adultSelect" class="adult-select" [ngModel]="adultoActual()" (ngModelChange)="cambiarAdulto($event)">
+          @for (adulto of adultos(); track adulto.idAdulto) {
+            <option [ngValue]="adulto">{{ adulto.nombre }} {{ adulto.apellido }}</option>
+          }
+        </select>
+      </div>
+    }
   </div>
 
   <!-- Filters -->
   <div class="filters-bar card">
-    <div class="date-chip">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M17 12h-5v5h5v-5zM16 1v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2h-1V1h-2zm3 18H5V8h14v11z"/></svg>
-      <span>Sem 26 · 23–29 Jun 2026</span>
+    <div class="date-filters">
+      <div class="input-group">
+        <label class="filter-label">Desde:</label>
+        <input type="date" class="date-input" [ngModel]="fechaInicio()" (ngModelChange)="fechaInicio.set($event); aplicarFiltroFechas()">
+      </div>
+      <div class="input-group">
+        <label class="filter-label">Hasta:</label>
+        <input type="date" class="date-input" [ngModel]="fechaFin()" (ngModelChange)="fechaFin.set($event); aplicarFiltroFechas()">
+      </div>
+      @if (fechaInicio() || fechaFin()) {
+        <button class="btn-clear" (click)="limpiarFiltroFechas()">Limpiar fechas</button>
+      }
     </div>
     <div class="type-pills">
       @for (pill of tipoPills; track pill.value) {
-        <button class="type-pill" [class.active]="tipoActivo() === pill.value" (click)="tipoActivo.set(pill.value)">{{ pill.label }}</button>
+        <button class="type-pill" [class.active]="tipoActivo() === pill.value" (click)="cambiarFiltroTipo(pill.value)">{{ pill.label }}</button>
       }
     </div>
   </div>
 
-  <!-- Weekly compliance circles -->
-  <div class="card compliance-card">
-    <div class="compliance-header">
-      <span class="card-title">Cumplimiento semanal</span>
-      <span class="compliance-pct">{{ cumplimientoTotal() }}%</span>
-    </div>
-    <div class="circles-row">
-      @for (d of diasSemana; track d.dia) {
-        <div class="circle-wrap">
-          <div class="circle" [class]="circleClass(d.pct)">
-            <span class="circle-pct">{{ d.pct }}%</span>
-          </div>
-          <div class="circle-dia">{{ d.dia }}</div>
-          <div class="circle-fecha">{{ d.fecha }}</div>
+  <!-- Main Content Card -->
+  <div class="card">
+    @if (loading()) {
+      <div class="loading-state">
+        <div class="spinner"></div>
+        <p>Cargando eventos del historial...</p>
+      </div>
+    } @else if (error()) {
+      <div class="error-state">
+        <p>{{ error() }}</p>
+        <button class="btn-retry" (click)="adultoActual() ? cargarHistorial(adultoActual()!.idAdulto) : null">Reintentar</button>
+      </div>
+    } @else {
+      <div class="table-top">
+        <span class="card-title">Eventos de {{ adultoActual()?.nombre }} {{ adultoActual()?.apellido }}</span>
+        <span class="events-count">{{ totalElements() }} eventos encontrados</span>
+      </div>
+      <div class="table-responsive">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Fecha y hora</th>
+              <th>Tipo</th>
+              <th>Descripción</th>
+              <th>Método / Fuente</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (ev of eventos(); track ev.id) {
+              <tr [class.row-alerta]="ev.tipo === 'alerta'" [class.row-toma]="ev.tipo === 'toma'">
+                <td class="cell-hora">{{ formatearFecha(ev.fechaHora) }}</td>
+                <td>
+                  <span class="badge" [class]="tipoBadge(ev.tipo)">
+                    {{ ev.tipo === 'actividad_iot' ? 'IoT' : ev.tipo }}
+                  </span>
+                </td>
+                <td class="cell-desc">
+                  <div class="event-title">{{ ev.titulo }}</div>
+                  <div class="event-desc">{{ ev.descripcion }}</div>
+                </td>
+                <td class="text-muted">{{ obtenerMetodo(ev) }}</td>
+              </tr>
+            }
+            @if (eventos().length === 0) {
+              <tr>
+                <td colspan="4" class="empty-row">No hay eventos para el filtro seleccionado</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+      
+      <!-- Pagination -->
+      @if (totalPages() > 1) {
+        <div class="pagination">
+          <button class="page-btn" [disabled]="currentPage() === 0" (click)="cambiarPagina(currentPage() - 1)">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/></svg>
+          </button>
+          <span class="page-info">Página {{ currentPage() + 1 }} de {{ totalPages() }}</span>
+          <button class="page-btn" [disabled]="currentPage() === totalPages() - 1" (click)="cambiarPagina(currentPage() + 1)">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>
+          </button>
         </div>
       }
-    </div>
-  </div>
-
-  <!-- Events table -->
-  <div class="card">
-    <div class="table-top">
-      <span class="card-title">Eventos</span>
-      <span class="events-count">{{ eventosFiltrados().length }} eventos</span>
-    </div>
-    <div class="table-responsive">
-      <table class="table">
-        <thead>
-          <tr><th>Fecha y hora</th><th>Tipo</th><th>Descripción</th><th>Método</th></tr>
-        </thead>
-        <tbody>
-          @for (ev of eventosFiltrados(); track ev.id) {
-            <tr>
-              <td class="cell-hora">{{ ev.fecha }} · {{ ev.hora }}</td>
-              <td><span class="badge" [class]="tipoBadge(ev.tipo)">{{ ev.tipo }}</span></td>
-              <td style="font-size:13px; color:#1B2B3A">{{ ev.descripcion }}</td>
-              <td class="text-muted">{{ ev.metodo }}</td>
-            </tr>
-          }
-          @if (eventosFiltrados().length === 0) {
-            <tr><td colspan="4" class="empty-row">No hay eventos para el filtro seleccionado</td></tr>
-          }
-        </tbody>
-      </table>
-    </div>
-    <div class="pagination">
-      <button class="page-btn" disabled>
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/></svg>
-      </button>
-      <span class="page-info">Página 1 de 1</span>
-      <button class="page-btn" disabled>
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>
-      </button>
-    </div>
+    }
   </div>
 </div>

@@ -12,6 +12,7 @@
 .ai-input::placeholder { color: #9CABB8; }
 .btn-primary { display: inline-flex; align-items: center; gap: 7px; padding: 9px 18px; background: #2E86AB; color: white; border: none; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; font-family: inherit; }
 .btn-primary:hover { background: #256E8F; }
+.btn-primary:disabled { background: #B0CAD8; cursor: not-allowed; }
 .ia-result { background: #EBF5FB; border: 1px solid #BFD9E8; border-radius: 10px; padding: 16px 18px; margin-bottom: 16px; }
 .ai-badge { display: inline-flex; align-items: center; justify-content: center; padding: 2px 8px; background: linear-gradient(135deg, #2E86AB, #52B788); color: white; border-radius: 6px; font-size: 11px; font-weight: 700; }
 .main-layout { display: grid; grid-template-columns: 220px 1fr; gap: 16px; }
@@ -52,17 +53,73 @@
 .badge-gray { background: #F0F4F8; color: #9CABB8; }
 .empty-state { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 48px; }
 
-/* ---- Responsive Enhancements for Familiar Components ---- */
-
-/* Buscar Cuidador responsive layout */
-@include r.respond(sm) {
-  .main-layout {
-    grid-template-columns: 1fr;
-  }
+/* Modal Styles */
+.modal-overlay {
+  position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+  background-color: rgba(27, 43, 58, 0.6);
+  backdrop-filter: blur(4px);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 1000;
 }
+.modal-content {
+  background: white; border-radius: 16px; width: 100%; max-width: 450px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+  display: flex; flex-direction: column;
+}
+.modal-content.large { max-width: 600px; }
+.modal-header {
+  padding: 20px 24px; border-bottom: 1px solid #F0F4F8;
+  display: flex; justify-content: space-between; align-items: center;
+}
+.modal-title { margin: 0; font-size: 18px; font-weight: 700; color: #1B2B3A; }
+.btn-close {
+  background: transparent; border: none; color: #9CABB8; cursor: pointer;
+  display: flex; align-items: center; justify-content: center; padding: 4px; border-radius: 6px;
+}
+.btn-close:hover { background: #F0F4F8; color: #5C6B7A; }
+.modal-body { padding: 24px; color: #5C6B7A; font-size: 14px; }
+.modal-footer {
+  padding: 16px 24px; border-top: 1px solid #F0F4F8; background: #F7FAFC;
+  display: flex; justify-content: flex-end; gap: 12px; border-radius: 0 0 16px 16px;
+}
+.form-group { margin-bottom: 16px; }
+.form-label { display: block; font-size: 13px; font-weight: 600; color: #1B2B3A; margin-bottom: 8px; }
+.form-select {
+  width: 100%; padding: 10px 14px; border: 1.5px solid #E2EAF0; border-radius: 8px;
+  font-size: 14px; color: #1B2B3A; outline: none; transition: border-color 0.2s;
+}
+.form-select:focus { border-color: #2E86AB; }
 
-/* Utility class for tables that may overflow */
-.table-responsive {
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
+/* Profile View Elements */
+.profile-header {
+  display: flex; gap: 20px; align-items: center; margin-bottom: 24px;
+}
+.profile-avatar {
+  width: 80px; height: 80px; border-radius: 20px;
+  background: linear-gradient(135deg, #2E86AB, #52B788);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 32px; font-weight: 700; color: white;
+}
+.profile-info h3 { margin: 0 0 4px 0; font-size: 24px; color: #1B2B3A; }
+.profile-section { margin-bottom: 20px; }
+.profile-section h4 { margin: 0 0 8px 0; font-size: 14px; text-transform: uppercase; letter-spacing: 0.5px; color: #9CABB8; }
+.profile-section p { margin: 0; font-size: 14px; line-height: 1.6; color: #5C6B7A; }
+.profile-stats {
+  display: flex; gap: 24px; background: #F7FAFC; padding: 16px; border-radius: 12px; margin-bottom: 20px;
+}
+.stat-box { display: flex; flex-direction: column; gap: 4px; }
+.stat-label { font-size: 12px; color: #9CABB8; font-weight: 600; }
+.stat-value { font-size: 18px; font-weight: 700; color: #1B2B3A; }
+
+/* Toast */
+.toast {
+  position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+  background: #1B2B3A; color: white; padding: 12px 24px; border-radius: 8px;
+  font-size: 14px; font-weight: 500; box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  opacity: 0; pointer-events: none; transition: opacity 0.3s; z-index: 2000;
+}
+.toast.show { opacity: 1; pointer-events: auto; }
+
+@include r.respond(sm) {
+  .main-layout { grid-template-columns: 1fr; }
 }

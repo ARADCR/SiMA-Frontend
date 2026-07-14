@@ -33,8 +33,18 @@ export const CUIDADOR_ROUTES: Routes = [
     title: 'Mi Perfil — SiMA'
   },
   {
+    path: 'reportes',
+    loadComponent: () => import('./pages/reportes-medicacion/reportes-medicacion.component').then(m => m.ReportesMedicacionComponent),
+    title: 'Reportes de Medicación — SiMA'
+  },
+  {
     path: 'chatbot',
     loadComponent: () => import('./pages/chatbot/chatbot-cuidador.component').then(m => m.ChatbotCuidadorComponent),
     title: 'Chatbot IA — SiMA'
+  },
+  {
+    path: 'notificaciones',
+    loadComponent: () => import('./pages/notificaciones/notificaciones.component').then(m => m.NotificacionesComponent),
+    title: 'Notificaciones — SiMA'
   }
 ];

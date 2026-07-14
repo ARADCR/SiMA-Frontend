@@ -44,7 +44,9 @@ export class SidebarComponent {
     { label: 'Observaciones',     icon: 'M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z', route: '/cuidador/observaciones',  roles: ['Cuidador'] },
     { sectionLabel: 'Consultas',  roles: ['Cuidador'], label: '' },
     { label: 'Historial',         icon: 'M13 3c-4.97 0-9 4.03-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42C8.27 19.99 10.51 21 13 21c4.97 0 9-4.03 9-9s-4.03-9-9-9zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z', route: '/cuidador/historial', roles: ['Cuidador'] },
+    { label: 'Reportes',          icon: 'M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z', route: '/cuidador/reportes',     roles: ['Cuidador'] },
     { label: 'Chatbot IA',        icon: 'M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z',                                                             route: '/cuidador/chatbot',         roles: ['Cuidador'] },
+    { label: 'Notificaciones',    icon: 'M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2zm6-6v-5c0-3.07-1.63-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.64 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2zm-2 1H8v-6c0-2.48 1.51-4.5 4-4.5s4 2.02 4 4.5v6z', route: '/cuidador/notificaciones',  roles: ['Cuidador'] },
     { sectionLabel: 'Mi perfil',  roles: ['Cuidador'], label: '' },
     { label: 'Mi Perfil',         icon: 'M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 4l6 2.67V11c0 3.89-2.67 7.52-6 8.93-3.33-1.41-6-5.04-6-8.93V7.67L12 5z', route: '/cuidador/perfil',  roles: ['Cuidador'] },
 
@@ -53,6 +55,7 @@ export class SidebarComponent {
     { label: 'Medicamentos',      icon: 'M6.5 10h-2v5h2v-5zm4 0h-2v5h2v-5zm8.5 7H4v2h15v-2zm-4.5-7h-2v5h2v-5zM11.5 1L2 6v2h19V6l-9.5-5z',                               route: '/familiar/medicamentos',    roles: ['Familiar'] },
     { label: 'Historial',         icon: 'M13 3c-4.97 0-9 4.03-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42C8.27 19.99 10.51 21 13 21c4.97 0 9-4.03 9-9s-4.03-9-9-9zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z', route: '/familiar/historial',   roles: ['Familiar'] },
     { label: 'Actividad IoT',     icon: 'M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z',  route: '/familiar/actividad-iot',  roles: ['Familiar'] },
+    { label: 'Observaciones',     icon: 'M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z', route: '/familiar/observaciones',  roles: ['Familiar'] },
     { sectionLabel: 'Gestión',    roles: ['Familiar'], label: '' },
     { label: 'Mis Adultos',       icon: 'M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z',               route: '/familiar/adultos',         roles: ['Familiar'] },
     { label: 'Buscar Cuidador',   icon: 'M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z', route: '/familiar/buscar-cuidador', roles: ['Familiar'] },

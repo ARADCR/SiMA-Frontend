@@ -8,13 +8,13 @@ import { ReporteMedicionSemanal } from '../../../../core/models/reporte-medicaci
 import { AdultoMayor } from '../../../../core/models/adulto-mayor.model';
 
 @Component({
-  selector: 'app-reportes-semanales',
+  selector: 'app-reportes-medicacion',
   standalone: true,
   imports: [CommonModule, FormsModule],
-  templateUrl: './reportes-semanales.component.html',
-  styleUrls: ['./reportes-semanales.component.scss']
+  templateUrl: './reportes-medicacion.component.html',
+  styleUrls: ['./reportes-medicacion.component.scss']
 })
-export class ReportesSemanalesComponent implements OnInit {
+export class ReportesMedicacionComponent implements OnInit {
   private route = inject(ActivatedRoute);
   private reporteSvc = inject(ReporteService);
   private adultoSvc = inject(AdultoMayorService);

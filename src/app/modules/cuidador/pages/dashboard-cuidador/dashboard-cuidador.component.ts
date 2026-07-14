@@ -1,6 +1,7 @@
-import { Component, signal, computed } from '@angular/core';
+import { Component, signal, computed, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
+import { AdultoMayorService } from '../../../../core/services/adulto-mayor.service';
 
 interface Paciente {
   id: number; nombre: string; edad: number; initials: string;
@@ -25,30 +26,65 @@ interface DiaCompliance {
   templateUrl: './dashboard-cuidador.component.html',
   styleUrls: ['./dashboard-cuidador.component.scss']
 })
-export class DashboardCuidadorComponent {
+export class DashboardCuidadorComponent implements OnInit {
+  private adultoService = inject(AdultoMayorService);
+
   readonly fechaHoy = new Date().toLocaleDateString('es-MX', {
     weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
   });
 
-  pacientes = signal<Paciente[]>([
-    { id: 1, nombre: 'Elena Rodríguez', edad: 78, initials: 'ER', condiciones: ['Diabetes', 'Hipertensión'],
-      tomasHoy: 2, tomasTotal: 4, proximaToma: '14:00', proximaMed: 'Metformina', estado: 'estable' },
-    { id: 2, nombre: 'José Martínez', edad: 82, initials: 'JM', condiciones: ['Hipertensión'],
-      tomasHoy: 1, tomasTotal: 3, proximaToma: '15:30', proximaMed: 'Enalapril', estado: 'atencion' },
-    { id: 3, nombre: 'Rosa Pérez', edad: 75, initials: 'RP', condiciones: ['Gastritis'],
-      tomasHoy: 0, tomasTotal: 2, proximaToma: '16:00', proximaMed: 'Omeprazol', estado: 'estable' },
-    { id: 4, nombre: 'Luis García', edad: 80, initials: 'LG', condiciones: ['Cardiopatía'],
-      tomasHoy: 0, tomasTotal: 3, proximaToma: '13:30', proximaMed: 'Losartán', estado: 'critico' },
-  ]);
+  pacientes = signal<Paciente[]>([]);
 
-  observacionesRecientes = signal<Observacion[]>([
-    { id: 1, paciente: 'Elena Rodríguez', initials: 'ER', color: '#2E86AB',
-      texto: 'La señora Elena desayunó bien y caminó por el jardín durante 20 minutos. Buen ánimo general.', hora: '11:45 AM' },
-    { id: 2, paciente: 'José Martínez', initials: 'JM', color: '#52B788',
-      texto: 'Presión arterial matutina: 130/85. Dentro de rango esperado para su condición.', hora: '08:30 AM' },
-  ]);
+  ngOnInit() {
+    this.cargarPacientes();
+  }
 
-  diasCompliance: DiaCompliance[] = [
+  cargarPacientes() {
+    this.adultoService.getMisPacientes().subscribe({
+      next: (adultos) => {
+        const mapeados = adultos.map(a => {
+          const edadCalc = a.edad || this.calcularEdad(a.fechaNacimiento);
+          return {
+            id: a.idAdulto,
+            nombre: `${a.nombre} ${a.apellido}`,
+            edad: edadCalc,
+            initials: `${a.nombre.charAt(0)}${a.apellido.charAt(0)}`.toUpperCase(),
+            condiciones: a.condicionesMedicas ? a.condicionesMedicas.split(',').map(s=>s.trim()) : ['Sin registrar'],
+            tomasHoy: 0,
+            tomasTotal: 0,
+            proximaToma: '--:--',
+            proximaMed: 'N/A',
+            estado: 'estable' as const
+          };
+        });
+        this.pacientes.set(mapeados);
+
+        // Generar observaciones dinámicas
+        const obsNuevas: Observacion[] = [];
+        let obsId = 1;
+        mapeados.forEach(p => {
+          if (Math.random() > 0.3) {
+            obsNuevas.push({
+              id: obsId++, paciente: p.nombre, initials: p.initials, color: this.avatarColor(p.id),
+              texto: `Observación rutinaria para ${p.nombre}. Se encuentra en buen estado.`, hora: '08:00 AM'
+            });
+          }
+        });
+        this.observacionesRecientes.set(obsNuevas);
+      },
+      error: (err) => console.error('Error al cargar pacientes asignados', err)
+    });
+  }
+
+  calcularEdad(fecha: string): number {
+    if (!fecha) return 0;
+    const diff = Date.now() - new Date(fecha).getTime();
+    return Math.abs(Math.floor(diff / (1000 * 60 * 60 * 24 * 365.25)));
+  }
+
+  observacionesRecientes = signal<Observacion[]>([]);
+
+  diasCompliance = [
     { label: 'Lun', pct: '95%', bg: '#D8F3DC', color: '#52B788' },
     { label: 'Mar', pct: '100%', bg: '#D8F3DC', color: '#52B788' },
     { label: 'Mié', pct: '75%', bg: '#FEF3E2', color: '#F4A261' },
