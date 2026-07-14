@@ -1,15 +1,12 @@
-import { Component, OnInit, inject, signal, computed } from '@angular/core';
+import { Component, OnInit, inject, signal, computed, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { AuthService } from '../../../../core/auth/auth.service';
 import { AdultoMayorService } from '../../../../core/services/adulto-mayor.service';
-import { MedicamentoService } from '../../../../core/services/medicamento.service';
+import { RegistroTomaService, RegistroTomaResponse } from '../../../../core/services/registro-toma.service';
 import { AlertaService } from '../../../../core/services/alerta.service';
 import { HistorialService } from '../../../../core/services/historial.service';
 import { ObservacionService } from '../../../../core/services/observacion.service';
-import { AdultoMayor } from '../../../../core/models/adulto-mayor.model';
-import { Toma } from '../../../../core/models/medicamento.model';
-import { Alerta as AlertaModel } from '../../../../core/models/alerta.model';
 
 interface TodayMed {
   nombre: string;
@@ -44,7 +41,7 @@ interface Adulto {
 export class DashboardFamiliarComponent implements OnInit {
   protected auth = inject(AuthService);
   private adultoSvc = inject(AdultoMayorService);
-  private medSvc = inject(MedicamentoService);
+  private registroTomaService = inject(RegistroTomaService);
   private alertaSvc = inject(AlertaService);
   private historialSvc = inject(HistorialService);
   private observacionSvc = inject(ObservacionService);
@@ -54,11 +51,30 @@ export class DashboardFamiliarComponent implements OnInit {
   loading = signal(true);
 
   adultos: Adulto[] = [];
-  medicamentosHoy: TodayMed[] = [];
+  medicamentosHoy = signal<TodayMed[]>([]);
   alertas = signal<Alerta[]>([]);
   ultimoEvento = signal<{ titulo: string; metodo: string; hora: string } | null>(null);
-
   observaciones: { cuidador: string; initials: string; hora: string; texto: string }[] = [];
+
+  tomadas = computed(() => this.medicamentosHoy().filter(m => m.estado === 'tomado').length);
+  totalMeds = computed(() => this.medicamentosHoy().length);
+  cumplimientoPct = computed(() => {
+    const total = this.totalMeds();
+    if (total === 0) return 100;
+    return Math.round((this.tomadas() / total) * 100);
+  });
+  proxima = computed(() => this.medicamentosHoy().find(m => m.estado === 'pendiente') ?? null);
+
+  adultoActivoObj = computed(() => this.adultos.find(a => a.id === this.adultoActivo()) ?? this.adultos[0]);
+
+  constructor() {
+    effect(() => {
+      const idAdulto = this.adultoActivo();
+      if (idAdulto != null) {
+        this.cargarTomasDelDia(idAdulto);
+      }
+    });
+  }
 
   ngOnInit(): void {
     this.cargarAdultos();
@@ -89,25 +105,31 @@ export class DashboardFamiliarComponent implements OnInit {
     });
   }
 
+  cargarTomasDelDia(idAdulto: number): void {
+    this.registroTomaService.getTomasDelDia(idAdulto).subscribe({
+      next: (res: RegistroTomaResponse[]) => {
+        const meds = res.map(toma => ({
+          nombre: toma.horario.medicamento.nombre,
+          dosis: toma.horario.medicamento.dosis,
+          hora: toma.horario.horaProgramada.substring(0, 5),
+          estado: (toma.estado === 'confirmado_manual' ? 'tomado' : toma.estado) as TodayMed['estado']
+        }));
+        this.medicamentosHoy.set(meds);
+      },
+      error: err => {
+        console.error('Error al cargar tomas', err);
+        this.showToast('Error al cargar medicamentos del día');
+      }
+    });
+  }
+
   seleccionarAdulto(id: number): void {
     this.adultoActivo.set(id);
     this.cargarDatosAdulto(id);
   }
 
   private cargarDatosAdulto(idAdulto: number): void {
-    // 1. Cargar tomas del día
-    this.medSvc.getTomas(idAdulto).subscribe({
-      next: (tomas) => {
-        this.medicamentosHoy = (tomas || []).map(t => ({
-          nombre: t.nombreMedicamento || 'Medicamento',
-          dosis: t.dosis || '1 tableta',
-          hora: this.formatearHora(t.fechaHoraProgramada),
-          estado: t.estado === 'tomado' || t.estado === 'omitido' ? t.estado : 'pendiente'
-        }));
-      }
-    });
-
-    // 2. Cargar alertas activas
+    // 1. Cargar alertas activas
     this.alertaSvc.getActivas().subscribe({
       next: (alertas) => {
         const filtradas = alertas.filter(a => a.adultoMayorId === idAdulto);
@@ -122,7 +144,7 @@ export class DashboardFamiliarComponent implements OnInit {
       }
     });
 
-    // 3. Cargar último evento del historial
+    // 2. Cargar último evento del historial
     this.historialSvc.getHistorial(idAdulto, { size: 1 }).subscribe({
       next: (page) => {
         if (page && page.content && page.content.length > 0) {
@@ -140,7 +162,7 @@ export class DashboardFamiliarComponent implements OnInit {
       }
     });
 
-    // 4. Cargar últimas observaciones del cuidador
+    // 3. Cargar últimas observaciones del cuidador
     this.observacionSvc.listarPorAdulto(idAdulto).subscribe({
       next: (obs) => {
         this.observaciones = obs
@@ -153,6 +175,8 @@ export class DashboardFamiliarComponent implements OnInit {
           }));
       }
     });
+
+    this.loading.set(false);
   }
 
   marcarResuelta(id: number): void {
@@ -167,29 +191,6 @@ export class DashboardFamiliarComponent implements OnInit {
   private showToast(msg: string): void {
     this.toast.set(msg);
     setTimeout(() => this.toast.set(null), 3500);
-  }
-
-  // Computeds
-  alertasActivas = computed(() => this.alertas().filter(a => !a.resuelta));
-  tomadas = computed(() => this.medicamentosHoy.filter(m => m.estado === 'tomado').length);
-  totalMeds = computed(() => this.medicamentosHoy.length);
-  cumplimientoPct = computed(() => {
-    const total = this.totalMeds();
-    if (total === 0) return 100;
-    return Math.round((this.tomadas() / total) * 100);
-  });
-  proxima = computed(() => this.medicamentosHoy.find(m => m.estado === 'pendiente') ?? null);
-
-  adultoActivoObj = computed(() => this.adultos.find(a => a.id === this.adultoActivo()) ?? this.adultos[0]);
-
-  private formatearHora(fechaStr: string): string {
-    if (!fechaStr) return '';
-    try {
-      const date = new Date(fechaStr);
-      return date.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit', hour12: false });
-    } catch (e) {
-      return '';
-    }
   }
 
   private formatearTiempoRelativo(fechaStr: string): string {

@@ -1,13 +1,15 @@
 import { Component, signal, computed, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { RegistroTomaService, RegistroTomaResponse, RegistroTomaRequest } from '../../../../core/services/registro-toma.service';
 import { AdultoMayorService } from '../../../../core/services/adulto-mayor.service';
-import { MedicamentoService } from '../../../../core/services/medicamento.service';
+import { forkJoin, map, switchMap, of, catchError } from 'rxjs';
 import { AdultoMayor } from '../../../../core/models/adulto-mayor.model';
-import { Toma as TomaBackend, EstadoToma } from '../../../../core/models/medicamento.model';
 
-interface TomaUI {
-  idRegistro: number;
+type EstadoToma = 'pendiente' | 'tomado' | 'omitido';
+
+interface Toma {
+  id: number;
   paciente: string;
   initials: string;
   avatarColor: string;
@@ -15,7 +17,7 @@ interface TomaUI {
   dosis: string;
   hora: string;
   estado: EstadoToma;
-  original: TomaBackend;
+  idAdulto: number;
 }
 
 @Component({
@@ -26,65 +28,12 @@ interface TomaUI {
   styleUrls: ['./registrar-tomas.component.scss']
 })
 export class RegistrarTomasComponent implements OnInit {
-  private adultoSvc = inject(AdultoMayorService);
-  private medSvc = inject(MedicamentoService);
+  private registroTomaService = inject(RegistroTomaService);
+  private adultoMayorService = inject(AdultoMayorService);
 
   pacienteFiltro = '';
-  adultos = signal<AdultoMayor[]>([]);
-  tomas = signal<TomaUI[]>([]);
-  isSaving = signal(false);
 
-  ngOnInit() {
-    this.cargarDatos();
-  }
-
-  cargarDatos() {
-    this.adultoSvc.getMisPacientes().subscribe({
-      next: (list) => {
-        this.adultos.set(list);
-        
-        if (list.length === 0) return;
-
-        const ids = list.map(a => a.idAdulto);
-        this.medSvc.getTomasMultiples(ids).subscribe({
-          next: (tomasList) => {
-            const nuevasTomas: TomaUI[] = [];
-            const colors = ['#2E86AB', '#52B788', '#E76F51', '#F4A261', '#6C63FF'];
-
-            tomasList.forEach((tomasPaciente, i) => {
-              if (tomasPaciente.length === 0) return;
-              
-              const adultoId = tomasPaciente[0].idAdulto;
-              const adultoIndex = list.findIndex(a => a.idAdulto === adultoId);
-              const a = list[adultoIndex !== -1 ? adultoIndex : 0];
-              const color = colors[(adultoIndex !== -1 ? adultoIndex : i) % colors.length];
-              
-              tomasPaciente.forEach(t => {
-                nuevasTomas.push({
-                  idRegistro: t.idRegistro,
-                  paciente: `${a.nombre} ${a.apellido}`,
-                  initials: `${a.nombre.charAt(0)}${a.apellido.charAt(0)}`.toUpperCase(),
-                  avatarColor: color,
-                  medicamento: t.nombreMedicamento,
-                  dosis: t.dosis,
-                  hora: new Date(t.fechaHoraProgramada).toLocaleTimeString('es-ES', {hour: '2-digit', minute:'2-digit'}),
-                  estado: t.estado,
-                  original: t
-                });
-              });
-            });
-
-            // Ordenar por hora
-            nuevasTomas.sort((a, b) => a.original.fechaHoraProgramada.localeCompare(b.original.fechaHoraProgramada));
-            this.tomas.set(nuevasTomas);
-          },
-          error: (err) => console.error('Error al cargar tomas múltiples', err)
-        });
-      },
-      error: (err) => console.error('Error al cargar pacientes:', err)
-    });
-  }
-
+  tomas = signal<Toma[]>([]);
   toast = signal<{ msg: string; type: 'success' | 'error' } | null>(null);
 
   tomasFiltradas = computed(() =>
@@ -97,42 +46,78 @@ export class RegistrarTomasComponent implements OnInit {
   pendientes = computed(() => this.tomas().filter(t => t.estado === 'pendiente').length);
   omitidas = computed(() => this.tomas().filter(t => t.estado === 'omitido').length);
 
-  registrar(t: TomaUI, estado: EstadoToma): void {
-    if (this.isSaving()) return;
-    this.isSaving.set(true);
+  private readonly colors = ['#2E86AB', '#52B788', '#E76F51', '#F4A261', '#457B9D', '#1D3557'];
 
-    this.medSvc.registrarToma(t.idRegistro, { estado }).subscribe({
-      next: () => {
-        this.tomas.update(list => list.map(x => x.idRegistro === t.idRegistro ? { ...x, estado } : x));
-        const msg = estado === 'tomado'
-          ? `Toma de ${t.medicamento} registrada correctamente`
-          : `Toma de ${t.medicamento} marcada como omitida`;
-        this.showToast(msg, estado === 'tomado' ? 'success' : 'error');
-        this.isSaving.set(false);
+  ngOnInit() {
+    this.cargarDatos();
+  }
+
+  cargarDatos() {
+    this.adultoMayorService.getMisPacientes().pipe(
+      switchMap(adultos => {
+        if (!adultos || adultos.length === 0) return of([]);
+
+        const tomasReqs = adultos.map((adulto: any) =>
+          this.registroTomaService.getTomasDelDia(adulto.idAdulto).pipe(
+            catchError(() => of([] as RegistroTomaResponse[])),
+            map((res: RegistroTomaResponse[]) => {
+              const name = `${adulto.nombre} ${adulto.apellido}`;
+              const initials = name.split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase();
+              const color = this.colors[adulto.idAdulto % this.colors.length];
+              
+              return res.map(toma => ({
+                id: toma.idRegistro,
+                paciente: name,
+                initials: initials,
+                avatarColor: color,
+                medicamento: toma.horario.medicamento.nombre,
+                dosis: toma.horario.medicamento.dosis,
+                hora: toma.horario.horaProgramada.substring(0, 5),
+                estado: (toma.estado === 'confirmado_manual' ? 'tomado' : toma.estado) as EstadoToma,
+                idAdulto: adulto.idAdulto
+              }));
+            })
+          )
+        );
+        return forkJoin(tomasReqs);
+      })
+    ).subscribe({
+      next: (tomasList) => {
+        const allTomas = tomasList.flat();
+        this.tomas.set(allTomas);
       },
-      error: (err) => {
-        console.error('Error al registrar toma', err);
-        this.showToast('Error al registrar la toma', 'error');
-        this.isSaving.set(false);
+      error: err => {
+        console.error('Error al cargar datos', err);
+        this.showToast('Error al cargar tomas', 'error');
       }
     });
   }
 
-  revertir(t: TomaUI): void {
-    if (this.isSaving()) return;
-    this.isSaving.set(true);
-    
-    this.medSvc.registrarToma(t.idRegistro, { estado: 'pendiente' }).subscribe({
+  registrar(t: Toma, estado: EstadoToma): void {
+    if (estado !== 'tomado') return; // We only support marking as 'tomado' via API in this view for now
+
+    const request: RegistroTomaRequest = {
+      idRegistro: t.id,
+      metodoConfirmacion: 'manual_cuidador'
+    };
+
+    this.registroTomaService.confirmarToma(request).subscribe({
       next: () => {
-        this.tomas.update(list => list.map(x => x.idRegistro === t.idRegistro ? { ...x, estado: 'pendiente' } : x));
-        this.showToast('Toma revertida a pendiente', 'success');
-        this.isSaving.set(false);
+        this.tomas.update(list => list.map(x => x.id === t.id ? { ...x, estado: 'tomado' } : x));
+        this.showToast(`Toma de ${t.medicamento} registrada correctamente`, 'success');
       },
-      error: () => {
-        this.showToast('Error al revertir la toma', 'error');
-        this.isSaving.set(false);
+      error: (err) => {
+        console.error('Error al confirmar', err);
+        this.showToast(`Error al confirmar toma de ${t.medicamento}`, 'error');
       }
     });
+  }
+
+  revertir(t: Toma): void {
+    // Note: the backend does not currently support reverting a confirmation. 
+    // This just updates the frontend state.
+    this.tomas.update(list => list.map(x => x.id === t.id ? { ...x, estado: 'pendiente' } : x));
+    this.showToast('Toma revertida a pendiente (solo visual)', 'success');
   }
 
   badgeClass(e: EstadoToma): string {
