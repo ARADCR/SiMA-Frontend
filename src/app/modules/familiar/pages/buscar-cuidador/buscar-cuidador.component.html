@@ -10,7 +10,7 @@
     <div class="ai-icon">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
     </div>
-    <input class="ai-input" [(ngModel)]="busquedaIA" placeholder='Describe lo que necesitas, ej. "Cuidador con experiencia en diabetes y fisioterapia para persona de 78 años"' (keydown.enter)="buscarIA()">
+    <input class="ai-input" [(ngModel)]="busquedaIA" placeholder='Describe lo que necesitas...' (keydown.enter)="buscarIA()">
     <button class="btn-primary" (click)="buscarIA()">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
       Buscar con IA
@@ -40,15 +40,6 @@
         }
       </div>
       <div class="filter-group">
-        <div class="filter-label">Disponibilidad</div>
-        <label class="check-row">
-          <input type="radio" name="disp" value="" [(ngModel)]="filtroDisp"> Todos
-        </label>
-        <label class="check-row">
-          <input type="radio" name="disp" value="disponible" [(ngModel)]="filtroDisp"> Solo disponibles
-        </label>
-      </div>
-      <div class="filter-group">
         <div class="filter-label">Calificación mínima</div>
         <select class="select-input" [(ngModel)]="filtroCalif">
           <option value="0">Cualquiera</option>
@@ -69,16 +60,16 @@
           <option value="exp">Más experiencia</option>
         </select>
       </div>
-      @for (c of cuidadoresFiltrados(); track c.id) {
+      
+      @for (c of cuidadoresFiltrados(); track c.idUsuario) {
         <div class="card cuidador-card">
           <div class="card-top">
             <div style="display:flex; align-items:flex-start; gap:14px; flex:1">
-              <div class="cuid-avatar">{{ c.initials }}</div>
+              <div class="cuid-avatar">{{ getInitials(c.nombre, c.apellido) }}</div>
               <div style="flex:1">
                 <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap">
-                  <span class="cuid-nombre">{{ c.nombre }}</span>
-                  @if (c.disponible) { <span class="badge badge-green">Disponible</span> }
-                  @else { <span class="badge badge-gray">Ocupado</span> }
+                  <span class="cuid-nombre">{{ c.nombre }} {{ c.apellido }}</span>
+                  <span class="badge badge-green">Disponible</span>
                 </div>
                 <div class="cuid-esp">{{ c.especialidad }}</div>
                 <div class="stars">
@@ -86,10 +77,6 @@
                     <svg width="14" height="14" viewBox="0 0 24 24" [attr.fill]="s ? '#F4A261' : '#E2EAF0'"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
                   }
                   <span class="cuid-cal">{{ c.calificacion }}</span>
-                  <span class="cuid-resenas">({{ c.resenas }} reseñas)</span>
-                </div>
-                <div class="cuid-tags">
-                  @for (t of c.tags; track t) { <span class="tag">{{ t }}</span> }
                 </div>
               </div>
             </div>
@@ -99,19 +86,102 @@
               <div style="font-size:12px; color:#5C6B7A; margin-top:4px">{{ c.experiencia }}</div>
             </div>
           </div>
-          <p class="cuid-desc">{{ c.descripcion }}</p>
           <div class="card-actions">
-            <button class="btn-outline">Ver perfil</button>
-            <button class="btn-primary-sm" [disabled]="!c.disponible">Solicitar</button>
+            <button class="btn-outline" (click)="abrirPerfil(c)">Ver perfil</button>
+            <button class="btn-primary-sm" (click)="abrirModalSolicitud(c)">Solicitar</button>
           </div>
         </div>
       }
+      
       @if (cuidadoresFiltrados().length === 0) {
         <div class="card empty-state">
           <svg width="48" height="48" viewBox="0 0 24 24" fill="currentColor" style="color:#D0D8E0"><path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
-          <p style="color:#9CABB8; margin-top:12px">No se encontraron cuidadores con estos filtros</p>
+          <p style="color:#9CABB8; margin-top:12px">No se encontraron cuidadores.</p>
         </div>
       }
     </div>
   </div>
 </div>
+
+<!-- Modal Solicitud -->
+@if (modalOpen()) {
+  <div class="modal-overlay" (click)="cerrarModal()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2 class="modal-title">Solicitar Cuidador</h2>
+        <button class="btn-close" (click)="cerrarModal()">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <p style="margin-bottom:15px; color:#5C6B7A">Selecciona el adulto mayor para el cual estás solicitando al cuidador <strong>{{ cuidadorSeleccionado()?.nombre }} {{ cuidadorSeleccionado()?.apellido }}</strong>.</p>
+        
+        <div class="form-group">
+          <label class="form-label">Adulto Mayor</label>
+          <select class="form-select" [(ngModel)]="adultoSeleccionadoId">
+            <option [ngValue]="null" disabled>Selecciona un adulto...</option>
+            @for (a of adultos(); track a.idAdulto) {
+              <option [ngValue]="a.idAdulto">{{ a.nombre }} {{ a.apellido }}</option>
+            }
+          </select>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-outline" (click)="cerrarModal()">Cancelar</button>
+        <button class="btn-primary" [disabled]="!adultoSeleccionadoId()" (click)="enviarSolicitud()">Enviar Solicitud</button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- Modal Perfil de Cuidador -->
+@if (perfilModalOpen()) {
+  <div class="modal-overlay" (click)="cerrarModal()">
+    <div class="modal-content large" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2 class="modal-title">Perfil del Cuidador</h2>
+        <button class="btn-close" (click)="cerrarModal()">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </div>
+      <div class="modal-body" style="max-height: 70vh; overflow-y: auto;">
+        <div class="profile-header">
+          <div class="profile-avatar">{{ getInitials(cuidadorSeleccionado()?.nombre || '', cuidadorSeleccionado()?.apellido || '') }}</div>
+          <div class="profile-info">
+            <h3>{{ cuidadorSeleccionado()?.nombre }} {{ cuidadorSeleccionado()?.apellido }}</h3>
+            <p style="margin: 0; color: #5C6B7A;">{{ cuidadorSeleccionado()?.especialidad }}</p>
+            <div style="display:flex; align-items:center; gap:6px; margin-top:8px;">
+              <span class="badge badge-green">Disponible</span>
+              <span style="font-weight:600; color:#1B2B3A;">⭐ {{ cuidadorSeleccionado()?.calificacion }}</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="profile-stats">
+          <div class="stat-box">
+            <span class="stat-label">Experiencia</span>
+            <span class="stat-value">{{ cuidadorSeleccionado()?.experiencia }}</span>
+          </div>
+          <div class="stat-box">
+            <span class="stat-label">Tarifa</span>
+            <span class="stat-value">{{ cuidadorSeleccionado()?.precio }}</span>
+          </div>
+        </div>
+
+        <div class="profile-section">
+          <h4>Sobre mí</h4>
+          <p>Soy un profesional dedicado al cuidado de adultos mayores, con formación especializada y vocación de servicio. Mi objetivo es mejorar la calidad de vida de mis pacientes asegurando un entorno seguro, promoviendo su autonomía y brindando compañía integral.</p>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-outline" (click)="cerrarModal()">Cerrar</button>
+        <button class="btn-primary" (click)="abrirModalDesdePerfil()">Solicitar Cuidado</button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- Toast -->
+@if (toast()) {
+  <div class="toast show">{{ toast() }}</div>
+}

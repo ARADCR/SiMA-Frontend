@@ -1,13 +1,13 @@
-import { Component, signal, computed } from '@angular/core';
+import { Component, signal, computed, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { forkJoin } from 'rxjs';
+import { AdultoMayorService } from '../../../../core/services/adulto-mayor.service';
+import { ObservacionService } from '../../../../core/services/observacion.service';
+import { AdultoMayor } from '../../../../core/models/adulto-mayor.model';
+import { Observacion, UrgenciaObservacion } from '../../../../core/models/observacion.model';
 
-interface Observacion {
-  id: number; paciente: string; initials: string; color: string;
-  texto: string; fecha: string; hora: string;
-  urgencia: 'normal' | 'importante' | 'urgente';
-  vitales?: { ta?: string; fc?: string; temp?: string };
-}
+const AVATAR_COLORS = ['#2E86AB', '#52B788', '#E76F51', '#F4A261', '#6C63FF'];
 
 @Component({
   selector: 'app-observaciones',
@@ -16,50 +16,89 @@ interface Observacion {
   templateUrl: './observaciones.component.html',
   styleUrls: ['./observaciones.component.scss']
 })
-export class ObservacionesComponent {
+export class ObservacionesComponent implements OnInit {
+  private adultoSvc = inject(AdultoMayorService);
+  private observacionSvc = inject(ObservacionService);
+
   busqueda = '';
   pacienteFiltro = '';
   urgenciaFiltro = '';
   modalOpen = signal(false);
-  confirmDeleteId = signal<number | null>(null);
   toast = signal<string | null>(null);
+  loading = signal(true);
+  error = signal<string | null>(null);
+  guardando = signal(false);
+
+  adultos = signal<AdultoMayor[]>([]);
+  observaciones = signal<Observacion[]>([]);
 
   nuevaObs = {
-    paciente: '',
-    urgencia: 'normal' as 'normal' | 'importante' | 'urgente',
+    idAdulto: null as number | null,
+    urgencia: 'normal' as UrgenciaObservacion,
     texto: '',
     ta: '', fc: '', temp: ''
   };
 
-  observaciones = signal<Observacion[]>([
-    {
-      id: 1, paciente: 'Elena Rodríguez', initials: 'ER', color: '#2E86AB',
-      texto: 'Paciente presentó mareos leves después de la toma de Metformina. Se mantuvo sentada durante 20 minutos y mejoró. Se recomienda no levantarse bruscamente.',
-      fecha: '28/06/2026', hora: '10:30', urgencia: 'importante',
-      vitales: { ta: '130/85 mmHg', fc: '72 BPM', temp: '36.5°C' }
-    },
-    {
-      id: 2, paciente: 'José Martínez', initials: 'JM', color: '#52B788',
-      texto: 'Buen estado general. Comió bien. Refiere dolor leve en rodilla izquierda. Se aplicó crema analgésica.',
-      fecha: '28/06/2026', hora: '08:15', urgencia: 'normal'
-    },
-    {
-      id: 3, paciente: 'Rosa Pérez', initials: 'RP', color: '#E76F51',
-      texto: 'Omitió toma de Omeprazol por náuseas. Se comunicó al familiar. Pendiente seguimiento a las 16:00.',
-      fecha: '27/06/2026', hora: '20:00', urgencia: 'urgente'
-    },
-  ]);
+  ngOnInit() {
+    this.cargarDatos();
+  }
+
+  cargarDatos(): void {
+    this.loading.set(true);
+    this.error.set(null);
+
+    this.adultoSvc.getMisPacientes().subscribe({
+      next: (list) => {
+        this.adultos.set(list);
+        if (list.length === 0) {
+          this.observaciones.set([]);
+          this.loading.set(false);
+          return;
+        }
+
+        forkJoin(list.map(a => this.observacionSvc.listarPorAdulto(a.idAdulto))).subscribe({
+          next: (resultados) => {
+            this.observaciones.set(resultados.flat());
+            this.loading.set(false);
+          },
+          error: () => {
+            this.error.set('Error al cargar las observaciones');
+            this.loading.set(false);
+          }
+        });
+      },
+      error: () => {
+        this.error.set('Error al cargar los pacientes');
+        this.loading.set(false);
+      }
+    });
+  }
 
   obsFiltradas = computed(() => {
     let list = this.observaciones();
     if (this.busqueda) {
       const q = this.busqueda.toLowerCase();
-      list = list.filter(o => o.texto.toLowerCase().includes(q) || o.paciente.toLowerCase().includes(q));
+      list = list.filter(o => o.texto.toLowerCase().includes(q) || this.nombrePaciente(o.idAdulto).toLowerCase().includes(q));
     }
-    if (this.pacienteFiltro) list = list.filter(o => o.paciente === this.pacienteFiltro);
+    if (this.pacienteFiltro) list = list.filter(o => String(o.idAdulto) === this.pacienteFiltro);
     if (this.urgenciaFiltro) list = list.filter(o => o.urgencia === this.urgenciaFiltro);
     return list;
   });
+
+  nombrePaciente(idAdulto: number): string {
+    const a = this.adultos().find(a => a.idAdulto === idAdulto);
+    return a ? `${a.nombre} ${a.apellido}` : '';
+  }
+
+  inicialesPaciente(idAdulto: number): string {
+    const a = this.adultos().find(a => a.idAdulto === idAdulto);
+    return a ? `${a.nombre.charAt(0)}${a.apellido.charAt(0)}`.toUpperCase() : '';
+  }
+
+  colorPaciente(idAdulto: number): string {
+    const index = this.adultos().findIndex(a => a.idAdulto === idAdulto);
+    return AVATAR_COLORS[index % AVATAR_COLORS.length];
+  }
 
   urgenciaBadgeClass(u: string): string { return `badge badge-${u}`; }
   urgenciaLabel(u: string): string {
@@ -67,50 +106,44 @@ export class ObservacionesComponent {
   }
 
   hasVitales(obs: Observacion): boolean {
-    return !!(obs.vitales && (obs.vitales.ta || obs.vitales.fc || obs.vitales.temp));
+    return !!(obs.tensionArterial || obs.frecuenciaCardiaca || obs.temperatura);
+  }
+
+  formatearFecha(fechaStr: string): string {
+    if (!fechaStr) return '';
+    const date = new Date(fechaStr);
+    return date.toLocaleString('es-MX', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
   }
 
   guardar(): void {
-    if (!this.nuevaObs.paciente || !this.nuevaObs.texto.trim()) return;
-    const colors: Record<string, string> = {
-      'Elena Rodríguez': '#2E86AB', 'José Martínez': '#52B788',
-      'Rosa Pérez': '#E76F51', 'Luis García': '#F4A261'
-    };
-    const inits = this.nuevaObs.paciente.split(' ').map(n => n[0]).join('').slice(0, 2);
-    const vitales = (this.nuevaObs.ta || this.nuevaObs.fc || this.nuevaObs.temp)
-      ? { ta: this.nuevaObs.ta || undefined, fc: this.nuevaObs.fc || undefined, temp: this.nuevaObs.temp || undefined }
-      : undefined;
-    this.observaciones.update(list => [{
-      id: Date.now(), paciente: this.nuevaObs.paciente, initials: inits,
-      color: colors[this.nuevaObs.paciente] || '#9CABB8',
-      texto: this.nuevaObs.texto,
-      fecha: new Date().toLocaleDateString('es-MX'),
-      hora: new Date().toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' }),
+    if (!this.nuevaObs.idAdulto || !this.nuevaObs.texto.trim()) return;
+
+    this.guardando.set(true);
+    this.observacionSvc.registrar({
+      idAdulto: this.nuevaObs.idAdulto,
       urgencia: this.nuevaObs.urgencia,
-      vitales
-    }, ...list]);
-    this.nuevaObs = { paciente: '', urgencia: 'normal', texto: '', ta: '', fc: '', temp: '' };
-    this.modalOpen.set(false);
-    this.showToast('Observación guardada correctamente');
-  }
-
-  solicitarEliminar(id: number): void {
-    this.confirmDeleteId.set(id);
-  }
-
-  confirmarEliminar(): void {
-    const id = this.confirmDeleteId();
-    if (id !== null) {
-      this.observaciones.update(list => list.filter(o => o.id !== id));
-      this.showToast('Observación eliminada');
-    }
-    this.confirmDeleteId.set(null);
+      texto: this.nuevaObs.texto,
+      tensionArterial: this.nuevaObs.ta || undefined,
+      frecuenciaCardiaca: this.nuevaObs.fc || undefined,
+      temperatura: this.nuevaObs.temp || undefined
+    }).subscribe({
+      next: (creada) => {
+        this.observaciones.update(list => [creada, ...list]);
+        this.nuevaObs = { idAdulto: null, urgencia: 'normal', texto: '', ta: '', fc: '', temp: '' };
+        this.modalOpen.set(false);
+        this.guardando.set(false);
+        this.showToast('Observación guardada correctamente');
+      },
+      error: () => {
+        this.guardando.set(false);
+        this.showToast('No se pudo guardar la observación');
+      }
+    });
   }
 
   cerrarSiEsOverlay(e: MouseEvent): void {
     if ((e.target as HTMLElement).classList.contains('modal-overlay')) {
       this.modalOpen.set(false);
-      this.confirmDeleteId.set(null);
     }
   }
 

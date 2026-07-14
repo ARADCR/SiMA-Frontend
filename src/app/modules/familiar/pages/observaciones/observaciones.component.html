@@ -1,0 +1,74 @@
+<div class="page">
+  <div class="header">
+    <div>
+      <h1 class="title">Notas de Observación</h1>
+      <p class="sub">Notas registradas por el cuidador sobre el estado del adulto mayor</p>
+    </div>
+
+    @if (adultos().length > 1) {
+      <div class="adult-select-wrapper">
+        <label for="adultSelect" class="select-label">Paciente:</label>
+        <select id="adultSelect" class="adult-select" [ngModel]="adultoActual()" (ngModelChange)="cambiarAdulto($event)">
+          @for (adulto of adultos(); track adulto.idAdulto) {
+            <option [ngValue]="adulto">{{ adulto.nombre }} {{ adulto.apellido }}</option>
+          }
+        </select>
+      </div>
+    }
+  </div>
+
+  <div class="filters-bar card">
+    <div class="type-pills">
+      <button class="type-pill" [class.active]="urgenciaFiltro() === ''" (click)="urgenciaFiltro.set('')">Todas</button>
+      <button class="type-pill" [class.active]="urgenciaFiltro() === 'normal'" (click)="urgenciaFiltro.set('normal')">Normal</button>
+      <button class="type-pill" [class.active]="urgenciaFiltro() === 'importante'" (click)="urgenciaFiltro.set('importante')">Importante</button>
+      <button class="type-pill" [class.active]="urgenciaFiltro() === 'urgente'" (click)="urgenciaFiltro.set('urgente')">Urgente</button>
+    </div>
+  </div>
+
+  <div class="card">
+    @if (loading()) {
+      <div class="loading-state">
+        <div class="spinner"></div>
+        <p>Cargando observaciones...</p>
+      </div>
+    } @else if (error()) {
+      <div class="error-state">
+        <p>{{ error() }}</p>
+        <button class="btn-retry" (click)="adultoActual() ? cargarObservaciones(adultoActual()!.idAdulto) : null">Reintentar</button>
+      </div>
+    } @else {
+      <div class="table-top">
+        <span class="card-title">Observaciones de {{ adultoActual()?.nombre }} {{ adultoActual()?.apellido }}</span>
+        <span class="events-count">{{ observacionesFiltradas().length }} notas encontradas</span>
+      </div>
+      <div class="obs-list">
+        @for (obs of observacionesFiltradas(); track obs.idObservacion) {
+          <div class="obs-row">
+            <div class="obs-row-header">
+              <span class="obs-cuidador">{{ obs.cuidadorNombre }}</span>
+              <span [class]="urgenciaBadge(obs.urgencia)">{{ urgenciaLabel(obs.urgencia) }}</span>
+              <span class="obs-fecha">{{ formatearFecha(obs.fechaHora) }}</span>
+            </div>
+            <p class="obs-texto">{{ obs.texto }}</p>
+            @if (hasVitales(obs)) {
+              <div class="vitales">
+                @if (obs.tensionArterial) {
+                  <span class="vital-chip"><span class="vital-lbl">TA:</span> {{ obs.tensionArterial }}</span>
+                }
+                @if (obs.frecuenciaCardiaca) {
+                  <span class="vital-chip"><span class="vital-lbl">FC:</span> {{ obs.frecuenciaCardiaca }}</span>
+                }
+                @if (obs.temperatura) {
+                  <span class="vital-chip"><span class="vital-lbl">Temp:</span> {{ obs.temperatura }}</span>
+                }
+              </div>
+            }
+          </div>
+        } @empty {
+          <div class="empty-row">No hay observaciones registradas para este adulto mayor</div>
+        }
+      </div>
+    }
+  </div>
+</div>

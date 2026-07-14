@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { Observable } from 'rxjs';
+import { Observable, forkJoin, of } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { ApiService } from './api.service';
 import { Medicamento, MedicamentoCreate, Toma } from '../models/medicamento.model';
@@ -40,6 +40,12 @@ export class MedicamentoService {
   /** Tomas */
   getTomas(adultoMayorId: number, fecha?: string): Observable<Toma[]> {
     return this.api.get<Toma[]>(`/tomas/hoy/${adultoMayorId}`).pipe(map(r => r.data));
+  }
+
+  getTomasMultiples(idsAdultos: number[]): Observable<Toma[][]> {
+    if (idsAdultos.length === 0) return of([]);
+    const requests = idsAdultos.map(id => this.getTomas(id));
+    return forkJoin(requests);
   }
 
   registrarToma(tomaId: number, datos: { estado: string; observacion?: string; fechaHoraReal?: string }): Observable<Toma> {

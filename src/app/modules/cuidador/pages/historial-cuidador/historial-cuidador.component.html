@@ -1,78 +1,109 @@
 <div class="page">
   <div class="header">
     <div>
-      <h1 class="title">Historial de Eventos</h1>
-      <p class="sub">Registro de tomas, observaciones y alertas</p>
+      <h1 class="title">Historial de Salud</h1>
+      <p class="sub">Registro histórico del cumplimiento de medicamentos, alertas y actividad física</p>
     </div>
-    <button class="btn-outline">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
-      Exportar
-    </button>
+
+    <!-- Patient Selector -->
+    @if (adultos().length > 1) {
+      <div class="adult-select-wrapper">
+        <label for="adultSelect" class="select-label">Paciente:</label>
+        <select id="adultSelect" class="adult-select" [ngModel]="adultoActual()" (ngModelChange)="cambiarAdulto($event)">
+          @for (adulto of adultos(); track adulto.idAdulto) {
+            <option [ngValue]="adulto">{{ adulto.nombre }} {{ adulto.apellido }}</option>
+          }
+        </select>
+      </div>
+    }
   </div>
 
-  <div class="filters">
-    <select class="select-input" [(ngModel)]="pacienteFiltro">
-      <option value="">Todos los pacientes</option>
-      <option>Elena Rodríguez</option>
-      <option>José Martínez</option>
-      <option>Rosa Pérez</option>
-      <option>Luis García</option>
-    </select>
-    <select class="select-input" [(ngModel)]="tipoFiltro">
-      <option value="">Todos los tipos</option>
-      <option value="toma">Tomas</option>
-      <option value="omision">Omisiones</option>
-      <option value="observacion">Observaciones</option>
-      <option value="alerta">Alertas</option>
-    </select>
-    <input class="date-input" type="date" [(ngModel)]="fechaInicio" title="Desde">
-    <input class="date-input" type="date" [(ngModel)]="fechaFin" title="Hasta">
-    <button class="btn-primary-sm" (click)="resetFiltros()">Limpiar</button>
+  <!-- Filters -->
+  <div class="filters-bar card">
+    <div class="date-filters">
+      <div class="input-group">
+        <label class="filter-label">Desde:</label>
+        <input type="date" class="date-input" [ngModel]="fechaInicio()" (ngModelChange)="fechaInicio.set($event); aplicarFiltroFechas()">
+      </div>
+      <div class="input-group">
+        <label class="filter-label">Hasta:</label>
+        <input type="date" class="date-input" [ngModel]="fechaFin()" (ngModelChange)="fechaFin.set($event); aplicarFiltroFechas()">
+      </div>
+      @if (fechaInicio() || fechaFin()) {
+        <button class="btn-clear" (click)="limpiarFiltroFechas()">Limpiar fechas</button>
+      }
+    </div>
+    <div class="type-pills">
+      @for (pill of tipoPills; track pill.value) {
+        <button class="type-pill" [class.active]="tipoActivo() === pill.value" (click)="cambiarFiltroTipo(pill.value)">{{ pill.label }}</button>
+      }
+    </div>
   </div>
 
-  <div class="timeline">
-    @for (grupo of eventosAgrupados(); track grupo.fecha) {
-      <div class="fecha-separador">{{ grupo.fecha }}</div>
-      @for (ev of grupo.eventos; track ev.id) {
-        <div class="ev-card card">
-          <div class="ev-left">
-            <div class="ev-icon" [class]="'ev-icon-' + ev.tipo">
-              @switch (ev.tipo) {
-                @case ('toma') {
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
-                }
-                @case ('omision') {
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
-                }
-                @case ('observacion') {
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg>
-                }
-                @case ('alerta') {
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"/></svg>
-                }
-              }
-            </div>
-            <div class="ev-connector"></div>
-          </div>
-          <div class="ev-body">
-            <div class="ev-meta">
-              <div class="avatar-xs" [style.background]="ev.color">{{ ev.initials }}</div>
-              <span class="ev-paciente">{{ ev.paciente }}</span>
-              <span [class]="tipoBadgeClass(ev.tipo)">{{ tipoLabel(ev.tipo) }}</span>
-              <span class="ev-hora">{{ ev.hora }}</span>
-            </div>
-            <div class="ev-titulo">{{ ev.titulo }}</div>
-            <div class="ev-desc">{{ ev.descripcion }}</div>
-          </div>
+  <!-- Main Content Card -->
+  <div class="card">
+    @if (loading()) {
+      <div class="loading-state">
+        <div class="spinner"></div>
+        <p>Cargando eventos del historial...</p>
+      </div>
+    } @else if (error()) {
+      <div class="error-state">
+        <p>{{ error() }}</p>
+        <button class="btn-retry" (click)="adultoActual() ? cargarHistorial(adultoActual()!.idAdulto) : null">Reintentar</button>
+      </div>
+    } @else {
+      <div class="table-top">
+        <span class="card-title">Eventos de {{ adultoActual()?.nombre }} {{ adultoActual()?.apellido }}</span>
+        <span class="events-count">{{ totalElements() }} eventos encontrados</span>
+      </div>
+      <div class="table-responsive">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Fecha y hora</th>
+              <th>Tipo</th>
+              <th>Descripción</th>
+              <th>Método / Fuente</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (ev of eventos(); track ev.id) {
+              <tr [class.row-alerta]="ev.tipo === 'alerta'" [class.row-toma]="ev.tipo === 'toma'">
+                <td class="cell-hora">{{ formatearFecha(ev.fechaHora) }}</td>
+                <td>
+                  <span class="badge" [class]="tipoBadge(ev.tipo)">
+                    {{ ev.tipo === 'actividad_iot' ? 'IoT' : ev.tipo }}
+                  </span>
+                </td>
+                <td class="cell-desc">
+                  <div class="event-title">{{ ev.titulo }}</div>
+                  <div class="event-desc">{{ ev.descripcion }}</div>
+                </td>
+                <td class="text-muted">{{ obtenerMetodo(ev) }}</td>
+              </tr>
+            }
+            @if (eventos().length === 0) {
+              <tr>
+                <td colspan="4" class="empty-row">No hay eventos para el filtro seleccionado</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Pagination -->
+      @if (totalPages() > 1) {
+        <div class="pagination">
+          <button class="page-btn" [disabled]="currentPage() === 0" (click)="cambiarPagina(currentPage() - 1)">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/></svg>
+          </button>
+          <span class="page-info">Página {{ currentPage() + 1 }} de {{ totalPages() }}</span>
+          <button class="page-btn" [disabled]="currentPage() === totalPages() - 1" (click)="cambiarPagina(currentPage() + 1)">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>
+          </button>
         </div>
       }
-    } @empty {
-      <div class="empty-state card">
-        <svg width="48" height="48" viewBox="0 0 24 24" fill="currentColor" class="empty-icon">
-          <path d="M13 3c-4.97 0-9 4.03-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42C8.27 19.99 10.51 21 13 21c4.97 0 9-4.03 9-9s-4.03-9-9-9zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z"/>
-        </svg>
-        <p class="empty-text">No hay eventos para los filtros seleccionados</p>
-      </div>
     }
   </div>
 </div>

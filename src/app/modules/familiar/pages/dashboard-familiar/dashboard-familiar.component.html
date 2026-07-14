@@ -75,9 +75,14 @@
         <span class="stat-label">Último evento</span>
         <div class="stat-icon blue"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg></div>
       </div>
-      <div class="stat-value" style="font-size:14px; font-weight:600">Toma confirmada</div>
-      <div class="stat-sub-line">Pastillero ESP32</div>
-      <div class="stat-trend muted">Hace 45 minutos</div>
+      @if (ultimoEvento()) {
+        <div class="stat-value" style="font-size:14px; font-weight:600">{{ ultimoEvento()!.titulo }}</div>
+        <div class="stat-sub-line">{{ ultimoEvento()!.metodo }}</div>
+        <div class="stat-trend muted">{{ ultimoEvento()!.hora }}</div>
+      } @else {
+        <div class="stat-value" style="font-size:14px; font-weight:600; color:#9CABB8">Sin eventos</div>
+        <div class="stat-trend muted">Historial vacío</div>
+      }
     </div>
   </div>
 

@@ -19,10 +19,9 @@
     </div>
     <select class="select-input" [(ngModel)]="pacienteFiltro">
       <option value="">Todos los pacientes</option>
-      <option>Elena Rodríguez</option>
-      <option>José Martínez</option>
-      <option>Rosa Pérez</option>
-      <option>Luis García</option>
+      @for (a of adultos(); track a.idAdulto) {
+        <option [value]="a.idAdulto">{{ a.nombre }} {{ a.apellido }}</option>
+      }
     </select>
     <select class="select-input" [(ngModel)]="urgenciaFiltro">
       <option value="">Todas las urgencias</option>
@@ -33,50 +32,57 @@
     <button class="btn-reset" (click)="resetFiltros()">Limpiar</button>
   </div>
 
-  <div class="obs-list">
-    @for (obs of obsFiltradas(); track obs.id) {
-      <div class="card obs-card">
-        <div class="obs-header">
-          <div class="obs-author">
-            <div class="avatar" [style.background]="obs.color">{{ obs.initials }}</div>
-            <div>
-              <div class="obs-paciente">{{ obs.paciente }}</div>
-              <div class="obs-fecha">{{ obs.fecha }} · {{ obs.hora }}</div>
+  @if (loading()) {
+    <div class="loading-state">
+      <div class="spinner"></div>
+      <p>Cargando observaciones...</p>
+    </div>
+  } @else if (error()) {
+    <div class="error-state">
+      <p>{{ error() }}</p>
+      <button class="btn-retry" (click)="cargarDatos()">Reintentar</button>
+    </div>
+  } @else {
+    <div class="obs-list">
+      @for (obs of obsFiltradas(); track obs.idObservacion) {
+        <div class="card obs-card">
+          <div class="obs-header">
+            <div class="obs-author">
+              <div class="avatar" [style.background]="colorPaciente(obs.idAdulto)">{{ inicialesPaciente(obs.idAdulto) }}</div>
+              <div>
+                <div class="obs-paciente">{{ nombrePaciente(obs.idAdulto) }}</div>
+                <div class="obs-fecha">{{ formatearFecha(obs.fechaHora) }}</div>
+              </div>
+            </div>
+            <div class="obs-actions">
+              <span [class]="urgenciaBadgeClass(obs.urgencia)">{{ urgenciaLabel(obs.urgencia) }}</span>
             </div>
           </div>
-          <div class="obs-actions">
-            <span [class]="urgenciaBadgeClass(obs.urgencia)">{{ urgenciaLabel(obs.urgencia) }}</span>
-            <button class="icon-btn icon-btn-red" (click)="solicitarEliminar(obs.id)" title="Eliminar">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
-              </svg>
-            </button>
-          </div>
+          <p class="obs-texto">{{ obs.texto }}</p>
+          @if (hasVitales(obs)) {
+            <div class="vitales">
+              @if (obs.tensionArterial) {
+                <span class="vital-chip"><span class="vital-lbl">TA:</span> {{ obs.tensionArterial }}</span>
+              }
+              @if (obs.frecuenciaCardiaca) {
+                <span class="vital-chip"><span class="vital-lbl">FC:</span> {{ obs.frecuenciaCardiaca }}</span>
+              }
+              @if (obs.temperatura) {
+                <span class="vital-chip"><span class="vital-lbl">Temp:</span> {{ obs.temperatura }}</span>
+              }
+            </div>
+          }
         </div>
-        <p class="obs-texto">{{ obs.texto }}</p>
-        @if (hasVitales(obs)) {
-          <div class="vitales">
-            @if (obs.vitales?.ta) {
-              <span class="vital-chip"><span class="vital-lbl">TA:</span> {{ obs.vitales!.ta }}</span>
-            }
-            @if (obs.vitales?.fc) {
-              <span class="vital-chip"><span class="vital-lbl">FC:</span> {{ obs.vitales!.fc }}</span>
-            }
-            @if (obs.vitales?.temp) {
-              <span class="vital-chip"><span class="vital-lbl">Temp:</span> {{ obs.vitales!.temp }}</span>
-            }
-          </div>
-        }
-      </div>
-    } @empty {
-      <div class="empty-state">
-        <svg width="48" height="48" viewBox="0 0 24 24" fill="currentColor" class="empty-icon">
-          <path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/>
-        </svg>
-        <p class="empty-text">No hay observaciones registradas</p>
-      </div>
-    }
-  </div>
+      } @empty {
+        <div class="empty-state">
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="currentColor" class="empty-icon">
+            <path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/>
+          </svg>
+          <p class="empty-text">No hay observaciones registradas</p>
+        </div>
+      }
+    </div>
+  }
 
   @if (modalOpen()) {
     <div class="modal-overlay" (click)="cerrarSiEsOverlay($event)">
@@ -91,14 +97,13 @@
         </div>
         <div class="modal-body">
           <div class="form-group">
-            <label>Paciente</label>
-            <select class="select-input" [(ngModel)]="nuevaObs.paciente">
-              <option value="">Seleccionar paciente</option>
-              <option>Elena Rodríguez</option>
-              <option>José Martínez</option>
-              <option>Rosa Pérez</option>
-              <option>Luis García</option>
-            </select>
+            <label class="label">Paciente *</label>
+          <select class="input" [(ngModel)]="nuevaObs.idAdulto" required>
+            <option [ngValue]="null" disabled>Seleccionar paciente...</option>
+            @for (a of adultos(); track a.idAdulto) {
+              <option [ngValue]="a.idAdulto">{{ a.nombre }} {{ a.apellido }}</option>
+            }
+          </select>
           </div>
           <div class="form-group">
             <label>Nivel de urgencia</label>
@@ -110,7 +115,7 @@
           </div>
           <div class="form-group">
             <label>Observación</label>
-            <textarea class="textarea-input" rows="4"
+            <textarea class="textarea-input" rows="4" maxlength="1000"
               placeholder="Describe el estado del paciente, síntomas observados, reacciones a medicamentos..."
               [(ngModel)]="nuevaObs.texto"></textarea>
           </div>
@@ -134,24 +139,9 @@
         </div>
         <div class="modal-footer">
           <button class="btn-secondary" (click)="modalOpen.set(false)">Cancelar</button>
-          <button class="btn-primary" (click)="guardar()">Guardar observación</button>
-        </div>
-      </div>
-    </div>
-  }
-
-  @if (confirmDeleteId() !== null) {
-    <div class="modal-overlay" (click)="cerrarSiEsOverlay($event)">
-      <div class="modal modal-sm">
-        <div class="modal-header">
-          <h2>Confirmar eliminación</h2>
-        </div>
-        <div class="modal-body">
-          <p class="confirm-text">¿Estás seguro de que deseas eliminar esta observación? Esta acción no se puede deshacer.</p>
-        </div>
-        <div class="modal-footer">
-          <button class="btn-secondary" (click)="confirmDeleteId.set(null)">Cancelar</button>
-          <button class="btn-danger" (click)="confirmarEliminar()">Eliminar</button>
+          <button class="btn-primary" [disabled]="guardando()" (click)="guardar()">
+            {{ guardando() ? 'Guardando...' : 'Guardar observación' }}
+          </button>
         </div>
       </div>
     </div>

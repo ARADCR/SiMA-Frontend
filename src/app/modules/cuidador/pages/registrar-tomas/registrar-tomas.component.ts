@@ -1,12 +1,21 @@
-import { Component, signal, computed } from '@angular/core';
+import { Component, signal, computed, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { AdultoMayorService } from '../../../../core/services/adulto-mayor.service';
+import { MedicamentoService } from '../../../../core/services/medicamento.service';
+import { AdultoMayor } from '../../../../core/models/adulto-mayor.model';
+import { Toma as TomaBackend, EstadoToma } from '../../../../core/models/medicamento.model';
 
-type EstadoToma = 'pendiente' | 'tomado' | 'omitido';
-
-interface Toma {
-  id: number; paciente: string; initials: string; avatarColor: string;
-  medicamento: string; dosis: string; hora: string; estado: EstadoToma;
+interface TomaUI {
+  idRegistro: number;
+  paciente: string;
+  initials: string;
+  avatarColor: string;
+  medicamento: string;
+  dosis: string;
+  hora: string;
+  estado: EstadoToma;
+  original: TomaBackend;
 }
 
 @Component({
@@ -16,19 +25,65 @@ interface Toma {
   templateUrl: './registrar-tomas.component.html',
   styleUrls: ['./registrar-tomas.component.scss']
 })
-export class RegistrarTomasComponent {
-  pacienteFiltro = '';
+export class RegistrarTomasComponent implements OnInit {
+  private adultoSvc = inject(AdultoMayorService);
+  private medSvc = inject(MedicamentoService);
 
-  tomas = signal<Toma[]>([
-    { id: 1, paciente: 'Elena Rodríguez', initials: 'ER', avatarColor: '#2E86AB', medicamento: 'Metformina 500mg', dosis: '1 tableta', hora: '08:00', estado: 'tomado' },
-    { id: 2, paciente: 'Elena Rodríguez', initials: 'ER', avatarColor: '#2E86AB', medicamento: 'Atorvastatina', dosis: '20mg', hora: '08:00', estado: 'tomado' },
-    { id: 3, paciente: 'José Martínez', initials: 'JM', avatarColor: '#52B788', medicamento: 'Enalapril 10mg', dosis: '1 tableta', hora: '09:00', estado: 'tomado' },
-    { id: 4, paciente: 'Rosa Pérez', initials: 'RP', avatarColor: '#E76F51', medicamento: 'Omeprazol 20mg', dosis: '1 cápsula', hora: '09:30', estado: 'omitido' },
-    { id: 5, paciente: 'Luis García', initials: 'LG', avatarColor: '#F4A261', medicamento: 'Losartán 50mg', dosis: '1 tableta', hora: '13:30', estado: 'pendiente' },
-    { id: 6, paciente: 'Elena Rodríguez', initials: 'ER', avatarColor: '#2E86AB', medicamento: 'Metformina 500mg', dosis: '1 tableta', hora: '14:00', estado: 'pendiente' },
-    { id: 7, paciente: 'José Martínez', initials: 'JM', avatarColor: '#52B788', medicamento: 'Amlodipina 5mg', dosis: '1 tableta', hora: '15:00', estado: 'pendiente' },
-    { id: 8, paciente: 'Rosa Pérez', initials: 'RP', avatarColor: '#E76F51', medicamento: 'Calcio + Vit D', dosis: '1 tableta', hora: '16:00', estado: 'pendiente' },
-  ]);
+  pacienteFiltro = '';
+  adultos = signal<AdultoMayor[]>([]);
+  tomas = signal<TomaUI[]>([]);
+  isSaving = signal(false);
+
+  ngOnInit() {
+    this.cargarDatos();
+  }
+
+  cargarDatos() {
+    this.adultoSvc.getMisPacientes().subscribe({
+      next: (list) => {
+        this.adultos.set(list);
+        
+        if (list.length === 0) return;
+
+        const ids = list.map(a => a.idAdulto);
+        this.medSvc.getTomasMultiples(ids).subscribe({
+          next: (tomasList) => {
+            const nuevasTomas: TomaUI[] = [];
+            const colors = ['#2E86AB', '#52B788', '#E76F51', '#F4A261', '#6C63FF'];
+
+            tomasList.forEach((tomasPaciente, i) => {
+              if (tomasPaciente.length === 0) return;
+              
+              const adultoId = tomasPaciente[0].idAdulto;
+              const adultoIndex = list.findIndex(a => a.idAdulto === adultoId);
+              const a = list[adultoIndex !== -1 ? adultoIndex : 0];
+              const color = colors[(adultoIndex !== -1 ? adultoIndex : i) % colors.length];
+              
+              tomasPaciente.forEach(t => {
+                nuevasTomas.push({
+                  idRegistro: t.idRegistro,
+                  paciente: `${a.nombre} ${a.apellido}`,
+                  initials: `${a.nombre.charAt(0)}${a.apellido.charAt(0)}`.toUpperCase(),
+                  avatarColor: color,
+                  medicamento: t.nombreMedicamento,
+                  dosis: t.dosis,
+                  hora: new Date(t.fechaHoraProgramada).toLocaleTimeString('es-ES', {hour: '2-digit', minute:'2-digit'}),
+                  estado: t.estado,
+                  original: t
+                });
+              });
+            });
+
+            // Ordenar por hora
+            nuevasTomas.sort((a, b) => a.original.fechaHoraProgramada.localeCompare(b.original.fechaHoraProgramada));
+            this.tomas.set(nuevasTomas);
+          },
+          error: (err) => console.error('Error al cargar tomas múltiples', err)
+        });
+      },
+      error: (err) => console.error('Error al cargar pacientes:', err)
+    });
+  }
 
   toast = signal<{ msg: string; type: 'success' | 'error' } | null>(null);
 
@@ -42,17 +97,42 @@ export class RegistrarTomasComponent {
   pendientes = computed(() => this.tomas().filter(t => t.estado === 'pendiente').length);
   omitidas = computed(() => this.tomas().filter(t => t.estado === 'omitido').length);
 
-  registrar(t: Toma, estado: EstadoToma): void {
-    this.tomas.update(list => list.map(x => x.id === t.id ? { ...x, estado } : x));
-    const msg = estado === 'tomado'
-      ? `Toma de ${t.medicamento} registrada correctamente`
-      : `Toma de ${t.medicamento} marcada como omitida`;
-    this.showToast(msg, estado === 'tomado' ? 'success' : 'error');
+  registrar(t: TomaUI, estado: EstadoToma): void {
+    if (this.isSaving()) return;
+    this.isSaving.set(true);
+
+    this.medSvc.registrarToma(t.idRegistro, { estado }).subscribe({
+      next: () => {
+        this.tomas.update(list => list.map(x => x.idRegistro === t.idRegistro ? { ...x, estado } : x));
+        const msg = estado === 'tomado'
+          ? `Toma de ${t.medicamento} registrada correctamente`
+          : `Toma de ${t.medicamento} marcada como omitida`;
+        this.showToast(msg, estado === 'tomado' ? 'success' : 'error');
+        this.isSaving.set(false);
+      },
+      error: (err) => {
+        console.error('Error al registrar toma', err);
+        this.showToast('Error al registrar la toma', 'error');
+        this.isSaving.set(false);
+      }
+    });
   }
 
-  revertir(t: Toma): void {
-    this.tomas.update(list => list.map(x => x.id === t.id ? { ...x, estado: 'pendiente' } : x));
-    this.showToast('Toma revertida a pendiente', 'success');
+  revertir(t: TomaUI): void {
+    if (this.isSaving()) return;
+    this.isSaving.set(true);
+    
+    this.medSvc.registrarToma(t.idRegistro, { estado: 'pendiente' }).subscribe({
+      next: () => {
+        this.tomas.update(list => list.map(x => x.idRegistro === t.idRegistro ? { ...x, estado: 'pendiente' } : x));
+        this.showToast('Toma revertida a pendiente', 'success');
+        this.isSaving.set(false);
+      },
+      error: () => {
+        this.showToast('Error al revertir la toma', 'error');
+        this.isSaving.set(false);
+      }
+    });
   }
 
   badgeClass(e: EstadoToma): string {
