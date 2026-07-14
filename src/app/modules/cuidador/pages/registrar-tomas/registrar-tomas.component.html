@@ -6,8 +6,8 @@
     </div>
     <select class="select-input" [(ngModel)]="pacienteFiltro">
       <option value="">Todos los pacientes</option>
-      @for (a of adultos(); track a.idAdulto) {
-        <option [value]="a.nombre + ' ' + a.apellido">{{ a.nombre }} {{ a.apellido }}</option>
+      @for (t of pacientesUnicos(); track t.idAdulto) {
+        <option [value]="t.paciente">{{ t.paciente }}</option>
       }
     </select>
   </div>
@@ -48,7 +48,7 @@
           </tr>
         </thead>
         <tbody>
-          @for (t of tomasFiltradas(); track t.idRegistro) {
+          @for (t of tomasFiltradas(); track t.id) {
             <tr>
               <td><span class="hora-val">{{ t.hora }}</span></td>
               <td>

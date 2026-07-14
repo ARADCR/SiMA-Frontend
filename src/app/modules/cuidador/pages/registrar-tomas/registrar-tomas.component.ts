@@ -42,6 +42,15 @@ export class RegistrarTomasComponent implements OnInit {
       : this.tomas()
   );
 
+  pacientesUnicos = computed(() => {
+    const seen = new Set<string>();
+    return this.tomas().filter(t => {
+      if (seen.has(t.paciente)) return false;
+      seen.add(t.paciente);
+      return true;
+    });
+  });
+
   completadas = computed(() => this.tomas().filter(t => t.estado === 'tomado').length);
   pendientes = computed(() => this.tomas().filter(t => t.estado === 'pendiente').length);
   omitidas = computed(() => this.tomas().filter(t => t.estado === 'omitido').length);

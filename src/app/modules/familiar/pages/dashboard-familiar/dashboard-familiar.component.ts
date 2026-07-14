@@ -56,6 +56,7 @@ export class DashboardFamiliarComponent implements OnInit {
   ultimoEvento = signal<{ titulo: string; metodo: string; hora: string } | null>(null);
   observaciones: { cuidador: string; initials: string; hora: string; texto: string }[] = [];
 
+  alertasActivas = computed(() => this.alertas().filter(a => !a.resuelta));
   tomadas = computed(() => this.medicamentosHoy().filter(m => m.estado === 'tomado').length);
   totalMeds = computed(() => this.medicamentosHoy().length);
   cumplimientoPct = computed(() => {
