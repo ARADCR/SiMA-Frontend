@@ -61,7 +61,7 @@ export class DashboardFamiliarComponent implements OnInit {
   totalMeds = computed(() => this.medicamentosHoy().length);
   cumplimientoPct = computed(() => {
     const total = this.totalMeds();
-    if (total === 0) return 100;
+    if (total === 0) return 0;
     return Math.round((this.tomadas() / total) * 100);
   });
   proxima = computed(() => this.medicamentosHoy().find(m => m.estado === 'pendiente') ?? null);
@@ -107,6 +107,35 @@ export class DashboardFamiliarComponent implements OnInit {
   }
 
   cargarTomasDelDia(idAdulto: number): void {
+    this.registroTomaService.getTomasDelDia(idAdulto).subscribe({
+      next: (res: RegistroTomaResponse[]) => {
+        const meds = res.map(toma => ({
+          nombre: toma.horario.medicamento.nombre,
+          dosis: toma.horario.medicamento.dosis,
+          hora: toma.horario.horaProgramada.substring(0, 5),
+          estado: (toma.estado === 'confirmado_manual' ? 'tomado' : toma.estado) as TodayMed['estado']
+        }));
+        this.medicamentosHoy.set(meds);
+      },
+      error: err => {
+        console.error('Error al cargar tomas', err);
+        this.showToast('Error al cargar medicamentos del día');
+      }
+    });
+  }
+
+  constructor() {
+    effect(() => {
+      const idAdulto = this.adultoActivo();
+      this.cargarTomasDelDia(idAdulto);
+    });
+  }
+
+  ngOnInit() {
+    // Initialization done in effect
+  }
+
+  cargarTomasDelDia(idAdulto: number) {
     this.registroTomaService.getTomasDelDia(idAdulto).subscribe({
       next: (res: RegistroTomaResponse[]) => {
         const meds = res.map(toma => ({

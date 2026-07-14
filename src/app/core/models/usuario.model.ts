@@ -1,10 +1,16 @@
-export type NombreRol = 'Administrador' | 'Familiar' | 'Cuidador';
+export type NombreRol = 'Administrador' | 'Familiar' | 'Cuidador' | 'Adulto Mayor';
+
+export interface Rol {
+  idRol: number;
+  nombreRol: string;
+}
 
 /** Mapa de roles disponibles: nombre → idRol tal como los inserta el DataSeeder */
 export const ROLES_DISPONIBLES: { idRol: number; nombreRol: NombreRol }[] = [
   { idRol: 1, nombreRol: 'Administrador' },
   { idRol: 2, nombreRol: 'Familiar' },
   { idRol: 3, nombreRol: 'Cuidador' },
+  { idRol: 4, nombreRol: 'Adulto Mayor' },
 ];
 
 /** Coincide con UsuarioResponse del backend */
@@ -42,7 +48,7 @@ export interface UsuarioUpdate {
 }
 
 export interface CredencialesLogin {
-  email: string;
+  correo: string;
   password: string;
 }
 

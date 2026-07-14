@@ -12,27 +12,27 @@ import { AuthService } from '../../../../core/auth/auth.service';
   styleUrl: './login.component.scss'
 })
 export class LoginComponent {
-  private fb     = inject(FormBuilder);
-  private auth   = inject(AuthService);
+  private fb = inject(FormBuilder);
+  private auth = inject(AuthService);
   private router = inject(Router);
 
   form: FormGroup = this.fb.group({
-    email:    ['', [Validators.required, Validators.email]],
+    correo: ['', [Validators.required, Validators.email]],
     password: ['', [Validators.required, Validators.minLength(6)]]
   });
 
-  cargando   = false;
-  error      = '';
+  cargando = false;
+  error = '';
   mostrarPass = false;
 
-  get emailCtrl()    { return this.form.get('email')!; }
+  get emailCtrl() { return this.form.get('correo')!; }
   get passwordCtrl() { return this.form.get('password')!; }
 
   onSubmit(): void {
     if (this.form.invalid) { this.form.markAllAsTouched(); return; }
 
     this.cargando = true;
-    this.error    = '';
+    this.error = '';
 
     this.auth.login(this.form.value).subscribe({
       next: () => {
