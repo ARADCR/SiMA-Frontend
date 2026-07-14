@@ -2,6 +2,7 @@ import { Component, signal, computed, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { AdultoMayorService } from '../../../../core/services/adulto-mayor.service';
+import { ObservacionService } from '../../../../core/services/observacion.service';
 
 interface Paciente {
   id: number; nombre: string; edad: number; initials: string;
@@ -28,6 +29,7 @@ interface DiaCompliance {
 })
 export class DashboardCuidadorComponent implements OnInit {
   private adultoService = inject(AdultoMayorService);
+  private observacionService = inject(ObservacionService);
 
   readonly fechaHoy = new Date().toLocaleDateString('es-MX', {
     weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
@@ -59,21 +61,45 @@ export class DashboardCuidadorComponent implements OnInit {
         });
         this.pacientes.set(mapeados);
 
-        // Generar observaciones dinámicas
-        const obsNuevas: Observacion[] = [];
-        let obsId = 1;
-        mapeados.forEach(p => {
-          if (Math.random() > 0.3) {
-            obsNuevas.push({
-              id: obsId++, paciente: p.nombre, initials: p.initials, color: this.avatarColor(p.id),
-              texto: `Observación rutinaria para ${p.nombre}. Se encuentra en buen estado.`, hora: '08:00 AM'
+        if (adultos.length > 0) {
+          import('rxjs').then(({ forkJoin }) => {
+            forkJoin(adultos.map(a => this.observacionService.listarPorAdulto(a.idAdulto))).subscribe({
+              next: (resultados) => {
+                const todas = resultados.flat() as any[];
+                const obsNuevas: Observacion[] = todas.map(o => {
+                  const pacienteObj = mapeados.find(m => m.id === o.idAdulto);
+                  return {
+                    id: o.idObservacion,
+                    paciente: pacienteObj ? pacienteObj.nombre : (o.adultoNombre || 'Desconocido'),
+                    initials: pacienteObj ? pacienteObj.initials : '',
+                    color: this.avatarColor(o.idAdulto),
+                    texto: o.texto,
+                    hora: this.formatearTiempoRelativo(o.fechaHora)
+                  };
+                });
+                this.observacionesRecientes.set(obsNuevas.slice(0, 5)); // Mostrar solo las 5 más recientes
+              }
             });
-          }
-        });
-        this.observacionesRecientes.set(obsNuevas);
+          });
+        }
       },
       error: (err) => console.error('Error al cargar pacientes asignados', err)
     });
+  }
+
+  formatearTiempoRelativo(fechaStr: string): string {
+    if (!fechaStr) return '';
+    try {
+      const date = new Date(fechaStr);
+      const diffMs = new Date().getTime() - date.getTime();
+      const diffMins = Math.floor(diffMs / 60000);
+      if (diffMins < 60) return `Hace ${diffMins} min`;
+      const diffHours = Math.floor(diffMins / 60);
+      if (diffHours < 24) return `Hace ${diffHours} horas`;
+      return date.toLocaleDateString();
+    } catch (e) {
+      return '';
+    }
   }
 
   calcularEdad(fecha: string): number {

@@ -51,9 +51,9 @@ export class ListaAdultosComponent implements OnInit {
           // Valores por defecto para HU futuras
           relacion: 'Familiar',
           condicionesArray: a.condicionesMedicas ? a.condicionesMedicas.split(',').map(s => s.trim()) : [],
-          cuidador: 'Sin asignar',
+          cuidador: a.cuidadorNombre || 'Sin asignar',
           dispositivoOnline: false,
-          medsCount: 0,
+          medsCount: a.medicamentosActivos || 0,
           cumplimiento: 0,
           cumplimientoColor: '#999'
         }));

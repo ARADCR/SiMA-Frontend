@@ -124,34 +124,7 @@ export class DashboardFamiliarComponent implements OnInit {
     });
   }
 
-  constructor() {
-    effect(() => {
-      const idAdulto = this.adultoActivo();
-      this.cargarTomasDelDia(idAdulto);
-    });
-  }
 
-  ngOnInit() {
-    // Initialization done in effect
-  }
-
-  cargarTomasDelDia(idAdulto: number) {
-    this.registroTomaService.getTomasDelDia(idAdulto).subscribe({
-      next: (res: RegistroTomaResponse[]) => {
-        const meds = res.map(toma => ({
-          nombre: toma.horario.medicamento.nombre,
-          dosis: toma.horario.medicamento.dosis,
-          hora: toma.horario.horaProgramada.substring(0, 5),
-          estado: (toma.estado === 'confirmado_manual' ? 'tomado' : toma.estado) as TodayMed['estado']
-        }));
-        this.medicamentosHoy.set(meds);
-      },
-      error: err => {
-        console.error('Error al cargar tomas', err);
-        this.showToast('Error al cargar medicamentos del día');
-      }
-    });
-  }
 
   seleccionarAdulto(id: number): void {
     this.adultoActivo.set(id);

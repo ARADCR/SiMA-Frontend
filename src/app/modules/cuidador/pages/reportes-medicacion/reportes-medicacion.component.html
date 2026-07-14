@@ -112,7 +112,7 @@
               <span class="med-name">{{ med.nombre }}</span>
               <div class="med-bar-track">
                 <div class="med-bar-fill"
-                     [style.width]="(med.cantidadOmisiones / reporte()!.medicamentosMasOmitidos[0].cantidadOmisiones * 100) + '%'">
+                     [style.width]="reporte()!.medicamentosMasOmitidos[0].cantidadOmisiones > 0 ? (med.cantidadOmisiones / reporte()!.medicamentosMasOmitidos[0].cantidadOmisiones * 100) + '%' : '0%'">
                 </div>
               </div>
               <span class="med-count">{{ med.cantidadOmisiones }}

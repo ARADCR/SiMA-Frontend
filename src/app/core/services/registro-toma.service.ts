@@ -18,6 +18,7 @@ export interface RegistroTomaResponse {
   fechaHoraProgramada: string;
   fechaHoraRegistro: string | null;
   observacion: string | null;
+  nombreConfirmador: string | null;
 }
 
 export interface RegistroTomaRequest {

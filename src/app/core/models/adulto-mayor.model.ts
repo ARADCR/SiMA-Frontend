@@ -10,6 +10,9 @@ export interface AdultoMayor {
   creadoEn?: string;
   familiarId?: number;
   familiarNombre?: string;
+  cuidadorId?: number;
+  cuidadorNombre?: string;
+  medicamentosActivos?: number;
 }
 
 export interface AdultoMayorCreate {
