@@ -1,122 +1,305 @@
 <div class="page">
+  <!-- Cabecera y Selector -->
   <div class="header">
     <div>
       <h1 class="title">Actividad IoT</h1>
-      <p class="sub">Estado y eventos de los dispositivos de Elena Rodríguez</p>
-    </div>
-    <div class="adulto-selector">
-      <select class="select-input" [(ngModel)]="adultoSel">
-        <option>Elena Rodríguez</option>
-        <option>José Rodríguez</option>
-      </select>
-    </div>
-  </div>
-
-  <div class="devices-grid">
-    <div class="card device-card">
-      <div class="device-header">
-        <div class="device-icon" style="background:#EBF5FB; color:#2E86AB">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M6.5 10h-2v5h2v-5zm4 0h-2v5h2v-5zm8.5 7H4v2h15v-2zm-4.5-7h-2v5h2v-5zM11.5 1L2 6v2h19V6l-9.5-5z"/></svg>
-        </div>
-        <div>
-          <div class="device-name">Pastillero Inteligente</div>
-          <div class="device-id">ID: ESP32-001</div>
-        </div>
-        <span class="badge badge-green">En línea</span>
-      </div>
-      <div class="device-stats">
-        <div class="dstat">
-          <div class="dstat-lbl">Batería</div>
-          <div class="dstat-val" style="color:#52B788">{{ bateriaPastillero() }}%</div>
-          <div class="battery-bar"><div class="battery-fill" [style.width.%]="bateriaPastillero()" style="background:#52B788"></div></div>
-        </div>
-        <div class="dstat">
-          <div class="dstat-lbl">Última sincronización</div>
-          <div class="dstat-val" style="font-size:14px">Hace 2 min</div>
-        </div>
-        <div class="dstat">
-          <div class="dstat-lbl">Compartimentos</div>
-          <div class="dstat-val">4 / 7 usados</div>
-        </div>
-      </div>
-      <div class="compartimentos">
-        @for (c of compartimentos; track c.id) {
-          <div class="comp" [title]="c.nombre">
-            <div class="comp-slot" [class]="c.estado">{{ c.hora }}</div>
-            <div class="comp-lbl">{{ c.nombre.split(' ')[0] }}</div>
-          </div>
+      <p class="sub">
+        @if (adultoSeleccionadoId()) {
+          Monitoreo en tiempo real de {{ adultoSeleccionadoNombre }}
+        } @else {
+          Seleccione un adulto mayor para ver sus lecturas
         }
-      </div>
+      </p>
     </div>
-
-    <div class="card device-card">
-      <div class="device-header">
-        <div class="device-icon" style="background:#D8F3DC; color:#52B788">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+    <div class="header-actions">
+      @if (adultoSeleccionadoId()) {
+        <button class="btn btn-primary" [disabled]="cargandoLecturas()" (click)="actualizar()">
+          @if (cargandoLecturas()) {
+            Cargando...
+          } @else {
+            Actualizar
+          }
+        </button>
+      }
+      @if (adultos().length > 1) {
+        <div class="adulto-selector">
+          <select class="select-input" [value]="adultoSeleccionadoId() || ''" (change)="onAdultoChange($event)">
+            <option value="" disabled selected>Seleccione Adulto Mayor...</option>
+            @for (a of adultos(); track a.idAdulto) {
+              <option [value]="a.idAdulto">{{ a.nombre }} {{ a.apellido }}</option>
+            }
+          </select>
         </div>
-        <div>
-          <div class="device-name">Pulsera de Salud</div>
-          <div class="device-id">ID: BLE-023</div>
-        </div>
-        <span class="badge badge-green">En línea</span>
-      </div>
-      <div class="device-stats">
-        <div class="dstat">
-          <div class="dstat-lbl">Batería</div>
-          <div class="dstat-val" style="color:#F4A261">{{ bateriaPulsera() }}%</div>
-          <div class="battery-bar"><div class="battery-fill" [style.width.%]="bateriaPulsera()" style="background:#F4A261"></div></div>
-        </div>
-        <div class="vitals-grid">
-          <div class="vital">
-            <div class="vital-val">{{ bpm() }}</div>
-            <div class="vital-lbl">BPM</div>
-            <div style="font-size:10px; color:#52B788; margin-top:2px">Normal</div>
-          </div>
-          <div class="vital">
-            <div class="vital-val">{{ spo2() }}</div>
-            <div class="vital-lbl">SpO₂ %</div>
-            <div style="font-size:10px; color:#52B788; margin-top:2px">Normal</div>
-          </div>
-          <div class="vital">
-            <div class="vital-val">{{ temp() }}</div>
-            <div class="vital-lbl">Temp °C</div>
-            <div style="font-size:10px; color:#52B788; margin-top:2px">Normal</div>
-          </div>
-          <div class="vital">
-            <div class="vital-val">{{ pasos() | number }}</div>
-            <div class="vital-lbl">Pasos</div>
-            <div style="font-size:10px; color:#2E86AB; margin-top:2px">Hoy</div>
-          </div>
-        </div>
-      </div>
+      }
     </div>
   </div>
 
-  <div class="card">
-    <div class="events-header">
-      <span class="card-title">Eventos recientes</span>
-      <select class="select-sm" [(ngModel)]="tipoEvento">
-        <option value="">Todos</option>
-        <option value="pastillero">Pastillero</option>
-        <option value="pulsera">Pulsera</option>
-      </select>
+  <!-- Estados Generales de Carga y Error de Adultos -->
+  @if (cargandoAdultos()) {
+    <div class="state-container">
+      <div class="spinner"></div>
+      <p>Cargando información de adultos mayores...</p>
     </div>
-    <div class="table-responsive"><table class="table">
-      <thead>
-        <tr>
-          <th>Tipo</th><th>Descripción</th><th>Dispositivo</th><th>Hora</th>
-        </tr>
-      </thead>
-      <tbody>
-        @for (ev of eventosFiltrados(); track ev.id) {
-          <tr>
-            <td><span class="badge" [class]="ev.tipo === 'Toma confirmada' ? 'badge-green' : ev.tipo === 'Alerta' ? 'badge-red' : 'badge-blue'">{{ ev.tipo }}</span></td>
-            <td style="font-size:13px; color:#1B2B3A">{{ ev.descripcion }}</td>
-            <td style="font-size:12px; color:#9CABB8">{{ ev.dispositivo }}</td>
-            <td style="font-size:12px; color:#9CABB8">{{ ev.hora }}</td>
-          </tr>
-        }
-      </tbody>
-    </table></div>
-  </div>
+  } @else if (errorAdultos()) {
+    <div class="state-container error-state">
+      <div class="error-icon">⚠️</div>
+      <h3>Error al cargar datos</h3>
+      <p>{{ errorAdultos() }}</p>
+      <button class="btn btn-outline" (click)="reintentar()">Reintentar</button>
+    </div>
+  } @else if (adultos().length === 0) {
+    <div class="state-container empty-state">
+      <h3>No hay adultos asignados</h3>
+      <p>No tienes ningún adulto mayor relacionado con tu cuenta.</p>
+    </div>
+  } @else if (!adultoSeleccionadoId()) {
+    <div class="state-container select-prompt">
+      <h3>Por favor, seleccione un adulto mayor</h3>
+      <p>Utilice el selector en la esquina superior derecha para ver el monitoreo de salud.</p>
+    </div>
+  } @else {
+    <!-- Panel Principal al tener un Adulto Mayor Seleccionado -->
+    <div class="monitoring-container">
+      @if (cargandoLecturas()) {
+        <div class="state-container">
+          <div class="spinner"></div>
+          <p>Cargando últimas lecturas de salud...</p>
+        </div>
+      } @else if (errorLecturas()) {
+        <div class="state-container error-state">
+          <div class="error-icon">⚠️</div>
+          <h3>Error al obtener lecturas</h3>
+          <p>{{ errorLecturas() }}</p>
+          <div class="btn-group">
+            <button class="btn btn-outline" (click)="reintentar()">Reintentar</button>
+          </div>
+        </div>
+      } @else {
+        <!-- Grid de Dispositivos (Pastillero e IoT) -->
+        <div class="devices-grid">
+          <!-- Tarjeta Pastillero Inteligente (Estructura y diseño intacto) -->
+          <div class="card device-card">
+            <div class="device-header">
+              <div class="device-icon" style="background:#EBF5FB; color:#2E86AB">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M6.5 10h-2v5h2v-5zm4 0h-2v5h2v-5zm8.5 7H4v2h15v-2zm-4.5-7h-2v5h2v-5zM11.5 1L2 6v2h19V6l-9.5-5z"/></svg>
+              </div>
+              <div>
+                <div class="device-name">Pastillero Inteligente</div>
+                <div class="device-id">ID: ESP32-001</div>
+              </div>
+              <span class="badge badge-green">En línea</span>
+            </div>
+            <div class="device-stats">
+              <div class="dstat">
+                <div class="dstat-lbl">Batería</div>
+                <div class="dstat-val" style="color:#52B788">{{ bateriaPastillero() }}%</div>
+                <div class="battery-bar"><div class="battery-fill" [style.width.%]="bateriaPastillero()" style="background:#52B788"></div></div>
+              </div>
+              <div class="dstat">
+                <div class="dstat-lbl">Última sincronización</div>
+                <div class="dstat-val" style="font-size:14px">Hace 2 min</div>
+              </div>
+              <div class="dstat">
+                <div class="dstat-lbl">Compartimentos</div>
+                <div class="dstat-val">4 / 7 usados</div>
+              </div>
+            </div>
+            <div class="compartimentos">
+              @for (c of compartimentos; track c.id) {
+                <div class="comp" [title]="c.nombre">
+                  <div class="comp-slot" [class]="c.estado">{{ c.hora }}</div>
+                  <div class="comp-lbl">{{ c.nombre.split(' ')[0] }}</div>
+                </div>
+              }
+            </div>
+          </div>
+
+          <!-- Tarjeta de Salud / Pulsera Inteligente -->
+          <div class="card device-card">
+            <div class="device-header">
+              <div class="device-icon" style="background:#D8F3DC; color:#52B788">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+              </div>
+              <div>
+                <div class="device-name">Pulsera de Salud</div>
+                <div class="device-id">MAC: {{ ultimaLectura()?.identificadorFisico || '--' }}</div>
+              </div>
+              @if (ultimaLectura()) {
+                <span class="badge badge-green">En línea</span>
+              } @else {
+                <span class="badge badge-red">Sin datos</span>
+              }
+            </div>
+            
+            @if (sinLecturas()) {
+              <div class="empty-vitals">
+                <p>No hay lecturas disponibles para la pulsera de este adulto mayor.</p>
+              </div>
+            } @else {
+              <div class="device-stats">
+                <div class="dstat">
+                  <div class="dstat-lbl">Batería de Pulsera</div>
+                  <div class="dstat-val" [style.color]="(ultimaLectura()?.nivelBateria || 0) < 20 ? '#C0452A' : '#F4A261'">
+                    {{ ultimaLectura()?.nivelBateria !== null ? ultimaLectura()?.nivelBateria + '%' : '--' }}
+                  </div>
+                  <div class="battery-bar">
+                    <div class="battery-fill" 
+                         [style.width.%]="ultimaLectura()?.nivelBateria || 0" 
+                         [style.background]="(ultimaLectura()?.nivelBateria || 0) < 20 ? '#C0452A' : '#F4A261'">
+                    </div>
+                  </div>
+                </div>
+                
+                <div class="device-info-grid">
+                  <div class="info-item">
+                    <span class="info-lbl">Adulto:</span>
+                    <span class="info-val">{{ ultimaLectura()?.nombreAdulto || adultoSeleccionadoNombre }}</span>
+                  </div>
+                  <div class="info-item">
+                    <span class="info-lbl">Medición:</span>
+                    <span class="info-val">{{ formatearFecha(ultimaLectura()?.fechaMedicion) }}</span>
+                  </div>
+                  <div class="info-item">
+                    <span class="info-lbl">Recepción:</span>
+                    <span class="info-val">{{ formatearFecha(ultimaLectura()?.fechaRecepcion) }}</span>
+                  </div>
+                </div>
+
+                <div class="vitals-grid">
+                  <div class="vital">
+                    <div class="vital-val">{{ ultimaLectura()?.frecuenciaCardiaca || '--' }}</div>
+                    <div class="vital-lbl">BPM</div>
+                    <div style="font-size:10px; color:#52B788; margin-top:2px">Frecuencia C.</div>
+                  </div>
+                  <div class="vital">
+                    <div class="vital-val">{{ ultimaLectura()?.spo2 !== null ? ultimaLectura()?.spo2 + '%' : '--' }}</div>
+                    <div class="vital-lbl">SpO₂</div>
+                    <div style="font-size:10px; color:#52B788; margin-top:2px">Saturación</div>
+                  </div>
+                  <div class="vital">
+                    <div class="vital-val">
+                      @if (ultimaLectura()?.presionSistolica !== null && ultimaLectura()?.presionDiastolica !== null) {
+                        {{ ultimaLectura()?.presionSistolica }}/{{ ultimaLectura()?.presionDiastolica }}
+                      } @else {
+                        --/--
+                      }
+                    </div>
+                    <div class="vital-lbl">mmHg</div>
+                    <div style="font-size:10px; color:#52B788; margin-top:2px">P. Arterial</div>
+                  </div>
+                  <div class="vital">
+                    <div class="vital-val">{{ ultimaLectura()?.pasosDiarios !== null ? (ultimaLectura()?.pasosDiarios | number) : '--' }}</div>
+                    <div class="vital-lbl">Pasos</div>
+                    <div style="font-size:10px; color:#2E86AB; margin-top:2px">Hoy</div>
+                  </div>
+                </div>
+              </div>
+            }
+          </div>
+        </div>
+
+        <!-- Tabla de Historial Clínico de la Pulsera -->
+        <div class="card history-section">
+          <div class="events-header">
+            <span class="card-title">Historial de Lecturas Clínicas (Pulsera)</span>
+          </div>
+          @if (historial().length === 0) {
+            <div class="empty-history">
+              <p>No hay lecturas registradas en el historial clínico.</p>
+            </div>
+          } @else {
+            <div class="table-responsive">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th>Fecha Medición</th>
+                    <th>Frecuencia Cardíaca</th>
+                    <th>SpO₂</th>
+                    <th>Presión Arterial</th>
+                    <th>Pasos</th>
+                    <th>Batería</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (h of historial(); track h.idLectura) {
+                    <tr>
+                      <td style="font-weight: 500;">{{ formatearFecha(h.fechaMedicion) }}</td>
+                      <td>
+                        @if (h.frecuenciaCardiaca) {
+                          <span class="vital-pill pulse">{{ h.frecuenciaCardiaca }} BPM</span>
+                        } @else {
+                          --
+                        }
+                      </td>
+                      <td>
+                        @if (h.spo2 !== null) {
+                          <span class="vital-pill oxygen">{{ h.spo2 }}%</span>
+                        } @else {
+                          --
+                        }
+                      </td>
+                      <td>
+                        @if (h.presionSistolica !== null && h.presionDiastolica !== null) {
+                          <span class="vital-pill pressure">{{ h.presionSistolica }}/{{ h.presionDiastolica }} mmHg</span>
+                        } @else {
+                          --/--
+                        }
+                      </td>
+                      <td>
+                        @if (h.pasosDiarios !== null) {
+                          {{ h.pasosDiarios | number }}
+                        } @else {
+                          --
+                        }
+                      </td>
+                      <td>
+                        @if (h.nivelBateria !== null) {
+                          <span class="badge" [class]="h.nivelBateria < 20 ? 'badge-red' : 'badge-green'">
+                            {{ h.nivelBateria }}%
+                          </span>
+                        } @else {
+                          --
+                        }
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          }
+        </div>
+      }
+
+      <!-- Feed de Eventos Recientes (Original, conservado tal cual) -->
+      <div class="card">
+        <div class="events-header">
+          <span class="card-title">Eventos de Dispositivos (Sistema / Alertas)</span>
+          <select class="select-sm" [(ngModel)]="tipoEvento">
+            <option value="">Todos</option>
+            <option value="pastillero">Pastillero</option>
+            <option value="pulsera">Pulsera</option>
+          </select>
+        </div>
+        <div class="table-responsive">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Tipo</th><th>Descripción</th><th>Dispositivo</th><th>Hora</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (ev of eventosFiltrados(); track ev.id) {
+                <tr>
+                  <td><span class="badge" [class]="ev.tipo === 'Toma confirmada' ? 'badge-green' : ev.tipo === 'Alerta' ? 'badge-red' : 'badge-blue'">{{ ev.tipo }}</span></td>
+                  <td style="font-size:13px; color:#1B2B3A">{{ ev.descripcion }}</td>
+                  <td style="font-size:12px; color:#9CABB8">{{ ev.dispositivo }}</td>
+                  <td style="font-size:12px; color:#9CABB8">{{ ev.hora }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  }
 </div>

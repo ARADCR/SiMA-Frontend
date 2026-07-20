@@ -2,14 +2,16 @@ import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, ActivatedRoute } from '@angular/router';
 import { AdultoMayorService } from '../../../../core/services/adulto-mayor.service';
+import { LecturaPulseraService } from '../../../../core/services/lectura-pulsera.service';
 import { FormularioAdultoComponent } from '../formulario-adulto/formulario-adulto.component';
+import { catchError, forkJoin, of } from 'rxjs';
 
 type Tab = 'medicamentos' | 'historial' | 'alertas' | 'dispositivo';
 
 interface Medicamento { nombre: string; dosis: string; horario: string; estado: string; }
 interface Evento { fecha: string; tipo: string; descripcion: string; metodo: string; }
 interface Alerta { titulo: string; descripcion: string; tipo: string; hora: string; resuelta: boolean; }
-interface Dispositivo { nombre: string; id: string; estado: string; bateria: number; sync: string; }
+interface Dispositivo { nombre: string; id: string; estado: string; bateria: number | null; sync: string; tipo: 'pastillero' | 'pulsera'; }
 
 @Component({
   selector: 'app-detalle-adulto',
@@ -20,8 +22,8 @@ interface Dispositivo { nombre: string; id: string; estado: string; bateria: num
 })
 export class DetalleAdultoComponent implements OnInit {
   private route = inject(ActivatedRoute);
-
   private adultoService = inject(AdultoMayorService);
+  private lecturaService = inject(LecturaPulseraService);
 
   tabActiva = signal<Tab>('medicamentos');
   toast = signal<string | null>(null);
@@ -29,6 +31,9 @@ export class DetalleAdultoComponent implements OnInit {
   adulto: any = null;
   cargando = signal<boolean>(true);
   showModal = signal<boolean>(false);
+
+  // Dispositivos asociados reales y fallbacks
+  dispositivos = signal<Dispositivo[]>([]);
 
   medicamentos: Medicamento[] = [
     { nombre: 'Losartán 50mg', dosis: '1 tableta', horario: '08:00 · 20:00', estado: 'activo' },
@@ -49,16 +54,11 @@ export class DetalleAdultoComponent implements OnInit {
     { titulo: 'Ritmo cardíaco elevado', descripcion: 'Pico de 108 BPM a las 11:30, 12 minutos.', tipo: 'moderado', hora: 'Hace 2 horas', resuelta: false },
   ]);
 
-  dispositivo: Dispositivo = {
-    nombre: 'Pastillero ESP32', id: 'AA:BB:CC:11:22:33',
-    estado: 'online', bateria: 78, sync: 'Hace 2 min'
-  };
-
   tabs: { id: Tab; label: string }[] = [
     { id: 'medicamentos', label: 'Medicamentos' },
     { id: 'historial', label: 'Historial' },
     { id: 'alertas', label: 'Alertas' },
-    { id: 'dispositivo', label: 'Dispositivo' },
+    { id: 'dispositivo', label: 'Dispositivos' },
   ];
 
   ngOnInit(): void {
@@ -70,10 +70,40 @@ export class DetalleAdultoComponent implements OnInit {
 
   private cargarAdulto(id: number): void {
     this.cargando.set(true);
-    this.adultoService.getById(id).subscribe({
-      next: (data) => {
-        this.adulto = data;
-        this.adulto.edad = this.calcularEdad(data.fechaNacimiento);
+
+    forkJoin({
+      adulto: this.adultoService.getById(id),
+      ultimaLectura: this.lecturaService.obtenerUltimaLectura(id).pipe(catchError(() => of(null)))
+    }).subscribe({
+      next: ({ adulto, ultimaLectura }) => {
+        this.adulto = adulto;
+        this.adulto.edad = this.calcularEdad(adulto.fechaNacimiento);
+
+        const listaDispositivos: Dispositivo[] = [];
+
+        // Si tenemos la última lectura de la pulsera, extraemos sus datos reales (MAC, batería, sincronización)
+        if (ultimaLectura) {
+          listaDispositivos.push({
+            nombre: 'Pulsera de Salud',
+            id: ultimaLectura.identificadorFisico,
+            estado: 'online',
+            bateria: ultimaLectura.nivelBateria,
+            sync: this.formatearFecha(ultimaLectura.fechaMedicion),
+            tipo: 'pulsera'
+          });
+        }
+
+        // Agregamos el pastillero por defecto para preservar la visualización existente
+        listaDispositivos.push({
+          nombre: 'Pastillero ESP32',
+          id: 'AA:BB:CC:11:22:33',
+          estado: 'online',
+          bateria: 78,
+          sync: 'Hace 2 min',
+          tipo: 'pastillero'
+        });
+
+        this.dispositivos.set(listaDispositivos);
         this.cargando.set(false);
       },
       error: (err) => {
@@ -121,6 +151,22 @@ export class DetalleAdultoComponent implements OnInit {
     if (recargar && this.adulto) {
       this.toast.set('Perfil actualizado exitosamente');
       this.cargarAdulto(this.adulto.idAdulto);
+    }
+  }
+
+  formatearFecha(fecha: string | null | undefined): string {
+    if (!fecha) return 'Sin sincronización';
+    try {
+      const date = new Date(fecha);
+      if (isNaN(date.getTime())) return 'Sin sincronización';
+      const day = String(date.getDate()).padStart(2, '0');
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const year = date.getFullYear();
+      const hours = String(date.getHours()).padStart(2, '0');
+      const minutes = String(date.getMinutes()).padStart(2, '0');
+      return `${day}/${month}/${year} ${hours}:${minutes}`;
+    } catch {
+      return 'Sin sincronización';
     }
   }
 }

@@ -1,24 +1,44 @@
 import { Component, signal, OnInit, OnDestroy, inject, HostListener } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { CommonModule, DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AlertaService } from '../../../../core/services/alerta.service';
-import { Subscription, interval } from 'rxjs';
+import { AdultoMayorService } from '../../../../core/services/adulto-mayor.service';
+import { LecturaPulseraService } from '../../../../core/services/lectura-pulsera.service';
+import { AuthService } from '../../../../core/auth/auth.service';
+import { AdultoMayor } from '../../../../core/models/adulto-mayor.model';
+import { LecturaPulsera } from '../../../../core/models/lectura-pulsera.model';
+import { Subscription, interval, forkJoin } from 'rxjs';
 
 interface Evento { id: number; tipo: string; descripcion: string; hora: string; dispositivo: string; }
 
 @Component({
   selector: 'app-actividad-iot',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, DatePipe],
   templateUrl: './actividad-iot.component.html',
   styleUrls: ['./actividad-iot.component.scss']
 })
 export class ActividadIotComponent implements OnInit, OnDestroy {
   private alertaService = inject(AlertaService);
+  private adultoService = inject(AdultoMayorService);
+  private lecturaService = inject(LecturaPulseraService);
+  private authService = inject(AuthService);
   private subs: Subscription = new Subscription();
-  adultoSel  = 'Elena Rodríguez';
-  tipoEvento = '';
 
+  // ─── Adultos mayores ────────────────────────────────────────────────
+  adultos = signal<AdultoMayor[]>([]);
+  adultoSeleccionadoId = signal<number | null>(null);
+  cargandoAdultos = signal<boolean>(true);
+  errorAdultos = signal<string | null>(null);
+
+  // ─── Lecturas de pulsera ────────────────────────────────────────────
+  ultimaLectura = signal<LecturaPulsera | null>(null);
+  historial = signal<LecturaPulsera[]>([]);
+  cargandoLecturas = signal<boolean>(false);
+  errorLecturas = signal<string | null>(null);
+  sinLecturas = signal<boolean>(false);
+
+  // ─── Pastillero (datos existentes, conservados) ─────────────────────
   compartimentos = [
     { id: 1, nombre: 'Metformina',    hora: '08:00', estado: 'tomado' },
     { id: 2, nombre: 'Atorvastatina', hora: '08:00', estado: 'tomado' },
@@ -29,6 +49,10 @@ export class ActividadIotComponent implements OnInit, OnDestroy {
     { id: 7, nombre: 'Metformina',    hora: '20:00', estado: 'pendiente' },
   ];
 
+  bateriaPastillero = signal<number>(78);
+
+  // ─── Eventos del feed (conservados) ─────────────────────────────────
+  tipoEvento = '';
   eventos = signal<Evento[]>([
     { id: 1, tipo: 'Toma confirmada', descripcion: 'Compartimento 1 abierto — Metformina 500mg',        dispositivo: 'Pastillero ESP32-001', hora: '08:02' },
     { id: 2, tipo: 'Toma confirmada', descripcion: 'Compartimento 4 abierto — Atorvastatina 20mg',      dispositivo: 'Pastillero ESP32-001', hora: '08:03' },
@@ -37,26 +61,10 @@ export class ActividadIotComponent implements OnInit, OnDestroy {
     { id: 5, tipo: 'Medición',        descripcion: 'Ritmo cardíaco: 68 BPM · Pasos: 2,340',             dispositivo: 'Pulsera BLE-023',       hora: '13:00' },
   ]);
 
-  // Señales de métricas (HU-09)
-  bpm = signal<number>(72);
-  spo2 = signal<number>(98.2);
-  temp = signal<number>(36.5);
-  pasos = signal<number>(2340);
-  bateriaPastillero = signal<number>(78);
-  bateriaPulsera = signal<number>(34);
+  // ─── Lifecycle ──────────────────────────────────────────────────────
 
   ngOnInit() {
-    // Simulación de monitoreo de actividad (HU-09)
-    this.subs.add(
-      interval(5000).subscribe(() => {
-        this.bpm.update(v => v + (Math.floor(Math.random() * 5) - 2));
-        this.pasos.update(v => v + Math.floor(Math.random() * 15));
-        
-        // Mantener dentro de rangos normales
-        if (this.bpm() < 60) this.bpm.set(60);
-        if (this.bpm() > 100) this.bpm.set(100);
-      })
-    );
+    this.cargarAdultos();
 
     // Polling de alertas de caída (HU-10)
     this.subs.add(
@@ -83,6 +91,120 @@ export class ActividadIotComponent implements OnInit, OnDestroy {
   ngOnDestroy() {
     this.subs.unsubscribe();
   }
+
+  // ─── Carga de adultos mayores ───────────────────────────────────────
+
+  private cargarAdultos(): void {
+    this.cargandoAdultos.set(true);
+    this.errorAdultos.set(null);
+
+    this.adultoService.getMisPacientes().subscribe({
+      next: (data) => {
+        this.adultos.set(data);
+        this.cargandoAdultos.set(false);
+
+        if (data.length === 1) {
+          // Auto-seleccionar si solo hay un adulto
+          this.seleccionarAdulto(data[0].idAdulto);
+        } else if (data.length > 1) {
+          // No auto-seleccionar, el usuario elige
+          this.adultoSeleccionadoId.set(null);
+        }
+      },
+      error: (err) => {
+        this.errorAdultos.set(err?.mensaje || 'Error al cargar los adultos mayores.');
+        this.cargandoAdultos.set(false);
+      }
+    });
+  }
+
+  // ─── Selección de adulto ────────────────────────────────────────────
+
+  seleccionarAdulto(idAdulto: number): void {
+    this.adultoSeleccionadoId.set(idAdulto);
+    this.cargarLecturas(idAdulto);
+  }
+
+  onAdultoChange(event: Event): void {
+    const id = Number((event.target as HTMLSelectElement).value);
+    if (id) {
+      this.seleccionarAdulto(id);
+    }
+  }
+
+  // ─── Carga de lecturas ──────────────────────────────────────────────
+
+  private cargarLecturas(idAdulto: number): void {
+    this.cargandoLecturas.set(true);
+    this.errorLecturas.set(null);
+    this.sinLecturas.set(false);
+    this.ultimaLectura.set(null);
+    this.historial.set([]);
+
+    forkJoin({
+      ultima: this.lecturaService.obtenerUltimaLectura(idAdulto),
+      historial: this.lecturaService.obtenerHistorial(idAdulto)
+    }).subscribe({
+      next: ({ ultima, historial }) => {
+        this.ultimaLectura.set(ultima);
+        this.historial.set(historial);
+        this.sinLecturas.set(!ultima && historial.length === 0);
+        this.cargandoLecturas.set(false);
+      },
+      error: (err) => {
+        // Si el error es 404, es que no hay lecturas aún
+        if (err?.status === 404) {
+          this.sinLecturas.set(true);
+          this.errorLecturas.set(null);
+        } else {
+          this.errorLecturas.set(err?.mensaje || 'Error al cargar las lecturas de la pulsera.');
+        }
+        this.cargandoLecturas.set(false);
+      }
+    });
+  }
+
+  // ─── Acciones del usuario ───────────────────────────────────────────
+
+  actualizar(): void {
+    const id = this.adultoSeleccionadoId();
+    if (id) {
+      this.cargarLecturas(id);
+    }
+  }
+
+  reintentar(): void {
+    if (this.errorAdultos()) {
+      this.cargarAdultos();
+    } else {
+      this.actualizar();
+    }
+  }
+
+  // ─── Helpers para el template ───────────────────────────────────────
+
+  get adultoSeleccionadoNombre(): string {
+    const adulto = this.adultos().find(a => a.idAdulto === this.adultoSeleccionadoId());
+    return adulto ? `${adulto.nombre} ${adulto.apellido}` : '';
+  }
+
+  formatearFecha(fecha: string | null | undefined): string {
+    if (!fecha) return '--';
+    try {
+      const date = new Date(fecha);
+      if (isNaN(date.getTime())) return '--';
+      const day = String(date.getDate()).padStart(2, '0');
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const year = date.getFullYear();
+      const hours = String(date.getHours()).padStart(2, '0');
+      const minutes = String(date.getMinutes()).padStart(2, '0');
+      return `${day}/${month}/${year} ${hours}:${minutes}`;
+    } catch {
+      return '--';
+    }
+  }
+
+  // ─── Feed de eventos (conservado) ───────────────────────────────────
 
   eventosFiltrados = () => {
     if (!this.tipoEvento) return this.eventos();
