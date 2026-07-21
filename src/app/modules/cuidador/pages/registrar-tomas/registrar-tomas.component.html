@@ -2,88 +2,192 @@
   <div class="header">
     <div>
       <h1 class="title">Registrar Tomas</h1>
-      <p class="sub">Gestión de administración de medicamentos · hoy</p>
+      <p class="sub">Gestión de administración de medicamentos · {{ fechaHoy() }}</p>
     </div>
-    <select class="select-input" [(ngModel)]="pacienteFiltro">
-      <option value="">Todos los pacientes</option>
-      @for (t of pacientesUnicos(); track t.idAdulto) {
-        <option [value]="t.paciente">{{ t.paciente }}</option>
-      }
-    </select>
+    <div class="header-actions">
+      <div class="search-wrap">
+        <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>
+        </svg>
+        <input class="search-input" type="text" placeholder="Buscar medicamento..." [ngModel]="busqueda()" (ngModelChange)="busqueda.set($event)">
+      </div>
+      <select class="select-input" [ngModel]="pacienteFiltro()" (ngModelChange)="pacienteFiltro.set($event)">
+        <option value="">Todos los pacientes</option>
+        @for (t of pacientesUnicos(); track t.idAdulto) {
+          <option [value]="t.paciente">{{ t.paciente }}</option>
+        }
+      </select>
+
+    </div>
   </div>
+
+  <!-- Barra de progreso general -->
+  @if (!loading() && tomas().length > 0) {
+    <div class="progress-section">
+      <div class="progress-info">
+        <span class="progress-label">Progreso del día</span>
+        <span class="progress-pct">{{ porcentajeProgreso() }}%</span>
+      </div>
+      <div class="progress-bar-bg">
+        <div class="progress-bar-fill" [style.width.%]="porcentajeProgreso()"></div>
+      </div>
+    </div>
+  }
 
   <div class="stats-row">
-    <div class="card stat-mini stat-green">
-      <div class="stat-val">{{ completadas() }}</div>
-      <div class="stat-lbl">Completadas</div>
+    <div class="card stat-mini stat-green" (click)="filtroEstado.set(filtroEstado() === 'tomado' ? '' : 'tomado')" [class.stat-active]="filtroEstado() === 'tomado'">
+      <div class="stat-icon-wrap stat-icon-green">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+      </div>
+      <div>
+        <div class="stat-val">{{ completadas() }}</div>
+        <div class="stat-lbl">Completadas</div>
+      </div>
     </div>
-    <div class="card stat-mini stat-yellow">
-      <div class="stat-val">{{ pendientes() }}</div>
-      <div class="stat-lbl">Pendientes</div>
+    <div class="card stat-mini stat-yellow" (click)="filtroEstado.set(filtroEstado() === 'pendiente' ? '' : 'pendiente')" [class.stat-active]="filtroEstado() === 'pendiente'">
+      <div class="stat-icon-wrap stat-icon-yellow">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"/></svg>
+      </div>
+      <div>
+        <div class="stat-val">{{ pendientes() }}</div>
+        <div class="stat-lbl">Pendientes</div>
+      </div>
     </div>
-    <div class="card stat-mini stat-red">
-      <div class="stat-val">{{ omitidas() }}</div>
-      <div class="stat-lbl">Omitidas</div>
+    <div class="card stat-mini stat-red" (click)="filtroEstado.set(filtroEstado() === 'omitido' ? '' : 'omitido')" [class.stat-active]="filtroEstado() === 'omitido'">
+      <div class="stat-icon-wrap stat-icon-red">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+      </div>
+      <div>
+        <div class="stat-val">{{ omitidas() }}</div>
+        <div class="stat-lbl">Omitidas</div>
+      </div>
     </div>
-    <div class="card stat-mini stat-blue">
-      <div class="stat-val">{{ tomas().length }}</div>
-      <div class="stat-lbl">Total programadas</div>
+    <div class="card stat-mini stat-blue" (click)="filtroEstado.set('')" [class.stat-active]="filtroEstado() === ''">
+      <div class="stat-icon-wrap stat-icon-blue">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>
+      </div>
+      <div>
+        <div class="stat-val">{{ tomasFiltradas().length }}</div>
+        <div class="stat-lbl">Total programadas</div>
+      </div>
     </div>
   </div>
 
-  <div class="card">
-    <div class="table-header">
-      <span class="card-title">Horario de tomas</span>
+
+
+  @if (loading()) {
+    <div class="loading-state">
+      <div class="spinner"></div>
+      <p class="loading-text">Cargando tomas del día...</p>
     </div>
-    <div class="table-wrap">
-      <table class="table">
-        <thead>
-          <tr>
-            <th>Hora</th>
-            <th>Paciente</th>
-            <th>Medicamento</th>
-            <th>Dosis</th>
-            <th>Estado</th>
-            <th class="text-right">Acción</th>
-          </tr>
-        </thead>
-        <tbody>
-          @for (t of tomasFiltradas(); track t.id) {
-            <tr>
-              <td><span class="hora-val">{{ t.hora }}</span></td>
-              <td>
-                <div class="patient-cell">
-                  <div class="avatar" [style.background]="t.avatarColor">{{ t.initials }}</div>
-                  <span class="patient-name">{{ t.paciente }}</span>
-                </div>
-              </td>
-              <td class="med-name">{{ t.medicamento }}</td>
-              <td>{{ t.dosis }}</td>
-              <td>
-                <span [class]="badgeClass(t.estado)">{{ badgeLabel(t.estado) }}</span>
-              </td>
-              <td class="text-right">
-                @if (t.estado === 'pendiente') {
-                  <div class="action-group">
-                    <button class="btn-sm btn-green" (click)="registrar(t, 'tomado')">
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
-                      Tomada
-                    </button>
-                    <button class="btn-sm btn-red" (click)="registrar(t, 'omitido')">
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
-                      Omitir
-                    </button>
-                  </div>
-                } @else {
-                  <button class="btn-sm btn-gray" (click)="revertir(t)">Revertir</button>
-                }
-              </td>
-            </tr>
-          }
-        </tbody>
-      </table>
+  } @else if (tomas().length === 0) {
+    <div class="empty-state">
+      <div class="empty-icon-wrap">
+        <svg width="56" height="56" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/>
+        </svg>
+      </div>
+      <h3 class="empty-title">No hay tomas programadas</h3>
+      <p class="empty-text">No se encontraron medicamentos programados para hoy. Verifique que tenga pacientes asignados con medicamentos activos.</p>
+      <button class="btn-primary" (click)="cargarDatos()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/>
+        </svg>
+        Reintentar
+      </button>
     </div>
-  </div>
+  } @else {
+    <div class="card table-card">
+      <div class="table-header">
+        <span class="card-title">Horario de tomas</span>
+        <span class="table-count">{{ tomasFiltradas().length }} de {{ tomas().length }} registros</span>
+      </div>
+      <div class="table-wrap">
+        @if (tomasFiltradas().length === 0) {
+          <div class="no-results">
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>
+            </svg>
+            <p>No se encontraron resultados con los filtros actuales</p>
+            <button class="btn-clear-filters" (click)="limpiarFiltros()">Limpiar filtros</button>
+          </div>
+        } @else {
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Hora</th>
+                <th>Paciente</th>
+                <th>Medicamento</th>
+                <th>Dosis</th>
+                <th>Estado</th>
+                <th class="text-right">Acción</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (t of tomasFiltradas(); track t.id) {
+                <tr [class.row-completed]="t.estado === 'tomado'" [class.row-omitted]="t.estado === 'omitido'" class="fade-in-row">
+                  <td>
+                    <div class="hora-cell">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" class="hora-icon">
+                        <path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"/>
+                      </svg>
+                      <span class="hora-val">{{ t.hora }}</span>
+                    </div>
+                  </td>
+                  <td>
+                    <div class="patient-cell">
+                      <div class="avatar" [style.background]="t.avatarColor">{{ t.initials }}</div>
+                      <span class="patient-name">{{ t.paciente }}</span>
+                    </div>
+                  </td>
+                  <td>
+                    <div class="med-cell">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" class="med-icon">
+                        <path d="M4.22 11.29l5.49-5.49c2.34-2.34 6.14-2.34 8.49 0 2.34 2.34 2.34 6.14 0 8.49l-5.49 5.49c-2.34 2.34-6.14 2.34-8.49 0-2.34-2.35-2.34-6.15 0-8.49zm2.12.71a4.007 4.007 0 0 0 0 5.66 4.007 4.007 0 0 0 5.66 0l2.83-2.83-5.66-5.66-2.83 2.83z"/>
+                      </svg>
+                      <span class="med-name">{{ t.medicamento }}</span>
+                    </div>
+                  </td>
+                  <td><span class="dosis-val">{{ t.dosis }}</span></td>
+                  <td>
+                    <span [class]="badgeClass(t.estado)">
+                      @if (t.estado === 'tomado') {
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+                      } @else if (t.estado === 'omitido') {
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+                      } @else {
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"/></svg>
+                      }
+                      {{ badgeLabel(t.estado) }}
+                    </span>
+                  </td>
+                  <td class="text-right">
+                    @if (t.estado === 'pendiente') {
+                      <div class="action-group">
+                        <button class="btn-sm btn-green" (click)="registrar(t, 'tomado')" [disabled]="procesando()">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+                          Tomada
+                        </button>
+                        <button class="btn-sm btn-red" (click)="registrar(t, 'omitido')" [disabled]="procesando()">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+                          Omitir
+                        </button>
+                      </div>
+                    } @else {
+                      <button class="btn-sm btn-gray" (click)="revertir(t)">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12.5 8c-2.65 0-5.05.99-6.9 2.6L2 7v9h9l-3.62-3.62c1.39-1.16 3.16-1.88 5.12-1.88 3.54 0 6.55 2.31 7.6 5.5l2.37-.78C21.08 11.03 17.15 8 12.5 8z"/></svg>
+                        Revertir
+                      </button>
+                    }
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        }
+      </div>
+    </div>
+  }
 
   @if (toast()) {
     <div class="toast" [class]="'toast-' + toast()!.type">
