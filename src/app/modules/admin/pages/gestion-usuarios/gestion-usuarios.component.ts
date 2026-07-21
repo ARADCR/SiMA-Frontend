@@ -40,6 +40,9 @@ export class GestionUsuariosComponent implements OnInit {
   selectedUser = signal<Usuario | null>(null);
   isLoading   = signal(false);
   toast       = signal<{ msg: string; type: 'success' | 'error' } | null>(null);
+  showDeleteModal = false;
+  usuarioParaEliminar: Usuario | null = null;
+  eliminando = false;
 
   form = signal<UsuarioForm>({
     nombre: '', apellido: '', correo: '',
@@ -192,19 +195,50 @@ export class GestionUsuariosComponent implements OnInit {
     }
   }
 
-  confirmarDesactivar(u: Usuario): void {
-    if (!confirm(`¿Desactivar la cuenta de ${u.nombre} ${u.apellido}? El historial se conservará.`)) return;
-    this.usuarioService.desactivar(u.idUsuario).subscribe({
-      next: () => {
-        this.usuarios.update(list =>
-          list.map(x => x.idUsuario === u.idUsuario ? { ...x, activo: false } : x)
-        );
-        this.showToast('Usuario desactivado', 'success');
-      },
-      error: (err: { mensaje?: string }) => {
-        this.showToast(err.mensaje ?? 'Error al desactivar usuario', 'error');
-      }
-    });
+  abrirModalEstado(u: Usuario): void {
+    this.usuarioParaEliminar = u;
+    this.showDeleteModal = true;
+  }
+
+  cerrarModalEstado(): void {
+    this.showDeleteModal = false;
+    this.usuarioParaEliminar = null;
+    this.eliminando = false;
+  }
+
+  confirmarEstado(): void {
+    if (!this.usuarioParaEliminar) return;
+    this.eliminando = true;
+
+    if (this.usuarioParaEliminar.activo) {
+      this.usuarioService.desactivar(this.usuarioParaEliminar.idUsuario).subscribe({
+        next: () => {
+          this.usuarios.update(list =>
+            list.map(x => x.idUsuario === this.usuarioParaEliminar!.idUsuario ? { ...x, activo: false } : x)
+          );
+          this.showToast('Usuario desactivado exitosamente', 'success');
+          this.cerrarModalEstado();
+        },
+        error: (err: { mensaje?: string }) => {
+          this.showToast(err.mensaje ?? 'Error al desactivar usuario', 'error');
+          this.eliminando = false;
+        }
+      });
+    } else {
+      this.usuarioService.reactivar(this.usuarioParaEliminar.idUsuario).subscribe({
+        next: () => {
+          this.usuarios.update(list =>
+            list.map(x => x.idUsuario === this.usuarioParaEliminar!.idUsuario ? { ...x, activo: true } : x)
+          );
+          this.showToast('Usuario reactivado exitosamente', 'success');
+          this.cerrarModalEstado();
+        },
+        error: (err: { mensaje?: string }) => {
+          this.showToast(err.mensaje ?? 'Error al reactivar usuario', 'error');
+          this.eliminando = false;
+        }
+      });
+    }
   }
 
   private showToast(msg: string, type: 'success' | 'error'): void {

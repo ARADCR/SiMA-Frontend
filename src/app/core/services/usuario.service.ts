@@ -46,5 +46,12 @@ export class UsuarioService {
       map(() => void 0)
     );
   }
+
+  /** PUT /usuarios/{id}/reactivar — reactivar (activo = true) */
+  reactivar(id: number): Observable<void> {
+    return this.api.put<void>(`${this.endpoint}/${id}/reactivar`, {}).pipe(
+      map(() => void 0)
+    );
+  }
 }
 
