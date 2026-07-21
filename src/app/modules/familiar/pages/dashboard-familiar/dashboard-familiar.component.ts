@@ -7,6 +7,7 @@ import { RegistroTomaService, RegistroTomaResponse } from '../../../../core/serv
 import { AlertaService } from '../../../../core/services/alerta.service';
 import { HistorialService } from '../../../../core/services/historial.service';
 import { ObservacionService } from '../../../../core/services/observacion.service';
+import { AiService, ResumenAlertasIAResponse } from '../../../../core/services/ai.service';
 
 interface TodayMed {
   nombre: string;
@@ -45,10 +46,14 @@ export class DashboardFamiliarComponent implements OnInit {
   private alertaSvc = inject(AlertaService);
   private historialSvc = inject(HistorialService);
   private observacionSvc = inject(ObservacionService);
+  private aiSvc = inject(AiService);
 
   adultoActivo = signal<number | null>(null);
   toast = signal<string | null>(null);
   loading = signal(true);
+
+  resumenAlertasIA = signal<ResumenAlertasIAResponse | null>(null);
+  loadingResumenIA = signal(false);
 
   adultos: Adulto[] = [];
   medicamentosHoy = signal<TodayMed[]>([]);
@@ -177,7 +182,24 @@ export class DashboardFamiliarComponent implements OnInit {
       }
     });
 
+    // 4. Cargar resumen inteligente de alertas del día
+    this.cargarResumenAlertasIA(idAdulto);
+
     this.loading.set(false);
+  }
+
+  private cargarResumenAlertasIA(idAdulto: number): void {
+    this.loadingResumenIA.set(true);
+    this.resumenAlertasIA.set(null);
+    this.aiSvc.getResumenAlertas(idAdulto).subscribe({
+      next: (resumen) => {
+        this.resumenAlertasIA.set(resumen);
+        this.loadingResumenIA.set(false);
+      },
+      error: () => {
+        this.loadingResumenIA.set(false);
+      }
+    });
   }
 
   marcarResuelta(id: number): void {

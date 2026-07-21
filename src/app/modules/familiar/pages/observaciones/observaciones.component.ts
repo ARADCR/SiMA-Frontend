@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
 import { ObservacionService } from '../../../../core/services/observacion.service';
 import { AdultoMayorService } from '../../../../core/services/adulto-mayor.service';
+import { AiService, ResumenObservacionesResponse } from '../../../../core/services/ai.service';
 import { Observacion } from '../../../../core/models/observacion.model';
 import { AdultoMayor } from '../../../../core/models/adulto-mayor.model';
 
@@ -18,6 +19,7 @@ export class ObservacionesFamiliarComponent implements OnInit {
   private route = inject(ActivatedRoute);
   private observacionSvc = inject(ObservacionService);
   private adultoSvc = inject(AdultoMayorService);
+  private aiSvc = inject(AiService);
 
   adultos = signal<AdultoMayor[]>([]);
   adultoActual = signal<AdultoMayor | null>(null);
@@ -25,6 +27,10 @@ export class ObservacionesFamiliarComponent implements OnInit {
   loading = signal(true);
   error = signal<string | null>(null);
   urgenciaFiltro = signal('');
+
+  resumenIA = signal<ResumenObservacionesResponse | null>(null);
+  resumenIALoading = signal(false);
+  resumenIAError = signal<string | null>(null);
 
   ngOnInit(): void {
     const adultoId = Number(this.route.snapshot.queryParamMap.get('adultoId')
@@ -67,6 +73,23 @@ export class ObservacionesFamiliarComponent implements OnInit {
       error: () => {
         this.error.set('Error al cargar las observaciones');
         this.loading.set(false);
+      }
+    });
+    this.cargarResumenIA(adultoId);
+  }
+
+  cargarResumenIA(adultoId: number): void {
+    this.resumenIA.set(null);
+    this.resumenIAError.set(null);
+    this.resumenIALoading.set(true);
+    this.aiSvc.getResumenObservaciones(adultoId).subscribe({
+      next: (resumen) => {
+        this.resumenIA.set(resumen);
+        this.resumenIALoading.set(false);
+      },
+      error: () => {
+        this.resumenIAError.set('No se pudo generar el resumen de IA en este momento.');
+        this.resumenIALoading.set(false);
       }
     });
   }

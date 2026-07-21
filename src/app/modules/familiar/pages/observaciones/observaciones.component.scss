@@ -85,6 +85,41 @@
   flex-wrap: wrap;
 }
 
+.resumen-ia-card {
+  padding: v.$space-5 v.$space-6;
+  border-left: 4px solid v.$color-primary;
+
+  .card-title {
+    margin-bottom: v.$space-3;
+  }
+}
+
+.resumen-ia-texto {
+  font-size: v.$font-size-sm;
+  color: v.$color-text;
+  line-height: 1.5;
+}
+
+.resumen-ia-meta {
+  display: flex;
+  gap: v.$space-4;
+  margin-top: v.$space-3;
+  font-size: v.$font-size-xs;
+  color: v.$color-text-subtle;
+}
+
+.resumen-ia-alertas {
+  margin-top: v.$space-3;
+  padding-left: v.$space-5;
+  font-size: v.$font-size-xs;
+  color: v.$color-danger;
+}
+
+.resumen-ia-error {
+  font-size: v.$font-size-sm;
+  color: v.$color-text-muted;
+}
+
 .type-pills {
   display: flex;
   gap: v.$space-2;

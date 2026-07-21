@@ -331,6 +331,126 @@
   white-space: nowrap;
 }
 
+// ── AI Analysis ───────────────────────────────────────────────────────────────
+.ai-loading {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: #5C6B7A;
+  font-size: 14px;
+  padding: 16px 0;
+}
+
+.spinner-sm {
+  width: 20px;
+  height: 20px;
+  border-width: 3px;
+  margin-bottom: 0;
+}
+
+.ai-error {
+  color: #DC2626;
+  font-size: 14px;
+}
+
+.ai-narrativo {
+  font-size: 15px;
+  line-height: 1.6;
+  color: #1B2B3A;
+  margin-bottom: 16px;
+}
+
+.ai-block { margin-bottom: 16px; }
+
+.ai-block-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: #5C6B7A;
+  text-transform: uppercase;
+  letter-spacing: .5px;
+  margin-bottom: 8px;
+}
+
+.ai-list {
+  margin: 0;
+  padding-left: 20px;
+  font-size: 14px;
+  color: #1B2B3A;
+  line-height: 1.6;
+}
+
+.ai-recomendaciones .ai-block-title { color: #0891B2; }
+
+.btn-patrones {
+  margin-top: 8px;
+  padding: 10px 20px;
+  background: #F1F5F9;
+  color: #1B2B3A;
+  border: 1px solid #E2E8F0;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background .15s ease;
+
+  &:hover { background: #E2E8F0; }
+}
+
+.patrones-section { margin-top: 20px; }
+
+.ai-info-msg {
+  font-size: 14px;
+  color: #5C6B7A;
+  padding: 16px;
+  background: #F7FAFC;
+  border-radius: 8px;
+}
+
+.patron-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.patron-card {
+  display: flex;
+  gap: 12px;
+  padding: 12px 16px;
+  border: 1px solid #E2E8F0;
+  border-radius: 12px;
+  background: #F7FAFC;
+
+  &.patron-alta {
+    border-color: #FCA5A5;
+    border-width: 2px;
+    background: #FEF2F2;
+  }
+}
+
+.patron-icono { font-size: 18px; line-height: 1.4; }
+
+.patron-body { flex: 1; }
+
+.patron-tipo {
+  font-size: 11px;
+  font-weight: 700;
+  color: #94A3B8;
+  text-transform: uppercase;
+  letter-spacing: .5px;
+}
+
+.patron-descripcion {
+  font-size: 14px;
+  color: #1B2B3A;
+  margin: 4px 0;
+  font-weight: 600;
+}
+
+.patron-recomendacion {
+  font-size: 13px;
+  color: #5C6B7A;
+}
+
 // ── Responsive ────────────────────────────────────────────────────────────────
 @include r.respond(md) {
   .header {

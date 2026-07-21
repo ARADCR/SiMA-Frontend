@@ -38,6 +38,13 @@
           <div class="bot-name">Asistente SiMA</div>
           <div class="bot-status">● En línea</div>
         </div>
+        @if (adultos().length > 1) {
+        <select class="chat-adulto-select" [ngModel]="adultoSeleccionado()" (ngModelChange)="adultoSeleccionado.set($event)">
+          @for (a of adultos(); track a.idAdulto) {
+          <option [value]="a.idAdulto">{{ a.nombre }} {{ a.apellido }}</option>
+          }
+        </select>
+        }
       </div>
 
       <div class="messages" #messagesContainer>
