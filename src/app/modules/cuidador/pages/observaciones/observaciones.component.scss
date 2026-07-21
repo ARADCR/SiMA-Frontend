@@ -291,7 +291,8 @@
   box-shadow: 0 20px 60px rgba(0,0,0,0.15);
   width: 100%;
   max-width: 540px;
-  overflow: hidden;
+  max-height: 90vh;
+  overflow-y: auto;
 }
 
 .modal-sm {
@@ -398,6 +399,67 @@
   color: #5C6B7A;
   line-height: 1.6;
   margin: 0;
+}
+
+.btn-evaluar-ia {
+  margin-top: 14px;
+  font-size: 13px;
+  padding: 8px 16px;
+}
+
+.ia-error {
+  margin-top: 10px;
+  font-size: 13px;
+  color: #C0452A;
+}
+
+.ia-evaluacion {
+  margin-top: 14px;
+  padding: 14px;
+  border-radius: 10px;
+  background: white;
+  border: 1px solid #E2E8F0;
+
+  &.ia-evaluacion-urgente {
+    border-color: #FDE8E0;
+    background: #FFF8F6;
+  }
+}
+
+.ia-evaluacion-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.ia-evaluacion-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #5C6B7A;
+}
+
+.ia-evaluacion-justificacion {
+  font-size: 13px;
+  color: #3A4750;
+  line-height: 1.5;
+  margin: 0 0 10px;
+}
+
+.btn-aceptar-ia {
+  font-size: 13px;
+  padding: 8px 16px;
+}
+
+.ia-aviso-alerta {
+  margin-top: 8px;
+  font-size: 12px;
+  color: #C0452A;
+}
+
+.ia-aviso-confirmado {
+  color: #1E7A4C;
+  font-weight: 600;
 }
 
 .toast {

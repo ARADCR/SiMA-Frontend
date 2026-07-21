@@ -107,6 +107,43 @@
     </div>
 
     <div class="right-col">
+      <div class="card card-ia-resumen">
+        <div class="card-title-row">
+          <span class="card-title">Resumen inteligente de alertas</span>
+        </div>
+
+        @if (loadingResumenIA()) {
+          <p class="empty-text">Generando resumen con IA...</p>
+        } @else if (resumenAlertasIA()) {
+          <p class="resumen-ejecutivo">{{ resumenAlertasIA()!.resumenEjecutivo }}</p>
+
+          @for (escalada of resumenAlertasIA()!.escaladas; track escalada.descripcion) {
+            <div class="escalada-banner">
+              ⚠️ Patrón detectado: {{ escalada.descripcion }}
+              @if (escalada.recomendacion) {
+                <div class="escalada-recomendacion">{{ escalada.recomendacion }}</div>
+              }
+            </div>
+          }
+
+          @for (critica of resumenAlertasIA()!.alertasCriticas; track critica.idAlerta) {
+            <div class="alerta-card critica-ia">
+              <div class="alerta-body">
+                <div class="alerta-titulo">⚠ {{ critica.mensaje }}</div>
+                <div class="alerta-desc">{{ critica.justificacion }}</div>
+              </div>
+            </div>
+          }
+
+          <div class="resumen-contadores">
+            <span>{{ resumenAlertasIA()!.alertasInformativas }} informativas</span>
+            <span>{{ resumenAlertasIA()!.alertasResueltas }} resueltas</span>
+          </div>
+        }
+
+        <a routerLink="/familiar/alertas" class="btn-outline mt-16">Ver todas las alertas</a>
+      </div>
+
       <div class="card">
         <div class="card-title-row">
           <span class="card-title">Alertas activas</span>

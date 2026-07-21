@@ -1,6 +1,8 @@
-import { Component, signal } from '@angular/core';
+import { Component, OnInit, signal, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { AiService, AnalisisPerfilResponse } from '../../../../core/services/ai.service';
+import { CuidadorPerfilService, DatosContactoCuidador } from '../../../../core/services/cuidador-perfil.service';
 
 type Tab = 'info' | 'credenciales' | 'solicitudes' | 'resenas';
 
@@ -26,8 +28,151 @@ interface Resena {
   templateUrl: './perfil-cuidador.component.html',
   styleUrls: ['./perfil-cuidador.component.scss']
 })
-export class PerfilCuidadorComponent {
+export class PerfilCuidadorComponent implements OnInit {
+  private aiService = inject(AiService);
+  private cuidadorPerfilService = inject(CuidadorPerfilService);
+
   activeTab = signal<Tab>('info');
+
+  descripcionPerfil = '';
+  analizando = signal(false);
+  analisisResultado = signal<AnalisisPerfilResponse | null>(null);
+  analisisError = signal<string | null>(null);
+  tagsEditables = signal<string[]>([]);
+  perfilGuardado = signal(false);
+
+  especialidadesMostradas = signal<string[]>([]);
+  experienciaMostrada = signal('');
+  bioMostrada = signal('');
+
+  // Datos de contacto y condiciones (HU-27)
+  editandoContacto = signal(false);
+  contactoGuardado = signal(false);
+  contactoError = signal<string | null>(null);
+  correo = signal('');
+  telefono = signal<string | null>(null);
+  ciudad = signal<string | null>(null);
+  tarifaHora = signal<number | null>(null);
+  disponibilidad = signal<string | null>(null);
+
+  formCorreo = '';
+  formTelefono: string | null = null;
+  formCiudad: string | null = null;
+  formTarifaHora: number | null = null;
+  formDisponibilidad: string | null = null;
+
+  ngOnInit(): void {
+    this.aiService.obtenerPerfilCuidador().subscribe({
+      next: (perfil) => {
+        if (!perfil.perfilAnalizado) return;
+        this.descripcionPerfil = perfil.descripcionPerfil ?? '';
+        if (perfil.especialidades.length > 0) this.especialidadesMostradas.set(perfil.especialidades);
+        if (perfil.experiencia) this.experienciaMostrada.set(perfil.experiencia);
+        if (perfil.resumenIa) this.bioMostrada.set(perfil.resumenIa);
+        this.tagsEditables.set(perfil.tags);
+      },
+      error: () => { /* mantiene los valores por defecto si falla la carga */ }
+    });
+
+    this.cargarDatosContacto();
+  }
+
+  private cargarDatosContacto(): void {
+    this.cuidadorPerfilService.obtenerPerfil().subscribe({
+      next: (datos) => {
+        this.correo.set(datos.correo);
+        this.telefono.set(datos.telefono);
+        this.ciudad.set(datos.ciudad);
+        this.tarifaHora.set(datos.tarifaHora);
+        this.disponibilidad.set(datos.disponibilidad);
+      },
+      error: () => { /* si falla la carga, no se muestran datos de contacto */ }
+    });
+  }
+
+  editarPerfil(): void {
+    this.formCorreo = this.correo();
+    this.formTelefono = this.telefono();
+    this.formCiudad = this.ciudad();
+    this.formTarifaHora = this.tarifaHora();
+    this.formDisponibilidad = this.disponibilidad();
+    this.contactoError.set(null);
+    this.editandoContacto.set(true);
+  }
+
+  cancelarEdicion(): void {
+    this.editandoContacto.set(false);
+    this.contactoError.set(null);
+  }
+
+  guardarDatosContacto(): void {
+    const datos: DatosContactoCuidador = {
+      correo: this.formCorreo,
+      telefono: this.formTelefono,
+      ciudad: this.formCiudad,
+      tarifaHora: this.formTarifaHora,
+      disponibilidad: this.formDisponibilidad
+    };
+
+    this.contactoError.set(null);
+
+    this.cuidadorPerfilService.actualizarPerfil(datos).subscribe({
+      next: (respuesta) => {
+        this.correo.set(respuesta.correo);
+        this.telefono.set(respuesta.telefono);
+        this.ciudad.set(respuesta.ciudad);
+        this.tarifaHora.set(respuesta.tarifaHora);
+        this.disponibilidad.set(respuesta.disponibilidad);
+        this.editandoContacto.set(false);
+        this.contactoGuardado.set(true);
+        setTimeout(() => this.contactoGuardado.set(false), 3000);
+      },
+      error: (err) => {
+        this.contactoError.set(err?.mensaje || 'No se pudo guardar el perfil. Intentá nuevamente.');
+      }
+    });
+  }
+
+  analizarConIA(): void {
+    const texto = this.descripcionPerfil.trim();
+    if (!texto) return;
+
+    this.analizando.set(true);
+    this.analisisError.set(null);
+    this.perfilGuardado.set(false);
+
+    this.aiService.analizarPerfil(texto).subscribe({
+      next: (resultado) => {
+        this.analizando.set(false);
+        this.analisisResultado.set(resultado);
+        this.tagsEditables.set([...resultado.tagsRecomendados]);
+      },
+      error: () => {
+        this.analizando.set(false);
+        this.analisisError.set('No se pudo analizar el perfil en este momento. Intentá nuevamente en unos minutos.');
+      }
+    });
+  }
+
+  quitarTag(tag: string): void {
+    this.tagsEditables.update(tags => tags.filter(t => t !== tag));
+  }
+
+  guardarPerfil(): void {
+    this.aiService.actualizarPerfilCuidador(this.tagsEditables()).subscribe({
+      next: () => {
+        const r = this.analisisResultado();
+        if (r) {
+          if (r.especialidadesDetectadas.length > 0) this.especialidadesMostradas.set([...r.especialidadesDetectadas]);
+          if (r.experienciaEstimada) this.experienciaMostrada.set(r.experienciaEstimada);
+          if (r.resumenGenerado) this.bioMostrada.set(r.resumenGenerado);
+        }
+        this.perfilGuardado.set(true);
+        setTimeout(() => this.perfilGuardado.set(false), 3000);
+      },
+      error: () => this.analisisError.set('No se pudo guardar el perfil. Intentá nuevamente.')
+    });
+  }
 
   tabs: { id: Tab; label: string }[] = [
     { id: 'info', label: 'Información' },
@@ -35,8 +180,6 @@ export class PerfilCuidadorComponent {
     { id: 'solicitudes', label: 'Solicitudes' },
     { id: 'resenas', label: 'Reseñas' },
   ];
-
-  especialidades = ['Adultos mayores', 'Diabetes tipo 2', 'Hipertensión', 'Movilidad reducida', 'Demencia leve'];
 
   stars = [1, 2, 3, 4, 5];
 

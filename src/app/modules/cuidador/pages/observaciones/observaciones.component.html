@@ -89,7 +89,7 @@
       <div class="modal">
         <div class="modal-header">
           <h2>Nueva observación</h2>
-          <button class="icon-btn" (click)="modalOpen.set(false)">
+          <button class="icon-btn" (click)="cerrarModal()">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
               <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
             </svg>
@@ -107,38 +107,71 @@
           </div>
           <div class="form-group">
             <label>Nivel de urgencia</label>
-            <select class="select-input" [(ngModel)]="nuevaObs.urgencia">
+            <select class="select-input" [(ngModel)]="nuevaObs.urgencia" (ngModelChange)="sugerenciaIaAceptada.set(false)">
               <option value="normal">Normal</option>
               <option value="importante">Importante</option>
               <option value="urgente">Urgente</option>
             </select>
           </div>
           <div class="form-group">
-            <label>Observación</label>
-            <textarea class="textarea-input" rows="4" maxlength="1000"
+            <label>Observación *</label>
+            <textarea class="textarea-input" rows="4" maxlength="1000" required
               placeholder="Describe el estado del paciente, síntomas observados, reacciones a medicamentos..."
-              [(ngModel)]="nuevaObs.texto"></textarea>
+              [(ngModel)]="nuevaObs.texto" (ngModelChange)="onCamposEvaluablesChange()"></textarea>
           </div>
           <div class="vitales-form">
             <div class="vitales-title">Signos vitales (opcional)</div>
             <div class="vitales-row">
               <div class="form-group">
                 <label>TA (mmHg)</label>
-                <input class="input-field" type="text" placeholder="ej. 130/85" [(ngModel)]="nuevaObs.ta">
+                <input class="input-field" type="text" placeholder="ej. 130/85" [(ngModel)]="nuevaObs.ta" (ngModelChange)="onCamposEvaluablesChange()">
               </div>
               <div class="form-group">
                 <label>FC (BPM)</label>
-                <input class="input-field" type="text" placeholder="ej. 72" [(ngModel)]="nuevaObs.fc">
+                <input class="input-field" type="text" placeholder="ej. 72" [(ngModel)]="nuevaObs.fc" (ngModelChange)="onCamposEvaluablesChange()">
               </div>
               <div class="form-group">
                 <label>Temp (°C)</label>
-                <input class="input-field" type="text" placeholder="ej. 36.5" [(ngModel)]="nuevaObs.temp">
+                <input class="input-field" type="text" placeholder="ej. 36.5" [(ngModel)]="nuevaObs.temp" (ngModelChange)="onCamposEvaluablesChange()">
               </div>
             </div>
+            @if (hayVitalesParaEvaluar()) {
+              <button type="button" class="btn-secondary btn-evaluar-ia"
+                [disabled]="evaluandoUrgencia()" (click)="evaluarConIA()">
+                {{ evaluandoUrgencia() ? 'Evaluando...' : 'Evaluar con IA' }}
+              </button>
+            }
+            @if (evaluacionIAError()) {
+              <p class="ia-error">{{ evaluacionIAError() }}</p>
+            }
+            @if (evaluacionIA()) {
+              <div class="ia-evaluacion" [class]="'ia-evaluacion-' + evaluacionIA()!.urgenciaSugerida">
+                <div class="ia-evaluacion-header">
+                  <span class="ia-evaluacion-label">Urgencia sugerida por IA:</span>
+                  <span class="badge" [class]="'badge-' + evaluacionIA()!.urgenciaSugerida">
+                    {{ evaluacionIA()!.urgenciaSugerida }}
+                  </span>
+                </div>
+                <p class="ia-evaluacion-justificacion">{{ evaluacionIA()!.justificacion }}</p>
+                @if (evaluacionIA()!.urgenciaSugerida === 'urgente' && !sugerenciaIaAceptada()) {
+                  <button type="button" class="btn-primary btn-aceptar-ia" (click)="aceptarSugerenciaIA()">
+                    Aceptar sugerencia y marcar como urgente
+                  </button>
+                  <p class="ia-aviso-alerta">Si aceptás, se generará una alerta automática a los Familiares.</p>
+                } @else if (evaluacionIA()!.urgenciaSugerida !== 'urgente') {
+                  <button type="button" class="btn-secondary btn-aceptar-ia" (click)="aceptarSugerenciaIA()">
+                    Usar esta urgencia sugerida
+                  </button>
+                }
+                @if (sugerenciaIaAceptada()) {
+                  <p class="ia-aviso-alerta ia-aviso-confirmado">Se generará una alerta automática al guardar.</p>
+                }
+              </div>
+            }
           </div>
         </div>
         <div class="modal-footer">
-          <button class="btn-secondary" (click)="modalOpen.set(false)">Cancelar</button>
+          <button class="btn-secondary" (click)="cerrarModal()">Cancelar</button>
           <button class="btn-primary" [disabled]="guardando()" (click)="guardar()">
             {{ guardando() ? 'Guardando...' : 'Guardar observación' }}
           </button>

@@ -17,6 +17,31 @@
     }
   </div>
 
+  <div class="card resumen-ia-card">
+    <div class="card-title">Resumen IA</div>
+    @if (resumenIALoading()) {
+      <div class="loading-state">
+        <div class="spinner"></div>
+        <p>Generando resumen con IA...</p>
+      </div>
+    } @else if (resumenIAError()) {
+      <p class="resumen-ia-error">{{ resumenIAError() }}</p>
+    } @else if (resumenIA()) {
+      <p class="resumen-ia-texto">{{ resumenIA()!.resumen }}</p>
+      <div class="resumen-ia-meta">
+        <span>{{ resumenIA()!.observacionesAnalizadas }} observaciones analizadas</span>
+        <span>{{ resumenIA()!.periodoAnalizado }}</span>
+      </div>
+      @if (resumenIA()!.alertasIdentificadas.length > 0) {
+        <ul class="resumen-ia-alertas">
+          @for (alerta of resumenIA()!.alertasIdentificadas; track alerta) {
+            <li>{{ alerta }}</li>
+          }
+        </ul>
+      }
+    }
+  </div>
+
   <div class="filters-bar card">
     <div class="type-pills">
       <button class="type-pill" [class.active]="urgenciaFiltro() === ''" (click)="urgenciaFiltro.set('')">Todas</button>

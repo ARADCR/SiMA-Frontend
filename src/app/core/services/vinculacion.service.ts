@@ -11,6 +11,7 @@ export interface CuidadorPublic {
   calificacion: number;
   experiencia: string;
   precio: string;
+  resumenIa?: string | null;
 }
 
 export interface SolicitudVinculacion {

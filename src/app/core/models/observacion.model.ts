@@ -20,4 +20,6 @@ export interface ObservacionCreate {
   tensionArterial?: string;
   frecuenciaCardiaca?: string;
   temperatura?: string;
+  /** true si el Cuidador aceptó explícitamente la sugerencia de urgencia "urgente" generada por la IA */
+  sugerenciaIaAceptada?: boolean;
 }

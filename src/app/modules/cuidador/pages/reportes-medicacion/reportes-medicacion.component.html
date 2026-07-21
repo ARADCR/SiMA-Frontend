@@ -124,5 +124,94 @@
       }
     </div>
 
+    <!-- AI Analysis -->
+    <div class="card section-card">
+      <div class="section-header">
+        <h2 class="section-title">Análisis IA</h2>
+        <span class="section-sub">Resumen generado a partir del reporte semanal</span>
+      </div>
+
+      @if (resumenIALoading()) {
+        <div class="ai-loading">
+          <div class="spinner spinner-sm"></div>
+          <p>Generando análisis...</p>
+        </div>
+      } @else if (resumenIAError()) {
+        <div class="ai-error">
+          <p>{{ resumenIAError() }}</p>
+          <button class="btn-retry"
+                  (click)="adultoActual() ? cargarResumenIA(adultoActual()!.idAdulto) : null">
+            Reintentar
+          </button>
+        </div>
+      } @else if (resumenIA()) {
+        <p class="ai-narrativo">{{ resumenIA()!.resumenNarrativo }}</p>
+
+        @if (resumenIA()!.puntosClave.length > 0) {
+          <div class="ai-block">
+            <h3 class="ai-block-title">Puntos clave</h3>
+            <ul class="ai-list">
+              @for (punto of resumenIA()!.puntosClave; track punto) {
+                <li>{{ punto }}</li>
+              }
+            </ul>
+          </div>
+        }
+
+        @if (resumenIA()!.recomendaciones.length > 0) {
+          <div class="ai-block ai-recomendaciones">
+            <h3 class="ai-block-title">Recomendaciones</h3>
+            <ul class="ai-list">
+              @for (rec of resumenIA()!.recomendaciones; track rec) {
+                <li>{{ rec }}</li>
+              }
+            </ul>
+          </div>
+        }
+
+        <button class="btn-patrones" (click)="toggleVerPatrones()">
+          {{ patronesIAVisible() ? 'Ocultar patrones detectados' : 'Ver patrones detectados' }}
+        </button>
+
+        @if (patronesIAVisible()) {
+          <div class="patrones-section">
+            @if (patronesIALoading()) {
+              <div class="ai-loading">
+                <div class="spinner spinner-sm"></div>
+                <p>Analizando patrones...</p>
+              </div>
+            } @else if (patronesIAError()) {
+              <div class="ai-error">
+                <p>{{ patronesIAError() }}</p>
+              </div>
+            } @else if (patronesIA()) {
+              @if (patronesIA()!.mensajeInformativo) {
+                <div class="ai-info-msg">
+                  <p>{{ patronesIA()!.mensajeInformativo }}</p>
+                </div>
+              } @else if (patronesIA()!.patronesDetectados.length === 0) {
+                <div class="ai-info-msg">
+                  <p>No se detectaron patrones relevantes en el período analizado.</p>
+                </div>
+              } @else {
+                <div class="patron-list">
+                  @for (patron of patronesIA()!.patronesDetectados; track patron.descripcion) {
+                    <div class="patron-card" [class.patron-alta]="patron.severidad === 'alta'">
+                      <span class="patron-icono">{{ severidadIcono(patron.severidad) }}</span>
+                      <div class="patron-body">
+                        <span class="patron-tipo">{{ patron.tipo }}</span>
+                        <p class="patron-descripcion">{{ patron.descripcion }}</p>
+                        <p class="patron-recomendacion">{{ patron.recomendacion }}</p>
+                      </div>
+                    </div>
+                  }
+                </div>
+              }
+            }
+          </div>
+        }
+      }
+    </div>
+
   }
 </div>
