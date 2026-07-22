@@ -117,6 +117,48 @@ export interface EvaluacionUrgenciaResponse {
   recomendaciones: string[];
 }
 
+export type TipoAnomaliaIot = 'vital' | 'actividad' | 'pastillero' | 'correlacion';
+export type SeveridadAnomaliaIot = 'baja' | 'media' | 'alta' | 'critica';
+export type DireccionTendencia = 'subiendo' | 'bajando' | 'estable';
+
+export interface AnomaliaIotDTO {
+  tipo: TipoAnomaliaIot;
+  descripcion: string;
+  severidad: SeveridadAnomaliaIot;
+  datosRelevantes: Record<string, string>;
+  recomendacion: string;
+}
+
+export interface TendenciaDTO {
+  descripcion: string;
+  direccion: DireccionTendencia;
+  periodo: string;
+}
+
+export interface AnalisisIotIAResponse {
+  resumenEstado: string;
+  anomaliasDetectadas: AnomaliaIotDTO[];
+  tendencias: TendenciaDTO[];
+  fechaAnalisis: string;
+}
+
+export type PrioridadPaciente = 'alta' | 'media' | 'baja';
+
+export interface PacienteBriefingDTO {
+  idAdulto: number;
+  nombre: string;
+  prioridad: PrioridadPaciente;
+  resumen: string;
+  proximaToma: string;
+  adherenciaSemana: number;
+}
+
+export interface BriefingIAResponse {
+  saludo: string;
+  resumenGeneral: string;
+  pacientes: PacienteBriefingDTO[];
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -207,6 +249,28 @@ export class AiService {
   evaluarUrgencia(request: EvaluarUrgenciaRequest): Observable<EvaluacionUrgenciaResponse> {
     return this.api
       .post<EvaluacionUrgenciaResponse>(`${this.endpoint}/observaciones/evaluar-urgencia`, request)
+      .pipe(map(r => r.data));
+  }
+
+  getAnalisisIot(idAdulto: number): Observable<AnalisisIotIAResponse> {
+    // El backend ya cachea por 24hs (tabla analisis_iot_ia); no se duplica el cacheo en el
+    // cliente para no mostrar un análisis desactualizado durante una sesión larga de SPA.
+    return this.api
+      .get<AnalisisIotIAResponse>(`${this.endpoint}/iot/${idAdulto}/analisis`)
+      .pipe(map(r => r.data));
+  }
+
+  getBriefing(): Observable<BriefingIAResponse> {
+    // El backend ya cachea por 30 minutos; no se duplica el cacheo en el cliente
+    // para que el botón de refresco pueda invalidarlo explícitamente.
+    return this.api
+      .get<BriefingIAResponse>(`${this.endpoint}/dashboard/briefing`)
+      .pipe(map(r => r.data));
+  }
+
+  refreshBriefing(): Observable<BriefingIAResponse> {
+    return this.api
+      .post<BriefingIAResponse>(`${this.endpoint}/dashboard/briefing/refresh`, {})
       .pipe(map(r => r.data));
   }
 }

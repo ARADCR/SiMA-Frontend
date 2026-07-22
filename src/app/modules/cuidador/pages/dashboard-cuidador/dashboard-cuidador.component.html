@@ -1,9 +1,46 @@
 <div class="page">
   <div class="header">
     <div>
-      <h1 class="title">Buenos días, Carlos</h1>
+      <h1 class="title">{{ briefing()?.saludo || 'Tu briefing de hoy' }}</h1>
       <p class="sub">{{ fechaHoy }} · <span class="turno-chip">Turno activo</span></p>
     </div>
+  </div>
+
+  <div class="card briefing-card">
+    <div class="card-header">
+      <span class="card-title">Tu briefing de hoy</span>
+      <button type="button" class="link-action briefing-refresh" (click)="refrescarBriefing()" [disabled]="briefingCargando()" title="Regenerar briefing">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M17.65 6.35A7.958 7.958 0 0012 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08a5.99 5.99 0 01-5.65 4c-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L14 11h7V4l-2.35 2.35z"/></svg>
+        Refrescar
+      </button>
+    </div>
+
+    @if (briefingCargando()) {
+      <div class="briefing-skeleton">
+        <div class="skeleton-line skeleton-line-lg"></div>
+        <div class="skeleton-line"></div>
+        <div class="skeleton-line skeleton-line-sm"></div>
+      </div>
+    } @else if (briefingError()) {
+      <p class="briefing-error">No se pudo generar el briefing en este momento. Probá refrescar en unos minutos.</p>
+    } @else if (briefing()) {
+      <p class="briefing-resumen">{{ briefing()!.resumenGeneral }}</p>
+      <div class="briefing-pacientes">
+        @for (p of briefing()!.pacientes; track p.idAdulto) {
+          <div class="briefing-paciente">
+            <span class="briefing-prioridad">{{ prioridadIcono(p.prioridad) }}</span>
+            <div class="briefing-paciente-info">
+              <div class="briefing-paciente-nombre">{{ p.nombre }}</div>
+              <p class="briefing-paciente-resumen">{{ p.resumen }}</p>
+              <div class="briefing-paciente-meta">
+                <span>Próxima toma: {{ p.proximaToma }}</span>
+                <span>Adherencia semanal: {{ p.adherenciaSemana }}%</span>
+              </div>
+            </div>
+          </div>
+        }
+      </div>
+    }
   </div>
 
   <div class="quick-grid">
@@ -26,7 +63,9 @@
     <a routerLink="/cuidador/historial" class="quick-card quick-orange">
       <div class="quick-icon" style="background:#FDE8E0; color:#E76F51; position:relative">
         <svg width="26" height="26" viewBox="0 0 24 24" fill="currentColor"><path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"/></svg>
-        <span class="alert-badge">2</span>
+        @if (alertasPendientes() > 0) {
+          <span class="alert-badge">{{ alertasPendientes() }}</span>
+        }
       </div>
       <div class="quick-label">Ver Alertas</div>
       <div class="quick-sub">Hay alertas que necesitan revisión</div>
@@ -102,7 +141,7 @@
         <span class="card-title">Cumplimiento última semana</span>
       </div>
       <div class="compliance-grid">
-        @for (d of diasCompliance; track d.label) {
+        @for (d of diasCompliance(); track d.label) {
           <div class="compliance-day">
             <div class="compliance-cell" [style.background]="d.bg" [style.color]="d.color">
               {{ d.pct }}
