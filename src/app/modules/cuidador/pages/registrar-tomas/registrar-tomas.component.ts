@@ -157,7 +157,6 @@ export class RegistrarTomasComponent implements OnInit {
         idRegistro: t.id,
         metodoConfirmacion: 'manual_cuidador'
       };
-
       this.registroTomaService.confirmarToma(request).subscribe({
         next: () => {
           this.tomas.update(list => list.map(x => x.id === t.id ? { ...x, estado: 'tomado' } : x));
@@ -171,15 +170,33 @@ export class RegistrarTomasComponent implements OnInit {
         }
       });
     } else if (estado === 'omitido') {
-      // Marcar como omitido localmente
-      this.tomas.update(list => list.map(x => x.id === t.id ? { ...x, estado: 'omitido' } : x));
-      this.showToast(`Toma de ${t.medicamento} marcada como omitida`, 'error');
+      this.procesando.set(true);
+      this.registroTomaService.omitirToma(t.id).subscribe({
+        next: () => {
+          this.tomas.update(list => list.map(x => x.id === t.id ? { ...x, estado: 'omitido' } : x));
+          this.showToast(`Toma de ${t.medicamento} marcada como omitida`, 'success');
+          this.procesando.set(false);
+        },
+        error: (err) => {
+          console.error('Error al omitir', err);
+          this.showToast(`Error al omitir toma de ${t.medicamento}`, 'error');
+          this.procesando.set(false);
+        }
+      });
     }
   }
 
   revertir(t: Toma): void {
-    this.tomas.update(list => list.map(x => x.id === t.id ? { ...x, estado: 'pendiente' } : x));
-    this.showToast('Toma revertida a pendiente', 'success');
+    this.registroTomaService.revertirToma(t.id).subscribe({
+      next: () => {
+        this.tomas.update(list => list.map(x => x.id === t.id ? { ...x, estado: 'pendiente' } : x));
+        this.showToast(`Toma de ${t.medicamento} revertida a pendiente`, 'success');
+      },
+      error: (err) => {
+        console.error('Error al revertir', err);
+        this.showToast(`Error al revertir toma de ${t.medicamento}`, 'error');
+      }
+    });
   }
 
   badgeClass(e: EstadoToma): string {

@@ -38,7 +38,7 @@ export class BuscarCuidadorComponent implements OnInit {
   perfilModalOpen = signal(false);
   cuidadorSeleccionado = signal<CuidadorPublic | null>(null);
   adultoSeleccionadoId = signal<number | null>(null);
-  toast = signal<string | null>(null);
+  toast = signal<{msg: string, type: string} | null>(null);
   matchResult = signal<MatchCuidadorResponse | null>(null);
   matchCargando = signal(false);
 
@@ -183,19 +183,19 @@ export class BuscarCuidadorComponent implements OnInit {
       .subscribe({
         next: (res) => {
           if (res.success) {
-            this.showToast('Solicitud enviada. Esperando respuesta del cuidador.');
+            this.showToast('Solicitud enviada. Esperando respuesta del cuidador.', 'success');
             this.cerrarModal();
           }
         },
         error: (err) => {
-          this.showToast('Error: ' + (err.error?.message || 'No se pudo enviar la solicitud.'));
+          this.showToast('Error: ' + (err.error?.message || 'No se pudo enviar la solicitud.'), 'error');
           this.cerrarModal();
         }
       });
   }
 
-  showToast(msg: string) {
-    this.toast.set(msg);
+  showToast(msg: string, type: 'success' | 'error' | 'info' = 'success') {
+    this.toast.set({ msg, type });
     setTimeout(() => this.toast.set(null), 3000);
   }
 }
