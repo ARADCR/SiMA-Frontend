@@ -8,6 +8,9 @@ import { AuthService } from '../../../../core/auth/auth.service';
 import { AdultoMayor } from '../../../../core/models/adulto-mayor.model';
 import { LecturaPulsera } from '../../../../core/models/lectura-pulsera.model';
 import { Subscription, interval, forkJoin } from 'rxjs';
+import { Chart, registerables } from 'chart.js';
+
+Chart.register(...registerables);
 
 interface Evento { id: number; tipo: string; descripcion: string; hora: string; dispositivo: string; }
 
@@ -38,6 +41,11 @@ export class ActividadIotComponent implements OnInit, OnDestroy {
   errorLecturas = signal<string | null>(null);
   sinLecturas = signal<boolean>(false);
 
+  // ─── Modal Gráficas ─────────────────────────────────────────────────
+  mostrarModalGraficas = signal<boolean>(false);
+  chartBPMInstance: Chart | null = null;
+  chartSpO2Instance: Chart | null = null;
+
   // ─── Pastillero (datos existentes, conservados) ─────────────────────
   compartimentos = [
     { id: 1, nombre: 'Metformina',    hora: '08:00', estado: 'tomado' },
@@ -65,6 +73,16 @@ export class ActividadIotComponent implements OnInit, OnDestroy {
 
   ngOnInit() {
     this.cargarAdultos();
+
+    // Polling para actualizar lecturas (cada 10 segundos)
+    this.subs.add(
+      interval(10000).subscribe(() => {
+        const id = this.adultoSeleccionadoId();
+        if (id) {
+          this.cargarLecturas(id, true);
+        }
+      })
+    );
 
     // Polling de alertas de caída (HU-10)
     this.subs.add(
@@ -134,12 +152,14 @@ export class ActividadIotComponent implements OnInit, OnDestroy {
 
   // ─── Carga de lecturas ──────────────────────────────────────────────
 
-  private cargarLecturas(idAdulto: number): void {
-    this.cargandoLecturas.set(true);
+  private cargarLecturas(idAdulto: number, esPolling: boolean = false): void {
+    if (!esPolling) {
+      this.cargandoLecturas.set(true);
+      this.ultimaLectura.set(null);
+      this.historial.set([]);
+    }
     this.errorLecturas.set(null);
     this.sinLecturas.set(false);
-    this.ultimaLectura.set(null);
-    this.historial.set([]);
 
     forkJoin({
       ultima: this.lecturaService.obtenerUltimaLectura(idAdulto),
@@ -149,7 +169,7 @@ export class ActividadIotComponent implements OnInit, OnDestroy {
         this.ultimaLectura.set(ultima);
         this.historial.set(historial);
         this.sinLecturas.set(!ultima && historial.length === 0);
-        this.cargandoLecturas.set(false);
+        if (!esPolling) this.cargandoLecturas.set(false);
       },
       error: (err) => {
         // Si el error es 404, es que no hay lecturas aún
@@ -159,7 +179,7 @@ export class ActividadIotComponent implements OnInit, OnDestroy {
         } else {
           this.errorLecturas.set(err?.mensaje || 'Error al cargar las lecturas de la pulsera.');
         }
-        this.cargandoLecturas.set(false);
+        if (!esPolling) this.cargandoLecturas.set(false);
       }
     });
   }
@@ -230,5 +250,121 @@ export class ActividadIotComponent implements OnInit, OnDestroy {
         ...evs
       ]);
     }
+  }
+
+  // ─── Modal de Gráficas ──────────────────────────────────────────────
+
+  abrirModalGraficas() {
+    this.mostrarModalGraficas.set(true);
+    setTimeout(() => this.renderizarGrafica(), 100);
+  }
+
+  cerrarModalGraficas() {
+    this.mostrarModalGraficas.set(false);
+    if (this.chartBPMInstance) {
+      this.chartBPMInstance.destroy();
+      this.chartBPMInstance = null;
+    }
+    if (this.chartSpO2Instance) {
+      this.chartSpO2Instance.destroy();
+      this.chartSpO2Instance = null;
+    }
+  }
+
+  renderizarGrafica() {
+    const canvasBPM = document.getElementById('chartBPM') as HTMLCanvasElement;
+    const canvasSpO2 = document.getElementById('chartSpO2') as HTMLCanvasElement;
+    
+    if (!canvasBPM || !canvasSpO2) return;
+
+    if (this.chartBPMInstance) this.chartBPMInstance.destroy();
+    if (this.chartSpO2Instance) this.chartSpO2Instance.destroy();
+
+    const dailyData = new Map<string, { bpm: number[], spo2: number[], fecha: Date }>();
+    
+    this.historial().forEach(h => {
+      if (!h.fechaMedicion) return;
+      const d = new Date(h.fechaMedicion);
+      if (isNaN(d.getTime())) return;
+      
+      const dateStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+      
+      if (!dailyData.has(dateStr)) {
+        dailyData.set(dateStr, { bpm: [], spo2: [], fecha: d });
+      }
+      
+      const entry = dailyData.get(dateStr)!;
+      if (h.frecuenciaCardiaca) entry.bpm.push(h.frecuenciaCardiaca);
+      if (h.spo2) entry.spo2.push(h.spo2);
+    });
+
+    const sortedDays = Array.from(dailyData.values())
+      .sort((a, b) => a.fecha.getTime() - b.fecha.getTime())
+      .slice(-7); // Últimos 7 días con datos
+
+    const diasSemana = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
+    const labels = sortedDays.map(d => {
+       const name = diasSemana[d.fecha.getDay()];
+       const dayNum = String(d.fecha.getDate()).padStart(2, '0');
+       return `${name} ${dayNum}`;
+    });
+
+    const dataBPM = sortedDays.map(d => {
+      if (d.bpm.length === 0) return 0;
+      return Math.round(d.bpm.reduce((a, b) => a + b, 0) / d.bpm.length);
+    });
+
+    const dataSpO2 = sortedDays.map(d => {
+      if (d.spo2.length === 0) return 0;
+      return Math.round(d.spo2.reduce((a, b) => a + b, 0) / d.spo2.length);
+    });
+
+    this.chartBPMInstance = new Chart(canvasBPM, {
+      type: 'line',
+      data: {
+        labels,
+        datasets: [{
+          label: 'Frecuencia Cardíaca',
+          data: dataBPM,
+          borderColor: '#C0452A',
+          backgroundColor: 'rgba(192, 69, 42, 0.1)',
+          tension: 0.4,
+          fill: true
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        interaction: { mode: 'index', intersect: false },
+        scales: {
+          y: { suggestedMin: 50, suggestedMax: 130 }
+        }
+      }
+    });
+
+    this.chartSpO2Instance = new Chart(canvasSpO2, {
+      type: 'line',
+      data: {
+        labels,
+        datasets: [{
+          label: 'SpO2',
+          data: dataSpO2,
+          borderColor: '#52B788',
+          backgroundColor: 'rgba(82, 183, 136, 0.1)',
+          tension: 0.4,
+          fill: true
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        interaction: { mode: 'index', intersect: false },
+        scales: {
+          y: { suggestedMin: 85, suggestedMax: 100 }
+        }
+      }
+    });
   }
 }

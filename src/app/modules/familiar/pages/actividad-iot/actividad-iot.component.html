@@ -12,15 +12,6 @@
       </p>
     </div>
     <div class="header-actions">
-      @if (adultoSeleccionadoId()) {
-        <button class="btn btn-primary" [disabled]="cargandoLecturas()" (click)="actualizar()">
-          @if (cargandoLecturas()) {
-            Cargando...
-          } @else {
-            Actualizar
-          }
-        </button>
-      }
       @if (adultos().length > 1) {
         <div class="adulto-selector">
           <select class="select-input" [value]="adultoSeleccionadoId() || ''" (change)="onAdultoChange($event)">
@@ -126,6 +117,10 @@
               </div>
               @if (ultimaLectura()) {
                 <span class="badge badge-green">En línea</span>
+                <button class="btn-outline btn-sm" style="margin-left:auto; padding: 4px 8px; font-size: 12px; height: auto;" (click)="abrirModalGraficas()">
+                  <svg style="vertical-align: middle; margin-right: 4px;" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M16 11V3H8v6H2v12h20V11h-6zm-6-6h4v14h-4V5zm-6 6h4v8H4v-8zm16 8h-4v-6h4v6z"/></svg>
+                  Ver gráficas
+                </button>
               } @else {
                 <span class="badge badge-red">Sin datos</span>
               }
@@ -303,3 +298,34 @@
     </div>
   }
 </div>
+
+@if (mostrarModalGraficas()) {
+  <div class="modal-overlay" (click)="cerrarModalGraficas()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>Resumen Semanal de Signos Vitales</h3>
+        <button class="close-btn" (click)="cerrarModalGraficas()">&times;</button>
+      </div>
+      <div class="modal-body" style="display: flex; flex-direction: column; gap: 24px; padding-bottom: 12px;">
+        <div>
+          <h4 style="margin: 0 0 12px 0; font-size: 14px; color: #5C6B7A; display: flex; align-items: center; gap: 8px;">
+            <span style="display:inline-block; width: 12px; height: 12px; border-radius: 50%; background: #C0452A;"></span>
+            Frecuencia Cardíaca (BPM)
+          </h4>
+          <div class="chart-container" style="position: relative; height: 200px; width: 100%;">
+            <canvas id="chartBPM"></canvas>
+          </div>
+        </div>
+        <div>
+          <h4 style="margin: 0 0 12px 0; font-size: 14px; color: #5C6B7A; display: flex; align-items: center; gap: 8px;">
+            <span style="display:inline-block; width: 12px; height: 12px; border-radius: 50%; background: #52B788;"></span>
+            Saturación de Oxígeno (SpO₂)
+          </h4>
+          <div class="chart-container" style="position: relative; height: 200px; width: 100%;">
+            <canvas id="chartSpO2"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+}
