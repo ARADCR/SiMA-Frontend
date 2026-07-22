@@ -1,72 +1,176 @@
-import { Component, signal, computed } from '@angular/core';
+import { Component, OnInit, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
-
-interface Evento { id: number; fecha: string; hora: string; tipo: string; descripcion: string; metodo: string; }
-interface DiaSemana { dia: string; fecha: string; pct: number; }
+import { FormsModule } from '@angular/forms';
+import { ActivatedRoute } from '@angular/router';
+import { HistorialService, Page } from '../../../../core/services/historial.service';
+import { AdultoMayorService } from '../../../../core/services/adulto-mayor.service';
+import { HistorialEvento } from '../../../../core/models/historial.model';
+import { AdultoMayor } from '../../../../core/models/adulto-mayor.model';
 
 @Component({
   selector: 'app-historial',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, FormsModule],
   templateUrl: './historial.component.html',
   styleUrls: ['./historial.component.scss']
 })
-export class HistorialComponent {
+export class HistorialComponent implements OnInit {
+  private route = inject(ActivatedRoute);
+  private historialSvc = inject(HistorialService);
+  private adultoSvc = inject(AdultoMayorService);
+
+  // State
+  adultos = signal<AdultoMayor[]>([]);
+  adultoActual = signal<AdultoMayor | null>(null);
+  eventos = signal<HistorialEvento[]>([]);
+  loading = signal(true);
+  error = signal<string | null>(null);
+
+  // Filters & Pagination
   tipoActivo = signal('todos');
+  fechaInicio = signal<string>('');
+  fechaFin = signal<string>('');
+  currentPage = signal(0);
+  pageSize = signal(20);
+  totalPages = signal(0);
+  totalElements = signal(0);
 
   tipoPills = [
     { label: 'Todos',         value: 'todos' },
     { label: 'Tomas',         value: 'toma' },
     { label: 'Alertas',       value: 'alerta' },
-    { label: 'Observaciones', value: 'observacion' },
-    { label: 'IoT',           value: 'iot' },
+    { label: 'IoT',           value: 'actividad_iot' }
   ];
 
-  diasSemana: DiaSemana[] = [
-    { dia: 'Lun', fecha: '23 Jun', pct: 100 },
-    { dia: 'Mar', fecha: '24 Jun', pct: 80 },
-    { dia: 'Mié', fecha: '25 Jun', pct: 100 },
-    { dia: 'Jue', fecha: '26 Jun', pct: 60 },
-    { dia: 'Vie', fecha: '27 Jun', pct: 100 },
-    { dia: 'Sáb', fecha: '28 Jun', pct: 100 },
-    { dia: 'Dom', fecha: '29 Jun', pct: 80 },
-  ];
+  ngOnInit(): void {
+    const adultoId = Number(this.route.snapshot.queryParamMap.get('adultoId')
+                  ?? this.route.snapshot.paramMap.get('id'));
 
-  eventos: Evento[] = [
-    { id: 1,  fecha: '29/06/2026', hora: '08:02', tipo: 'toma',        descripcion: 'Metformina 500mg tomada — Compartimento 1',    metodo: 'Pastillero IoT' },
-    { id: 2,  fecha: '29/06/2026', hora: '08:03', tipo: 'toma',        descripcion: 'Atorvastatina 20mg tomada — Compartimento 4',  metodo: 'Pastillero IoT' },
-    { id: 3,  fecha: '29/06/2026', hora: '09:00', tipo: 'iot',         descripcion: 'Medición: BPM 72 · SpO₂ 98.2% · Temp 36.5°C', metodo: 'Pulsera BLE' },
-    { id: 4,  fecha: '28/06/2026', hora: '12:30', tipo: 'alerta',      descripcion: 'Toma omitida — Vitamina D 12:00',              metodo: 'Sistema' },
-    { id: 5,  fecha: '28/06/2026', hora: '14:00', tipo: 'toma',        descripcion: 'Metformina 500mg tomada',                      metodo: 'Manual' },
-    { id: 6,  fecha: '27/06/2026', hora: '10:15', tipo: 'observacion', descripcion: 'Sin eventos adversos. Buen día.',              metodo: 'Cuidador' },
-    { id: 7,  fecha: '26/06/2026', hora: '08:00', tipo: 'toma',        descripcion: 'Enalapril 5mg tomada',                         metodo: 'Pastillero IoT' },
-    { id: 8,  fecha: '26/06/2026', hora: '11:00', tipo: 'alerta',      descripcion: 'Frecuencia cardíaca elevada: 102 BPM',         metodo: 'Pulsera BLE' },
-  ];
+    this.adultoSvc.getAll().subscribe({
+      next: r => {
+        const list = r.data ?? [];
+        this.adultos.set(list);
+        if (!adultoId && list.length > 0) {
+          this.adultoActual.set(list[0]);
+          this.cargarHistorial(list[0].idAdulto);
+        } else if (adultoId) {
+          const found = list.find(a => a.idAdulto === adultoId);
+          if (found) {
+            this.adultoActual.set(found);
+          } else {
+            this.adultoSvc.getById(adultoId).subscribe({ next: a => this.adultoActual.set(a) });
+          }
+          this.cargarHistorial(adultoId);
+        } else {
+          this.loading.set(false);
+        }
+      },
+      error: err => {
+        this.error.set('Error al cargar la lista de adultos mayores');
+        this.loading.set(false);
+      }
+    });
+  }
 
-  eventosFiltrados = computed(() => {
-    const tipo = this.tipoActivo();
-    if (tipo === 'todos') return this.eventos;
-    return this.eventos.filter(e => e.tipo === tipo);
-  });
+  cargarHistorial(adultoId: number): void {
+    this.loading.set(true);
+    this.error.set(null);
 
-  cumplimientoTotal = computed(() => {
-    const total = this.diasSemana.reduce((acc, d) => acc + d.pct, 0);
-    return Math.round(total / this.diasSemana.length);
-  });
+    const params: any = {
+      page: this.currentPage(),
+      size: this.pageSize()
+    };
 
-  circleClass(pct: number): string {
-    if (pct >= 90) return 'circle high';
-    if (pct >= 60) return 'circle mid';
-    return 'circle low';
+    if (this.tipoActivo() !== 'todos') {
+      params.tipoEvento = this.tipoActivo();
+    }
+    if (this.fechaInicio()) {
+      params.fechaInicio = this.fechaInicio() + 'T00:00:00';
+    }
+    if (this.fechaFin()) {
+      params.fechaFin = this.fechaFin() + 'T23:59:59';
+    }
+
+    this.historialSvc.getHistorial(adultoId, params).subscribe({
+      next: (pageData: Page<HistorialEvento>) => {
+        this.eventos.set(pageData.content);
+        this.totalPages.set(pageData.totalPages);
+        this.totalElements.set(pageData.totalElements);
+        this.loading.set(false);
+      },
+      error: err => {
+        this.error.set('Error al cargar el historial de salud');
+        this.loading.set(false);
+      }
+    });
+  }
+
+  cambiarAdulto(adulto: AdultoMayor): void {
+    this.adultoActual.set(adulto);
+    this.currentPage.set(0);
+    this.cargarHistorial(adulto.idAdulto);
+  }
+
+  cambiarFiltroTipo(tipo: string): void {
+    this.tipoActivo.set(tipo);
+    this.currentPage.set(0);
+    const act = this.adultoActual();
+    if (act) this.cargarHistorial(act.idAdulto);
+  }
+
+  aplicarFiltroFechas(): void {
+    this.currentPage.set(0);
+    const act = this.adultoActual();
+    if (act) this.cargarHistorial(act.idAdulto);
+  }
+
+  limpiarFiltroFechas(): void {
+    this.fechaInicio.set('');
+    this.fechaFin.set('');
+    this.currentPage.set(0);
+    const act = this.adultoActual();
+    if (act) this.cargarHistorial(act.idAdulto);
+  }
+
+  cambiarPagina(nuevaPagina: number): void {
+    if (nuevaPagina >= 0 && nuevaPagina < this.totalPages()) {
+      this.currentPage.set(nuevaPagina);
+      const act = this.adultoActual();
+      if (act) this.cargarHistorial(act.idAdulto);
+    }
+  }
+
+  formatearFecha(fechaStr: string): string {
+    if (!fechaStr) return '';
+    try {
+      const date = new Date(fechaStr);
+      return date.toLocaleString('es-MX', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    } catch (e) {
+      return fechaStr;
+    }
   }
 
   tipoBadge(tipo: string): string {
     const map: Record<string, string> = {
       toma: 'badge badge-green',
       alerta: 'badge badge-red',
-      observacion: 'badge badge-purple',
-      iot: 'badge badge-blue',
+      actividad_iot: 'badge badge-blue'
     };
     return map[tipo] ?? 'badge badge-yellow';
+  }
+
+  obtenerMetodo(ev: HistorialEvento): string {
+    if (ev.tipo === 'toma') {
+      return ev.meta && ev.meta['confirmador'] ? ev.meta['confirmador'] : 'Sistema';
+    } else if (ev.tipo === 'actividad_iot') {
+      return ev.meta && ev.meta['tipoDispositivo'] ? String(ev.meta['tipoDispositivo']).replace('_', ' ') : 'IoT';
+    }
+    return 'Alerta';
   }
 }

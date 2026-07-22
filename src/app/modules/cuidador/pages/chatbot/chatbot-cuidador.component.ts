@@ -1,6 +1,9 @@
-import { Component, signal, AfterViewChecked, ViewChild, ElementRef } from '@angular/core';
+import { Component, signal, AfterViewChecked, ViewChild, ElementRef, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { AiService } from '../../../../core/services/ai.service';
+import { AdultoMayorService } from '../../../../core/services/adulto-mayor.service';
+import { AdultoMayor } from '../../../../core/models/adulto-mayor.model';
 
 interface Mensaje {
   id: number;
@@ -9,24 +12,7 @@ interface Mensaje {
   hora: string;
 }
 
-const RESPUESTAS_BOT: Record<string, string> = {
-  default: 'Entiendo tu consulta. Como asistente de SiMA puedo ayudarte con información sobre medicamentos, síntomas comunes en adultos mayores, y protocolos de cuidado. ¿Podrías darme más detalles?',
-  medicamento: 'Los medicamentos deben administrarse en los horarios indicados por el médico. Si un paciente olvida una toma, consulta con el familiar o médico antes de doblar la dosis. ¿Sobre qué medicamento tienes dudas?',
-  presion: 'Para monitorear la presión arterial, registra los valores antes de la toma de medicamentos antihipertensivos. Valores normales: sistólica 90-130 mmHg, diastólica 60-85 mmHg. Valores superiores a 140/90 deben reportarse.',
-  caida: 'En caso de caída: 1) No mover al paciente de inmediato. 2) Verificar consciencia. 3) Evaluar dolor o deformidad. 4) Contactar al familiar y médico. 5) Si hay pérdida de consciencia, llamar a emergencias (911).',
-  diabetes: 'Para pacientes diabéticos: registrar glucosa en ayunas (70-130 mg/dL) y 2h postprandial (<180 mg/dL). Administrar insulina/metformina según pauta. Reportar hipoglucemia (<70 mg/dL) inmediatamente.',
-  dolor: 'Ante dolor en el paciente: evalúa localización, intensidad (escala 1-10) y duración. Registra la observación en la plataforma. Si el dolor es agudo o acompañado de otros síntomas, notifica al familiar y busca atención médica.',
-};
-
-function getBotResponse(texto: string): string {
-  const t = texto.toLowerCase();
-  if (t.includes('medicamento') || t.includes('pastilla') || t.includes('toma')) return RESPUESTAS_BOT['medicamento'];
-  if (t.includes('presion') || t.includes('presión') || t.includes('hipertension') || t.includes('tensión')) return RESPUESTAS_BOT['presion'];
-  if (t.includes('caida') || t.includes('caída') || t.includes('cayó')) return RESPUESTAS_BOT['caida'];
-  if (t.includes('diabetes') || t.includes('glucosa') || t.includes('insulina')) return RESPUESTAS_BOT['diabetes'];
-  if (t.includes('dolor') || t.includes('duele')) return RESPUESTAS_BOT['dolor'];
-  return RESPUESTAS_BOT['default'];
-}
+const MENSAJE_ERROR = 'El asistente no está disponible en este momento. Intentá nuevamente en unos minutos.';
 
 @Component({
   selector: 'app-chatbot-cuidador',
@@ -35,33 +21,46 @@ function getBotResponse(texto: string): string {
   templateUrl: './chatbot-cuidador.component.html',
   styleUrls: ['./chatbot-cuidador.component.scss']
 })
-export class ChatbotCuidadorComponent implements AfterViewChecked {
+export class ChatbotCuidadorComponent implements AfterViewChecked, OnInit {
   @ViewChild('messagesContainer') private msgsEl!: ElementRef<HTMLDivElement>;
 
   inputTexto = '';
   convActiva = 1;
   escribiendo = signal(false);
 
+  adultos = signal<AdultoMayor[]>([]);
+  adultoSeleccionado = signal<number | null>(null);
+
   sugerencias = [
-    '¿Qué hacer si un paciente cae?',
-    '¿Cómo controlar la presión arterial?',
-    '¿Qué es una hipoglucemia?',
+    '¿Qué medicamentos toma y a qué horas?',
+    '¿Hay alertas activas para este paciente?',
+    '¿Qué observaciones registré ayer?',
     '¿Cuándo llamar a emergencias?',
   ];
 
   conversaciones = [
     { id: 1, titulo: 'Consulta de hoy', fecha: 'Hace 5 min' },
-    { id: 2, titulo: 'Manejo de diabetes', fecha: 'Ayer' },
-    { id: 3, titulo: 'Presión arterial alta', fecha: '25/06/2026' },
   ];
 
   mensajes = signal<Mensaje[]>([
     {
       id: 1, tipo: 'bot',
-      texto: '¡Hola Carlos! Soy el asistente de SiMA. Puedo ayudarte con dudas sobre el cuidado de tus pacientes, protocolos médicos y manejo de medicamentos. ¿En qué puedo ayudarte?',
+      texto: '¡Hola! Soy el asistente de SiMA. Puedo ayudarte con dudas sobre medicamentos, signos vitales y observaciones del paciente seleccionado. ¿En qué puedo ayudarte?',
       hora: '13:45'
     },
   ]);
+
+  constructor(private aiService: AiService, private adultoMayorService: AdultoMayorService) {}
+
+  ngOnInit(): void {
+    this.adultoMayorService.getMisPacientes().subscribe({
+      next: (adultos) => {
+        this.adultos.set(adultos);
+        if (adultos.length > 0) this.adultoSeleccionado.set(adultos[0].idAdulto);
+      },
+      error: () => this.adultos.set([])
+    });
+  }
 
   ngAfterViewChecked(): void {
     if (this.msgsEl) {
@@ -72,19 +71,30 @@ export class ChatbotCuidadorComponent implements AfterViewChecked {
 
   enviar(): void {
     const txt = this.inputTexto.trim();
-    if (!txt) return;
+    const idAdulto = this.adultoSeleccionado();
+    if (!txt || !idAdulto) return;
+
     const hora = new Date().toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' });
     this.mensajes.update(m => [...m, { id: Date.now(), tipo: 'usuario', texto: txt, hora }]);
     this.inputTexto = '';
     this.escribiendo.set(true);
-    setTimeout(() => {
-      this.escribiendo.set(false);
-      const resp = getBotResponse(txt);
-      this.mensajes.update(m => [...m, {
-        id: Date.now() + 1, tipo: 'bot', texto: resp,
-        hora: new Date().toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' })
-      }]);
-    }, 1200);
+
+    this.aiService.chat(idAdulto, txt).subscribe({
+      next: (resp) => {
+        this.escribiendo.set(false);
+        this.mensajes.update(m => [...m, {
+          id: Date.now() + 1, tipo: 'bot', texto: resp.respuesta,
+          hora: new Date().toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' })
+        }]);
+      },
+      error: () => {
+        this.escribiendo.set(false);
+        this.mensajes.update(m => [...m, {
+          id: Date.now() + 1, tipo: 'bot', texto: MENSAJE_ERROR,
+          hora: new Date().toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' })
+        }]);
+      }
+    });
   }
 
   enviarSugerencia(s: string): void {

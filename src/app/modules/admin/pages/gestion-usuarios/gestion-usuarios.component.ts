@@ -95,7 +95,8 @@ export class GestionUsuariosComponent implements OnInit {
     const map: Record<NombreRol, string> = {
       Administrador: '#2E86AB',
       Familiar:      '#52B788',
-      Cuidador:      '#F4A261'
+      Cuidador:      '#F4A261',
+      'Adulto Mayor': '#8338EC'
     };
     return map[u.nombreRol] ?? '#9CABB8';
   }
@@ -104,7 +105,8 @@ export class GestionUsuariosComponent implements OnInit {
     const map: Record<NombreRol, { bg: string; color: string }> = {
       Administrador: { bg: '#EBF5FB', color: '#1E5F7A' },
       Familiar:      { bg: '#D8F3DC', color: '#1A7A4A' },
-      Cuidador:      { bg: '#FEF3E2', color: '#B47B12' }
+      Cuidador:      { bg: '#FEF3E2', color: '#B47B12' },
+      'Adulto Mayor': { bg: '#F3E8FF', color: '#6B21A8' }
     };
     return map[rol] ?? { bg: '#F0F0F0', color: '#555' };
   }

@@ -25,11 +25,64 @@
     </div>
   </div>
 
-  <!-- Estados Generales de Carga y Error de Adultos -->
-  @if (cargandoAdultos()) {
-    <div class="state-container">
-      <div class="spinner"></div>
-      <p>Cargando información de adultos mayores...</p>
+  @if (analisisIot(); as analisis) {
+    <div class="card" style="margin-bottom:16px">
+      <div class="events-header">
+        <span class="card-title">Análisis IA</span>
+        @if (analisis.fechaAnalisis) {
+          <span style="font-size:12px; color:#9CABB8">Último análisis: {{ analisis.fechaAnalisis | date:'short' }}</span>
+        }
+      </div>
+      <p style="font-size:14px; color:#1B2B3A; margin:8px 0 16px">{{ analisis.resumenEstado }}</p>
+
+      @if (analisis.anomaliasDetectadas.length) {
+        <div style="display:flex; flex-direction:column; gap:8px; margin-bottom:16px">
+          @for (anomalia of analisis.anomaliasDetectadas; track anomalia.descripcion) {
+            <div class="card" [style.border-left]="(anomalia.severidad === 'critica' || anomalia.severidad === 'alta') ? '4px solid #DC2626' : '4px solid #E5E7EB'" style="padding:12px">
+              <div style="display:flex; align-items:center; gap:8px">
+                <span>{{ iconoSeveridad(anomalia.severidad) }}</span>
+                <span class="badge" [class]="anomalia.severidad === 'critica' || anomalia.severidad === 'alta' ? 'badge-red' : 'badge-blue'">{{ anomalia.tipo }}</span>
+                <span style="font-size:12px; color:#9CABB8; text-transform:uppercase">{{ anomalia.severidad }}</span>
+              </div>
+              <p style="font-size:13px; color:#1B2B3A; margin:6px 0">{{ anomalia.descripcion }}</p>
+              @if (anomalia.recomendacion) {
+                <p style="font-size:12px; color:#52B788; margin:0">Recomendación: {{ anomalia.recomendacion }}</p>
+              }
+            </div>
+          }
+        </div>
+      }
+
+      @if (analisis.tendencias.length) {
+        <div style="display:flex; flex-direction:column; gap:6px">
+          @for (tendencia of analisis.tendencias; track tendencia.descripcion) {
+            <div style="font-size:13px; color:#1B2B3A">
+              <span>{{ iconoTendencia(tendencia.direccion) }}</span>
+              {{ tendencia.descripcion }}
+              <span style="font-size:12px; color:#9CABB8"> ({{ tendencia.periodo }})</span>
+            </div>
+          }
+        </div>
+      }
+    </div>
+  } @else if (cargandoAnalisisIot()) {
+    <div class="card" style="margin-bottom:16px">
+      <p style="font-size:13px; color:#9CABB8">Cargando análisis IA...</p>
+    </div>
+  } @else if (errorAnalisisIot()) {
+    <div class="card" style="margin-bottom:16px">
+      <p style="font-size:13px; color:#9CABB8">{{ errorAnalisisIot() }}</p>
+    </div>
+  }
+
+  <div class="card">
+    <div class="events-header">
+      <span class="card-title">Eventos recientes</span>
+      <select class="select-sm" [(ngModel)]="tipoEvento">
+        <option value="">Todos</option>
+        <option value="pastillero">Pastillero</option>
+        <option value="pulsera">Pulsera</option>
+      </select>
     </div>
   } @else if (errorAdultos()) {
     <div class="state-container error-state">

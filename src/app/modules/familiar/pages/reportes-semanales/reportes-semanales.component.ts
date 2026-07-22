@@ -1,10 +1,11 @@
-import { Component, signal, computed } from '@angular/core';
+import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-
-interface SemanaOption { label: string; value: string; }
-interface MetricaSemana { nombre: string; valor: string; cambio: number; icon: string; color: string; bg: string; }
-interface DiaDato { dia: string; tomas: number; omisiones: number; }
+import { ActivatedRoute } from '@angular/router';
+import { ReporteService } from '../../../../core/services/reporte.service';
+import { AdultoMayorService } from '../../../../core/services/adulto-mayor.service';
+import { ReporteMedicionSemanal } from '../../../../core/models/reporte-medicacion.model';
+import { AdultoMayor } from '../../../../core/models/adulto-mayor.model';
 
 @Component({
   selector: 'app-reportes-semanales',
@@ -13,76 +14,84 @@ interface DiaDato { dia: string; tomas: number; omisiones: number; }
   templateUrl: './reportes-semanales.component.html',
   styleUrls: ['./reportes-semanales.component.scss']
 })
-export class ReportesSemanalesComponent {
-  Math = Math;
-  adultoSel = 'Elena Rodríguez';
-  semanaActiva = signal('Sem 26');
-  toast = signal<string | null>(null);
+export class ReportesSemanalesComponent implements OnInit {
+  private route = inject(ActivatedRoute);
+  private reporteSvc = inject(ReporteService);
+  private adultoSvc = inject(AdultoMayorService);
 
-  semanas: SemanaOption[] = [
-    { label: 'Sem 23', value: 'Sem 23' },
-    { label: 'Sem 24', value: 'Sem 24' },
-    { label: 'Sem 25', value: 'Sem 25' },
-    { label: 'Sem 26', value: 'Sem 26' },
-  ];
+  adultos = signal<AdultoMayor[]>([]);
+  adultoActual = signal<AdultoMayor | null>(null);
+  reporte = signal<ReporteMedicionSemanal | null>(null);
+  loading = signal(true);
+  error = signal<string | null>(null);
 
-  metricas: MetricaSemana[] = [
-    { nombre: 'Cumplimiento',   valor: '91%',    cambio:  4,  icon: '💊', color: '#1A7A4A', bg: '#D8F3DC' },
-    { nombre: 'Tomas totales',  valor: '49',     cambio:  2,  icon: '📋', color: '#1E5F7A', bg: '#EBF5FB' },
-    { nombre: 'Alertas',        valor: '2',      cambio: -3,  icon: '🔔', color: '#C0452A', bg: '#FDE8E0' },
-    { nombre: 'Frec. cardíaca', valor: '70 bpm', cambio:  1,  icon: '❤️', color: '#1A7A4A', bg: '#D8F3DC' },
-  ];
+  ngOnInit(): void {
+    const adultoId = Number(
+      this.route.snapshot.queryParamMap.get('adultoId') ??
+      this.route.snapshot.paramMap.get('id')
+    );
 
-  chartData: DiaDato[] = [
-    { dia: 'Lun', tomas: 5, omisiones: 0 },
-    { dia: 'Mar', tomas: 4, omisiones: 1 },
-    { dia: 'Mié', tomas: 5, omisiones: 0 },
-    { dia: 'Jue', tomas: 3, omisiones: 2 },
-    { dia: 'Vie', tomas: 5, omisiones: 0 },
-    { dia: 'Sáb', tomas: 5, omisiones: 0 },
-    { dia: 'Dom', tomas: 4, omisiones: 1 },
-  ];
-
-  cumplimientoSemana = computed(() => {
-    const total = this.chartData.reduce((acc, d) => acc + d.tomas + d.omisiones, 0);
-    const tomas = this.chartData.reduce((acc, d) => acc + d.tomas, 0);
-    return Math.round((tomas / total) * 100);
-  });
-
-  iaResumen = computed(() =>
-    this.semanaActiva() === 'Sem 26'
-      ? 'Elena Rodríguez muestra una semana de alta estabilidad con un cumplimiento del 91% en la toma de medicamentos. Su ritmo cardíaco se mantuvo en rangos normales (68-76 bpm) y no se registraron caídas. Las 2 omisiones detectadas corresponden al jueves, posiblemente relacionadas con la visita médica de ese día.'
-      : `Durante la ${this.semanaActiva()}, el estado general de Elena Rodríguez fue estable. Los indicadores vitales se mantuvieron dentro de los parámetros esperados para su perfil de salud.`
-  );
-
-  iaObservaciones = computed(() => [
-    'Jueves: 2 tomas omitidas (Metformina 14:00 y Vitamina D 12:00).',
-    'Ritmo cardíaco promedio: 70 bpm — estable durante toda la semana.',
-    'Pastillero IoT sincronizado correctamente los 7 días.',
-    'Sin eventos de caída registrados por la pulsera.',
-  ]);
-
-  iaRecomendaciones = computed(() => [
-    'Verificar con el médico si las omisiones del jueves requieren ajuste de dosis.',
-    'Mantener el horario actual de medicamentos — los resultados son positivos.',
-    'Próxima revisión cardiovascular recomendada en 3 semanas.',
-  ]);
-
-  semanaAnterior(): void {
-    const idx = this.semanas.findIndex(s => s.value === this.semanaActiva());
-    if (idx > 0) this.semanaActiva.set(this.semanas[idx - 1].value);
+    this.adultoSvc.getMisPacientes().subscribe({
+      next: list => {
+        this.adultos.set(list);
+        if (!adultoId && list.length > 0) {
+          this.adultoActual.set(list[0]);
+          this.cargarReporte(list[0].idAdulto);
+        } else if (adultoId) {
+          const found = list.find(a => a.idAdulto === adultoId);
+          this.adultoActual.set(found ?? null);
+          this.cargarReporte(adultoId);
+        } else {
+          this.loading.set(false);
+        }
+      },
+      error: () => {
+        this.error.set('Error al cargar la lista de pacientes');
+        this.loading.set(false);
+      }
+    });
   }
 
-  semanaSiguiente(): void {
-    const idx = this.semanas.findIndex(s => s.value === this.semanaActiva());
-    if (idx < this.semanas.length - 1) this.semanaActiva.set(this.semanas[idx + 1].value);
+  cargarReporte(idAdulto: number): void {
+    this.loading.set(true);
+    this.error.set(null);
+    this.reporteSvc.getReporteSemanal(idAdulto).subscribe({
+      next: data => {
+        this.reporte.set(data);
+        this.loading.set(false);
+      },
+      error: () => {
+        this.error.set('No se pudo cargar el reporte. Verificá tu conexión o permisos.');
+        this.loading.set(false);
+      }
+    });
   }
 
-  compartir(): void { this.showToast('Reporte compartido con el médico tratante por correo'); }
-  descargar(): void { this.showToast('Descargando reporte PDF...'); }
+  cambiarAdulto(adulto: AdultoMayor): void {
+    this.adultoActual.set(adulto);
+    this.cargarReporte(adulto.idAdulto);
+  }
 
-  private showToast(msg: string): void {
-    this.toast.set(msg);
-    setTimeout(() => this.toast.set(null), 3500);
+  adherenciaColor(pct: number): string {
+    if (pct >= 80) return '#16A34A';
+    if (pct >= 60) return '#D97706';
+    return '#DC2626';
+  }
+
+  adherenciaBackground(pct: number): string {
+    if (pct >= 80) return '#DCFCE7';
+    if (pct >= 60) return '#FEF3C7';
+    return '#FEE2E2';
+  }
+
+  barWidth(tomadas: number, programadas: number): string {
+    if (!programadas) return '0%';
+    return Math.min((tomadas / programadas) * 100, 100).toFixed(1) + '%';
+  }
+
+  formatDia(isoDate: string): string {
+    if (!isoDate) return '';
+    const d = new Date(isoDate + 'T12:00:00');
+    return d.toLocaleDateString('es-MX', { weekday: 'short', day: 'numeric', month: 'short' });
   }
 }

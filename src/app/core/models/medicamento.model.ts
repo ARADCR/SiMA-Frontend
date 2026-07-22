@@ -23,16 +23,17 @@ export interface Medicamento {
 }
 
 export interface Toma {
-  id: number;
-  medicamentoId: number;
-  medicamentoNombre?: string;
-  adultoMayorId: number;
-  fechaHoraProgramada: string;
-  fechaHoraReal?: string;
+  idRegistro: number;
+  idAdulto: number;
+  idHorario: number;
+  nombreMedicamento: string;
+  dosis: string;
   estado: EstadoToma;
+  metodoConfirmacion?: string;
+  fechaHoraProgramada: string;
+  fechaHoraRegistro?: string;
   observacion?: string;
-  registradoPor?: number;
-  registradoPorNombre?: string;
+  nombreConfirmador?: string;
 }
 
 export interface MedicamentoCreate {

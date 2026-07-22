@@ -3,14 +3,8 @@ import { CommonModule, DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AlertaService } from '../../../../core/services/alerta.service';
 import { AdultoMayorService } from '../../../../core/services/adulto-mayor.service';
-import { LecturaPulseraService } from '../../../../core/services/lectura-pulsera.service';
-import { AuthService } from '../../../../core/auth/auth.service';
-import { AdultoMayor } from '../../../../core/models/adulto-mayor.model';
-import { LecturaPulsera } from '../../../../core/models/lectura-pulsera.model';
-import { Subscription, interval, forkJoin } from 'rxjs';
-import { Chart, registerables } from 'chart.js';
-
-Chart.register(...registerables);
+import { AiService, AnalisisIotIAResponse } from '../../../../core/services/ai.service';
+import { Subscription, interval } from 'rxjs';
 
 interface Evento { id: number; tipo: string; descripcion: string; hora: string; dispositivo: string; }
 
@@ -23,30 +17,15 @@ interface Evento { id: number; tipo: string; descripcion: string; hora: string; 
 })
 export class ActividadIotComponent implements OnInit, OnDestroy {
   private alertaService = inject(AlertaService);
-  private adultoService = inject(AdultoMayorService);
-  private lecturaService = inject(LecturaPulseraService);
-  private authService = inject(AuthService);
+  private adultoMayorService = inject(AdultoMayorService);
+  private aiService = inject(AiService);
   private subs: Subscription = new Subscription();
 
-  // ─── Adultos mayores ────────────────────────────────────────────────
-  adultos = signal<AdultoMayor[]>([]);
-  adultoSeleccionadoId = signal<number | null>(null);
-  cargandoAdultos = signal<boolean>(true);
-  errorAdultos = signal<string | null>(null);
+  // Análisis IA de anomalías IoT (HU-26)
+  analisisIot = signal<AnalisisIotIAResponse | null>(null);
+  cargandoAnalisisIot = signal<boolean>(false);
+  errorAnalisisIot = signal<string | null>(null);
 
-  // ─── Lecturas de pulsera ────────────────────────────────────────────
-  ultimaLectura = signal<LecturaPulsera | null>(null);
-  historial = signal<LecturaPulsera[]>([]);
-  cargandoLecturas = signal<boolean>(false);
-  errorLecturas = signal<string | null>(null);
-  sinLecturas = signal<boolean>(false);
-
-  // ─── Modal Gráficas ─────────────────────────────────────────────────
-  mostrarModalGraficas = signal<boolean>(false);
-  chartBPMInstance: Chart | null = null;
-  chartSpO2Instance: Chart | null = null;
-
-  // ─── Pastillero (datos existentes, conservados) ─────────────────────
   compartimentos = [
     { id: 1, nombre: 'Metformina',    hora: '08:00', estado: 'tomado' },
     { id: 2, nombre: 'Atorvastatina', hora: '08:00', estado: 'tomado' },
@@ -104,6 +83,50 @@ export class ActividadIotComponent implements OnInit, OnDestroy {
         });
       })
     );
+
+    // Carga del análisis IA de anomalías IoT para el primer adulto vinculado
+    this.adultoMayorService.getMisPacientes().subscribe({
+      next: adultos => {
+        if (adultos.length > 0) {
+          this.cargarAnalisisIot(adultos[0].idAdulto);
+        }
+      },
+      error: () => {
+        // Silencioso: la sección de análisis IA simplemente no se muestra
+      }
+    });
+  }
+
+  cargarAnalisisIot(idAdulto: number): void {
+    this.cargandoAnalisisIot.set(true);
+    this.errorAnalisisIot.set(null);
+    this.aiService.getAnalisisIot(idAdulto).subscribe({
+      next: data => {
+        this.analisisIot.set(data);
+        this.cargandoAnalisisIot.set(false);
+      },
+      error: () => {
+        this.errorAnalisisIot.set('No se pudo cargar el análisis IA de los datos IoT.');
+        this.cargandoAnalisisIot.set(false);
+      }
+    });
+  }
+
+  iconoSeveridad(severidad: string): string {
+    switch (severidad) {
+      case 'critica': return '🔴';
+      case 'alta': return '🟠';
+      case 'media': return '🟡';
+      default: return '🟢';
+    }
+  }
+
+  iconoTendencia(direccion: string): string {
+    switch (direccion) {
+      case 'subiendo': return '↑';
+      case 'bajando': return '↓';
+      default: return '→';
+    }
   }
 
   ngOnDestroy() {

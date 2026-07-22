@@ -1,12 +1,10 @@
-import { Component, signal, computed } from '@angular/core';
+import { Component, signal, computed, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-
-interface Cuidador {
-  id: number; nombre: string; initials: string; especialidad: string; experiencia: string;
-  calificacion: number; resenas: number; precio: string; disponible: boolean;
-  tags: string[]; descripcion: string;
-}
+import { VinculacionService, CuidadorPublic } from '../../../../core/services/vinculacion.service';
+import { AdultoMayorService } from '../../../../core/services/adulto-mayor.service';
+import { AdultoMayor } from '../../../../core/models/adulto-mayor.model';
+import { AiService, CuidadorRankeado, MatchCuidadorResponse } from '../../../../core/services/ai.service';
 
 @Component({
   selector: 'app-buscar-cuidador',
@@ -15,52 +13,80 @@ interface Cuidador {
   templateUrl: './buscar-cuidador.component.html',
   styleUrls: ['./buscar-cuidador.component.scss']
 })
-export class BuscarCuidadorComponent {
+export class BuscarCuidadorComponent implements OnInit {
+  private vinculacionService = inject(VinculacionService);
+  private adultoService = inject(AdultoMayorService);
+  private aiService = inject(AiService);
+
   busquedaIA = '';
   iaMensaje  = signal<string | null>(null);
+  buscandoIA = signal(false);
+  rankeados  = signal<Map<number, CuidadorRankeado>>(new Map());
   filtroEsp  = signal<string[]>([]);
   filtroDisp = '';
   filtroCalif = '0';
   ordenar    = 'cal';
+  adultoBusquedaId = signal<number | null>(null);
 
   especialidades = ['Adultos mayores', 'Diabetes', 'Fisioterapia', 'Alzheimer/demencia', 'Rehabilitación', 'Enfermería'];
 
-  cuidadores: Cuidador[] = [
-    {
-      id: 1, nombre: 'María García López', initials: 'MG', especialidad: 'Cuidado de adultos mayores · Diabetes',
-      experiencia: '8 años de experiencia', calificacion: 4.9, resenas: 47, precio: '$120',
-      disponible: true, tags: ['Diabetes', 'Alzheimer', 'Fisioterapia'],
-      descripcion: 'Enfermera titulada con amplia experiencia en el cuidado de adultos mayores con enfermedades crónicas. Certificada en primeros auxilios y manejo de emergencias.',
-    },
-    {
-      id: 2, nombre: 'Roberto Sánchez', initials: 'RS', especialidad: 'Fisioterapia · Rehabilitación',
-      experiencia: '5 años de experiencia', calificacion: 4.7, resenas: 31, precio: '$100',
-      disponible: true, tags: ['Fisioterapia', 'Movilidad', 'Rehabilitación'],
-      descripcion: 'Fisioterapeuta especializado en movilidad y rehabilitación post-quirúrgica. Trabaja con un enfoque integral centrado en el paciente.',
-    },
-    {
-      id: 3, nombre: 'Ana Martínez Cruz', initials: 'AM', especialidad: 'Enfermería geriátrica',
-      experiencia: '12 años de experiencia', calificacion: 5.0, resenas: 83, precio: '$145',
-      disponible: false, tags: ['Enfermería', 'Adultos mayores', 'Medicamentos'],
-      descripcion: 'Gerontóloga con más de una década cuidando adultos mayores. Especialista en administración de medicamentos y detección temprana de complicaciones.',
-    },
-    {
-      id: 4, nombre: 'Carlos Jiménez', initials: 'CJ', especialidad: 'Alzheimer · Demencias',
-      experiencia: '6 años de experiencia', calificacion: 4.5, resenas: 22, precio: '$110',
-      disponible: true, tags: ['Alzheimer', 'Demencia', 'Estimulación cognitiva'],
-      descripcion: 'Psicólogo con especialización en deterioro cognitivo. Aplica técnicas de estimulación cognitiva y reminiscencia para mejorar la calidad de vida.',
-    },
-  ];
+  cuidadores = signal<CuidadorPublic[]>([]);
+  adultos = signal<AdultoMayor[]>([]);
+
+  // Modal state
+  modalOpen = signal(false);
+  perfilModalOpen = signal(false);
+  cuidadorSeleccionado = signal<CuidadorPublic | null>(null);
+  adultoSeleccionadoId = signal<number | null>(null);
+  toast = signal<{msg: string, type: string} | null>(null);
+  matchResult = signal<MatchCuidadorResponse | null>(null);
+  matchCargando = signal(false);
+
+  ngOnInit() {
+    this.cargarCuidadores();
+    this.cargarAdultos();
+  }
+
+  cargarCuidadores() {
+    this.vinculacionService.getCuidadoresDisponibles().subscribe({
+      next: (res) => {
+        if (res.success) {
+          this.cuidadores.set(res.data);
+        }
+      },
+      error: (err) => console.error('Error al cargar cuidadores', err)
+    });
+  }
+
+  cargarAdultos() {
+    this.adultoService.getMisPacientes().subscribe({
+      next: (adultos) => {
+        this.adultos.set(adultos);
+        if (adultos.length > 0) this.adultoBusquedaId.set(adultos[0].idAdulto);
+      },
+      error: (err) => console.error('Error al cargar adultos', err)
+    });
+  }
+
+  rankeado(idUsuario: number): CuidadorRankeado | undefined {
+    return this.rankeados().get(idUsuario);
+  }
 
   cuidadoresFiltrados = computed(() => {
-    let res = [...this.cuidadores];
+    const rankeados = this.rankeados();
+    let res = [...this.cuidadores()];
+
+    if (rankeados.size > 0) {
+      res = res.filter(c => rankeados.has(c.idUsuario));
+      res.sort((a, b) => (rankeados.get(b.idUsuario)?.scoreRelevancia ?? 0) - (rankeados.get(a.idUsuario)?.scoreRelevancia ?? 0));
+      return res;
+    }
+
     if (this.filtroEsp().length > 0) {
       res = res.filter(c => this.filtroEsp().some(e =>
-        c.tags.some(t => t.toLowerCase().includes(e.toLowerCase())) ||
         c.especialidad.toLowerCase().includes(e.toLowerCase())
       ));
     }
-    if (this.filtroDisp === 'disponible') res = res.filter(c => c.disponible);
     const min = parseFloat(this.filtroCalif);
     if (min > 0) res = res.filter(c => c.calificacion >= min);
     if (this.ordenar === 'cal') res.sort((a, b) => b.calificacion - a.calificacion);
@@ -79,8 +105,22 @@ export class BuscarCuidadorComponent {
 
   buscarIA(): void {
     const q = this.busquedaIA.trim();
-    if (!q) return;
-    this.iaMensaje.set(`Basado en tu búsqueda "${q}", te recomiendo cuidadores con experiencia en las áreas mencionadas. He filtrado los resultados para mostrar primero los más relevantes y con mayor calificación. Considera contactar a María García López o Ana Martínez Cruz, quienes tienen especialidades que se ajustan a tu necesidad.`);
+    const idAdulto = this.adultoBusquedaId();
+    if (!q || !idAdulto) return;
+
+    this.buscandoIA.set(true);
+    this.aiService.buscarCuidadorIA(q, idAdulto).subscribe({
+      next: (resp) => {
+        this.buscandoIA.set(false);
+        this.iaMensaje.set(resp.resumenBusqueda);
+        this.rankeados.set(new Map(resp.cuidadoresRankeados.map(c => [c.idUsuario, c])));
+      },
+      error: () => {
+        this.buscandoIA.set(false);
+        this.iaMensaje.set('No se pudo procesar la búsqueda en este momento. Intentá nuevamente en unos minutos.');
+        this.rankeados.set(new Map());
+      }
+    });
   }
 
   resetFiltros(): void {
@@ -89,5 +129,73 @@ export class BuscarCuidadorComponent {
     this.filtroCalif = '0';
     this.iaMensaje.set(null);
     this.busquedaIA = '';
+    this.rankeados.set(new Map());
+  }
+
+  getInitials(nombre: string, apellido: string): string {
+    return (nombre.charAt(0) + (apellido ? apellido.charAt(0) : '')).toUpperCase();
+  }
+
+  abrirModalSolicitud(cuidador: CuidadorPublic) {
+    this.cuidadorSeleccionado.set(cuidador);
+    if (this.adultos().length === 1) {
+      this.adultoSeleccionadoId.set(this.adultos()[0].idAdulto);
+    } else {
+      this.adultoSeleccionadoId.set(null);
+    }
+    this.modalOpen.set(true);
+  }
+
+  cerrarModal() {
+    this.modalOpen.set(false);
+    this.perfilModalOpen.set(false);
+    this.cuidadorSeleccionado.set(null);
+    this.adultoSeleccionadoId.set(null);
+    this.matchResult.set(null);
+  }
+
+  abrirPerfil(cuidador: CuidadorPublic) {
+    this.cuidadorSeleccionado.set(cuidador);
+    this.perfilModalOpen.set(true);
+    this.matchResult.set(null);
+
+    const idAdulto = this.adultoBusquedaId() ?? (this.adultos().length > 0 ? this.adultos()[0].idAdulto : null);
+    if (idAdulto) {
+      this.matchCargando.set(true);
+      this.aiService.matchCuidador(cuidador.idUsuario, idAdulto).subscribe({
+        next: (resp) => { this.matchCargando.set(false); this.matchResult.set(resp); },
+        error: () => { this.matchCargando.set(false); this.matchResult.set(null); }
+      });
+    }
+  }
+
+  abrirModalDesdePerfil() {
+    this.perfilModalOpen.set(false);
+    if (this.cuidadorSeleccionado()) {
+      this.abrirModalSolicitud(this.cuidadorSeleccionado()!);
+    }
+  }
+
+  enviarSolicitud() {
+    if (!this.adultoSeleccionadoId() || !this.cuidadorSeleccionado()) return;
+    
+    this.vinculacionService.enviarSolicitud(this.adultoSeleccionadoId()!, this.cuidadorSeleccionado()!.idUsuario)
+      .subscribe({
+        next: (res) => {
+          if (res.success) {
+            this.showToast('Solicitud enviada. Esperando respuesta del cuidador.', 'success');
+            this.cerrarModal();
+          }
+        },
+        error: (err) => {
+          this.showToast('Error: ' + (err.error?.message || 'No se pudo enviar la solicitud.'), 'error');
+          this.cerrarModal();
+        }
+      });
+  }
+
+  showToast(msg: string, type: 'success' | 'error' | 'info' = 'success') {
+    this.toast.set({ msg, type });
+    setTimeout(() => this.toast.set(null), 3000);
   }
 }

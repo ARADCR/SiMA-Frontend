@@ -1,0 +1,217 @@
+<div class="page">
+  <div class="header">
+    <div>
+      <h1 class="title">Reportes de Medicación</h1>
+      <p class="sub">Adherencia de los últimos 7 días</p>
+    </div>
+
+    @if (adultos().length > 1) {
+      <div class="adult-select-wrapper">
+        <label for="adultSelect" class="select-label">Paciente:</label>
+        <select id="adultSelect" class="adult-select"
+                [ngModel]="adultoActual()"
+                (ngModelChange)="cambiarAdulto($event)">
+          @for (adulto of adultos(); track adulto.idAdulto) {
+            <option [ngValue]="adulto">{{ adulto.nombre }} {{ adulto.apellido }}</option>
+          }
+        </select>
+      </div>
+    }
+  </div>
+
+  @if (loading()) {
+    <div class="card state-card">
+      <div class="spinner"></div>
+      <p>Generando reporte...</p>
+    </div>
+  } @else if (error()) {
+    <div class="card state-card error">
+      <p>{{ error() }}</p>
+      <button class="btn-retry"
+              (click)="adultoActual() ? cargarReporte(adultoActual()!.idAdulto) : null">
+        Reintentar
+      </button>
+    </div>
+  } @else if (reporte()) {
+
+    <!-- KPI row -->
+    <div class="kpi-grid">
+      <!-- Adherencia global -->
+      <div class="kpi-card kpi-main"
+           [style.background]="adherenciaBackground(reporte()!.porcentajeAdherencia)">
+        <span class="kpi-label">Adherencia global</span>
+        <span class="kpi-value"
+              [style.color]="adherenciaColor(reporte()!.porcentajeAdherencia)">
+          {{ reporte()!.porcentajeAdherencia | number:'1.1-1' }}%
+        </span>
+        @if (reporte()!.porcentajeAdherencia < 80) {
+          <span class="kpi-warning">⚠ Por debajo del 80%</span>
+        }
+      </div>
+
+      <!-- Totales -->
+      <div class="kpi-card">
+        <span class="kpi-label">Programadas</span>
+        <span class="kpi-value kpi-neutral">{{ reporte()!.totalProgramadas }}</span>
+      </div>
+      <div class="kpi-card">
+        <span class="kpi-label">Tomadas</span>
+        <span class="kpi-value kpi-green">{{ reporte()!.totalTomadas }}</span>
+      </div>
+      <div class="kpi-card">
+        <span class="kpi-label">Omitidas</span>
+        <span class="kpi-value kpi-red">{{ reporte()!.totalOmitidas }}</span>
+      </div>
+    </div>
+
+    <!-- Daily breakdown -->
+    <div class="card section-card">
+      <div class="section-header">
+        <h2 class="section-title">Desglose diario</h2>
+        <span class="section-sub">Última semana</span>
+      </div>
+      <div class="daily-grid">
+        @for (dia of reporte()!.desgloseDiario; track dia.fecha) {
+          <div class="day-col">
+            <span class="day-label">{{ formatDia(dia.fecha) }}</span>
+            <div class="bar-track">
+              <div class="bar-fill"
+                   [style.height]="barWidth(dia.totalTomadas, dia.totalProgramadas)"
+                   [class.bar-zero]="dia.totalProgramadas === 0">
+              </div>
+            </div>
+            <div class="day-nums">
+              <span class="num-taken">{{ dia.totalTomadas }}</span>
+              <span class="num-sep">/</span>
+              <span class="num-total">{{ dia.totalProgramadas }}</span>
+            </div>
+          </div>
+        }
+      </div>
+    </div>
+
+    <!-- Most missed medications -->
+    <div class="card section-card">
+      <div class="section-header">
+        <h2 class="section-title">Medicamentos más omitidos</h2>
+        <span class="section-sub">Prioridad de seguimiento</span>
+      </div>
+
+      @if (reporte()!.medicamentosMasOmitidos.length === 0) {
+        <div class="empty-meds">
+          <span class="empty-icon">✓</span>
+          <p>Sin omisiones registradas esta semana.</p>
+        </div>
+      } @else {
+        <div class="med-list">
+          @for (med of reporte()!.medicamentosMasOmitidos; track med.nombre; let i = $index) {
+            <div class="med-row">
+              <div class="med-rank" [class.rank-1]="i === 0" [class.rank-2]="i === 1">
+                {{ i + 1 }}
+              </div>
+              <span class="med-name">{{ med.nombre }}</span>
+              <div class="med-bar-track">
+                <div class="med-bar-fill"
+                     [style.width]="reporte()!.medicamentosMasOmitidos[0].cantidadOmisiones > 0 ? (med.cantidadOmisiones / reporte()!.medicamentosMasOmitidos[0].cantidadOmisiones * 100) + '%' : '0%'">
+                </div>
+              </div>
+              <span class="med-count">{{ med.cantidadOmisiones }}
+                {{ med.cantidadOmisiones === 1 ? 'omisión' : 'omisiones' }}
+              </span>
+            </div>
+          }
+        </div>
+      }
+    </div>
+
+    <!-- AI Analysis -->
+    <div class="card section-card">
+      <div class="section-header">
+        <h2 class="section-title">Análisis IA</h2>
+        <span class="section-sub">Resumen generado a partir del reporte semanal</span>
+      </div>
+
+      @if (resumenIALoading()) {
+        <div class="ai-loading">
+          <div class="spinner spinner-sm"></div>
+          <p>Generando análisis...</p>
+        </div>
+      } @else if (resumenIAError()) {
+        <div class="ai-error">
+          <p>{{ resumenIAError() }}</p>
+          <button class="btn-retry"
+                  (click)="adultoActual() ? cargarResumenIA(adultoActual()!.idAdulto) : null">
+            Reintentar
+          </button>
+        </div>
+      } @else if (resumenIA()) {
+        <p class="ai-narrativo">{{ resumenIA()!.resumenNarrativo }}</p>
+
+        @if (resumenIA()!.puntosClave.length > 0) {
+          <div class="ai-block">
+            <h3 class="ai-block-title">Puntos clave</h3>
+            <ul class="ai-list">
+              @for (punto of resumenIA()!.puntosClave; track punto) {
+                <li>{{ punto }}</li>
+              }
+            </ul>
+          </div>
+        }
+
+        @if (resumenIA()!.recomendaciones.length > 0) {
+          <div class="ai-block ai-recomendaciones">
+            <h3 class="ai-block-title">Recomendaciones</h3>
+            <ul class="ai-list">
+              @for (rec of resumenIA()!.recomendaciones; track rec) {
+                <li>{{ rec }}</li>
+              }
+            </ul>
+          </div>
+        }
+
+        <button class="btn-patrones" (click)="toggleVerPatrones()">
+          {{ patronesIAVisible() ? 'Ocultar patrones detectados' : 'Ver patrones detectados' }}
+        </button>
+
+        @if (patronesIAVisible()) {
+          <div class="patrones-section">
+            @if (patronesIALoading()) {
+              <div class="ai-loading">
+                <div class="spinner spinner-sm"></div>
+                <p>Analizando patrones...</p>
+              </div>
+            } @else if (patronesIAError()) {
+              <div class="ai-error">
+                <p>{{ patronesIAError() }}</p>
+              </div>
+            } @else if (patronesIA()) {
+              @if (patronesIA()!.mensajeInformativo) {
+                <div class="ai-info-msg">
+                  <p>{{ patronesIA()!.mensajeInformativo }}</p>
+                </div>
+              } @else if (patronesIA()!.patronesDetectados.length === 0) {
+                <div class="ai-info-msg">
+                  <p>No se detectaron patrones relevantes en el período analizado.</p>
+                </div>
+              } @else {
+                <div class="patron-list">
+                  @for (patron of patronesIA()!.patronesDetectados; track patron.descripcion) {
+                    <div class="patron-card" [class.patron-alta]="patron.severidad === 'alta'">
+                      <span class="patron-icono">{{ severidadIcono(patron.severidad) }}</span>
+                      <div class="patron-body">
+                        <span class="patron-tipo">{{ patron.tipo }}</span>
+                        <p class="patron-descripcion">{{ patron.descripcion }}</p>
+                        <p class="patron-recomendacion">{{ patron.recomendacion }}</p>
+                      </div>
+                    </div>
+                  }
+                </div>
+              }
+            }
+          </div>
+        }
+      }
+    </div>
+
+  }
+</div>

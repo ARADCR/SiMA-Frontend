@@ -11,12 +11,18 @@ export interface RecordatorioMedicamento {
   idAlerta: number;
 }
 
+export interface EventoVinculacion {
+  tipo: 'NUEVA_SOLICITUD' | 'SOLICITUD_ACEPTADA' | 'SOLICITUD_RECHAZADA';
+  mensaje: string;
+}
+
 @Injectable({
   providedIn: 'root'
 })
 export class NotificationService {
   private eventSource: EventSource | null = null;
   private recordatorioSubject = new Subject<RecordatorioMedicamento>();
+  private vinculacionSubject = new Subject<EventoVinculacion>();
 
   constructor(private authService: AuthService, private zone: NgZone) {}
 
@@ -31,9 +37,11 @@ export class NotificationService {
     const token = this.authService.obtenerToken();
     if (!token) return;
 
-    // Conectar usando el token como query param (soportado por EventSource nativo)
-    const url = `${environment.apiUrl}/notifications/subscribe?token=${token}`;
-    this.eventSource = new EventSource(url);
+    // Conectar usando el token como query param.
+    // withCredentials: false evita el conflicto CORS cuando el backend tiene allowCredentials(true)
+    const url = `${environment.apiUrl}/notifications/subscribe?token=${encodeURIComponent(token)}`;
+    console.log('[SSE] Conectando a:', url.replace(token, token.substring(0, 20) + '...'));
+    this.eventSource = new EventSource(url, { withCredentials: false });
 
     this.eventSource.onopen = () => {
       console.log('Conexión SSE establecida con éxito.');
@@ -46,8 +54,6 @@ export class NotificationService {
 
     // Escuchar eventos de RECORDATORIO_MEDICAMENTO
     this.eventSource.addEventListener('RECORDATORIO_MEDICAMENTO', (event: MessageEvent) => {
-      // EventSource callbacks se ejecutan fuera de la zona de Angular a veces, 
-      // aseguramos que corran dentro de la zona para actualizar la UI
       this.zone.run(() => {
         try {
           const data = JSON.parse(event.data) as RecordatorioMedicamento;
@@ -58,10 +64,25 @@ export class NotificationService {
       });
     });
 
+    // Escuchar eventos de vinculación (solicitudes entre Familiar y Cuidador)
+    const eventosVinculacion: EventoVinculacion['tipo'][] = [
+      'NUEVA_SOLICITUD',
+      'SOLICITUD_ACEPTADA',
+      'SOLICITUD_RECHAZADA'
+    ];
+
+    eventosVinculacion.forEach(tipo => {
+      this.eventSource!.addEventListener(tipo, (event: MessageEvent) => {
+        this.zone.run(() => {
+          this.vinculacionSubject.next({ tipo, mensaje: event.data });
+        });
+      });
+    });
+
     this.eventSource.onerror = (error) => {
-      console.error('Error en conexión SSE', error);
-      // EventSource intentará reconectar automáticamente, pero si el token expiró fallará
+      console.error('[SSE] Error de conexión. readyState:', this.eventSource?.readyState, error);
       if (this.eventSource?.readyState === EventSource.CLOSED) {
+        console.warn('[SSE] Conexión cerrada definitivamente. Desconectando.');
         this.desconectar();
       }
     };
@@ -77,5 +98,9 @@ export class NotificationService {
 
   get recordatorios$(): Observable<RecordatorioMedicamento> {
     return this.recordatorioSubject.asObservable();
+  }
+
+  get vinculacion$(): Observable<EventoVinculacion> {
+    return this.vinculacionSubject.asObservable();
   }
 }

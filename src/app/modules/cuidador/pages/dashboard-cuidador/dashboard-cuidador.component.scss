@@ -12,6 +12,95 @@
   margin-bottom: 28px;
 }
 
+.briefing-card {
+  margin-bottom: 24px;
+}
+
+.briefing-refresh {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: none;
+  border: none;
+  cursor: pointer;
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+.briefing-resumen {
+  color: #5C6B7A;
+  font-size: 14px;
+  margin: 12px 0 16px;
+}
+
+.briefing-pacientes {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.briefing-paciente {
+  display: flex;
+  gap: 12px;
+  padding: 12px;
+  border-radius: 10px;
+  background: #F7FAFC;
+}
+
+.briefing-prioridad {
+  font-size: 18px;
+  line-height: 1;
+}
+
+.briefing-paciente-nombre {
+  font-weight: 600;
+  color: #1B2B3A;
+}
+
+.briefing-paciente-resumen {
+  font-size: 13px;
+  color: #5C6B7A;
+  margin: 4px 0;
+}
+
+.briefing-paciente-meta {
+  display: flex;
+  gap: 16px;
+  font-size: 12px;
+  color: #8A97A5;
+}
+
+.briefing-error {
+  color: #E76F51;
+  font-size: 14px;
+  padding: 8px 0;
+}
+
+.briefing-skeleton {
+  padding: 8px 0;
+}
+
+.skeleton-line {
+  height: 14px;
+  border-radius: 6px;
+  background: linear-gradient(90deg, #EEF2F5 25%, #E4E9ED 37%, #EEF2F5 63%);
+  background-size: 400% 100%;
+  animation: skeleton-shimmer 1.4s ease infinite;
+  margin-bottom: 10px;
+  width: 100%;
+
+  &.skeleton-line-lg { width: 90%; height: 18px; }
+  &.skeleton-line-sm { width: 60%; }
+}
+
+@keyframes skeleton-shimmer {
+  0% { background-position: 100% 50%; }
+  100% { background-position: 0 50%; }
+}
+
 .title {
   font-size: 28px;
   font-weight: 700;

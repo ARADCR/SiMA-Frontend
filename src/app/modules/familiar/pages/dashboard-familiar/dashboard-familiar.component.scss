@@ -294,6 +294,86 @@
   .alerta-hora { font-size: 11px; color: #9CABB8; margin-top: 6px; }
 }
 
+.card-ia-resumen {
+  border: 1px solid #D9E8F5;
+  background: linear-gradient(180deg, #F4FAFF 0%, #FFFFFF 100%);
+}
+
+.briefing-card {
+  margin-bottom: 20px;
+}
+
+.briefing-refresh {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  width: auto;
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+.briefing-skeleton {
+  padding: 8px 0;
+}
+
+.skeleton-line {
+  height: 14px;
+  border-radius: 6px;
+  background: linear-gradient(90deg, #EEF2F5 25%, #E4E9ED 37%, #EEF2F5 63%);
+  background-size: 400% 100%;
+  animation: skeleton-shimmer 1.4s ease infinite;
+  margin-bottom: 10px;
+  width: 100%;
+
+  &.skeleton-line-lg { width: 90%; height: 18px; }
+  &.skeleton-line-sm { width: 60%; }
+}
+
+@keyframes skeleton-shimmer {
+  0% { background-position: 100% 50%; }
+  100% { background-position: 0 50%; }
+}
+
+.resumen-ejecutivo {
+  font-size: 13px;
+  color: #1B2B3A;
+  line-height: 1.6;
+  margin: 0 0 12px;
+}
+
+.escalada-banner {
+  background: #FEF3E2;
+  border-left: 3px solid #F4A261;
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 12px;
+  color: #7A4E12;
+  margin-bottom: 10px;
+  line-height: 1.5;
+
+  .escalada-recomendacion {
+    font-size: 11px;
+    color: #9C6B2A;
+    margin-top: 4px;
+  }
+}
+
+.alerta-card.critica-ia {
+  background: #FDE8E0;
+  border-color: #C0452A;
+}
+
+.resumen-contadores {
+  display: flex;
+  gap: 14px;
+  font-size: 12px;
+  color: #5C6B7A;
+  margin: 4px 0 12px;
+}
+
 .btn-resolver {
   margin-top: 10px;
   padding: 5px 12px;

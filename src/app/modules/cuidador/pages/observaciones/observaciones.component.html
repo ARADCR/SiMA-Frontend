@@ -15,16 +15,15 @@
       <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
         <path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>
       </svg>
-      <input class="search-input" type="text" placeholder="Buscar observaciones..." [(ngModel)]="busqueda">
+      <input class="search-input" type="text" placeholder="Buscar observaciones..." [ngModel]="busqueda()" (ngModelChange)="busqueda.set($event)">
     </div>
-    <select class="select-input" [(ngModel)]="pacienteFiltro">
+    <select class="select-input" [ngModel]="pacienteFiltro()" (ngModelChange)="pacienteFiltro.set($event)">
       <option value="">Todos los pacientes</option>
-      <option>Elena Rodríguez</option>
-      <option>José Martínez</option>
-      <option>Rosa Pérez</option>
-      <option>Luis García</option>
+      @for (a of adultos(); track a.idAdulto) {
+        <option [value]="a.idAdulto">{{ a.nombre }} {{ a.apellido }}</option>
+      }
     </select>
-    <select class="select-input" [(ngModel)]="urgenciaFiltro">
+    <select class="select-input" [ngModel]="urgenciaFiltro()" (ngModelChange)="urgenciaFiltro.set($event)">
       <option value="">Todas las urgencias</option>
       <option value="normal">Normal</option>
       <option value="importante">Importante</option>
@@ -33,57 +32,64 @@
     <button class="btn-reset" (click)="resetFiltros()">Limpiar</button>
   </div>
 
-  <div class="obs-list">
-    @for (obs of obsFiltradas(); track obs.id) {
-      <div class="card obs-card">
-        <div class="obs-header">
-          <div class="obs-author">
-            <div class="avatar" [style.background]="obs.color">{{ obs.initials }}</div>
-            <div>
-              <div class="obs-paciente">{{ obs.paciente }}</div>
-              <div class="obs-fecha">{{ obs.fecha }} · {{ obs.hora }}</div>
+  @if (loading()) {
+    <div class="loading-state">
+      <div class="spinner"></div>
+      <p>Cargando observaciones...</p>
+    </div>
+  } @else if (error()) {
+    <div class="error-state">
+      <p>{{ error() }}</p>
+      <button class="btn-retry" (click)="cargarDatos()">Reintentar</button>
+    </div>
+  } @else {
+    <div class="obs-list">
+      @for (obs of obsFiltradas(); track obs.idObservacion) {
+        <div class="card obs-card">
+          <div class="obs-header">
+            <div class="obs-author">
+              <div class="avatar" [style.background]="colorPaciente(obs.idAdulto)">{{ inicialesPaciente(obs.idAdulto) }}</div>
+              <div>
+                <div class="obs-paciente">{{ nombrePaciente(obs.idAdulto) }}</div>
+                <div class="obs-fecha">{{ formatearFecha(obs.fechaHora) }}</div>
+              </div>
+            </div>
+            <div class="obs-actions">
+              <span [class]="urgenciaBadgeClass(obs.urgencia)">{{ urgenciaLabel(obs.urgencia) }}</span>
             </div>
           </div>
-          <div class="obs-actions">
-            <span [class]="urgenciaBadgeClass(obs.urgencia)">{{ urgenciaLabel(obs.urgencia) }}</span>
-            <button class="icon-btn icon-btn-red" (click)="solicitarEliminar(obs.id)" title="Eliminar">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
-              </svg>
-            </button>
-          </div>
+          <p class="obs-texto">{{ obs.texto }}</p>
+          @if (hasVitales(obs)) {
+            <div class="vitales">
+              @if (obs.tensionArterial) {
+                <span class="vital-chip"><span class="vital-lbl">TA:</span> {{ obs.tensionArterial }}</span>
+              }
+              @if (obs.frecuenciaCardiaca) {
+                <span class="vital-chip"><span class="vital-lbl">FC:</span> {{ obs.frecuenciaCardiaca }}</span>
+              }
+              @if (obs.temperatura) {
+                <span class="vital-chip"><span class="vital-lbl">Temp:</span> {{ obs.temperatura }}</span>
+              }
+            </div>
+          }
         </div>
-        <p class="obs-texto">{{ obs.texto }}</p>
-        @if (hasVitales(obs)) {
-          <div class="vitales">
-            @if (obs.vitales?.ta) {
-              <span class="vital-chip"><span class="vital-lbl">TA:</span> {{ obs.vitales!.ta }}</span>
-            }
-            @if (obs.vitales?.fc) {
-              <span class="vital-chip"><span class="vital-lbl">FC:</span> {{ obs.vitales!.fc }}</span>
-            }
-            @if (obs.vitales?.temp) {
-              <span class="vital-chip"><span class="vital-lbl">Temp:</span> {{ obs.vitales!.temp }}</span>
-            }
-          </div>
-        }
-      </div>
-    } @empty {
-      <div class="empty-state">
-        <svg width="48" height="48" viewBox="0 0 24 24" fill="currentColor" class="empty-icon">
-          <path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/>
-        </svg>
-        <p class="empty-text">No hay observaciones registradas</p>
-      </div>
-    }
-  </div>
+      } @empty {
+        <div class="empty-state">
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="currentColor" class="empty-icon">
+            <path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/>
+          </svg>
+          <p class="empty-text">No hay observaciones registradas</p>
+        </div>
+      }
+    </div>
+  }
 
   @if (modalOpen()) {
     <div class="modal-overlay" (click)="cerrarSiEsOverlay($event)">
       <div class="modal">
         <div class="modal-header">
           <h2>Nueva observación</h2>
-          <button class="icon-btn" (click)="modalOpen.set(false)">
+          <button class="icon-btn" (click)="cerrarModal()">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
               <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
             </svg>
@@ -91,67 +97,84 @@
         </div>
         <div class="modal-body">
           <div class="form-group">
-            <label>Paciente</label>
-            <select class="select-input" [(ngModel)]="nuevaObs.paciente">
-              <option value="">Seleccionar paciente</option>
-              <option>Elena Rodríguez</option>
-              <option>José Martínez</option>
-              <option>Rosa Pérez</option>
-              <option>Luis García</option>
-            </select>
+            <label class="label">Paciente *</label>
+          <select class="input" [(ngModel)]="nuevaObs.idAdulto" required>
+            <option [ngValue]="null" disabled>Seleccionar paciente...</option>
+            @for (a of adultos(); track a.idAdulto) {
+              <option [ngValue]="a.idAdulto">{{ a.nombre }} {{ a.apellido }}</option>
+            }
+          </select>
           </div>
           <div class="form-group">
             <label>Nivel de urgencia</label>
-            <select class="select-input" [(ngModel)]="nuevaObs.urgencia">
+            <select class="select-input" [(ngModel)]="nuevaObs.urgencia" (ngModelChange)="sugerenciaIaAceptada.set(false)">
               <option value="normal">Normal</option>
               <option value="importante">Importante</option>
               <option value="urgente">Urgente</option>
             </select>
           </div>
           <div class="form-group">
-            <label>Observación</label>
-            <textarea class="textarea-input" rows="4"
+            <label>Observación *</label>
+            <textarea class="textarea-input" rows="4" maxlength="1000" required
               placeholder="Describe el estado del paciente, síntomas observados, reacciones a medicamentos..."
-              [(ngModel)]="nuevaObs.texto"></textarea>
+              [(ngModel)]="nuevaObs.texto" (ngModelChange)="onCamposEvaluablesChange()"></textarea>
           </div>
           <div class="vitales-form">
             <div class="vitales-title">Signos vitales (opcional)</div>
             <div class="vitales-row">
               <div class="form-group">
                 <label>TA (mmHg)</label>
-                <input class="input-field" type="text" placeholder="ej. 130/85" [(ngModel)]="nuevaObs.ta">
+                <input class="input-field" type="text" placeholder="ej. 130/85" [(ngModel)]="nuevaObs.ta" (ngModelChange)="onCamposEvaluablesChange()">
               </div>
               <div class="form-group">
                 <label>FC (BPM)</label>
-                <input class="input-field" type="text" placeholder="ej. 72" [(ngModel)]="nuevaObs.fc">
+                <input class="input-field" type="text" placeholder="ej. 72" [(ngModel)]="nuevaObs.fc" (ngModelChange)="onCamposEvaluablesChange()">
               </div>
               <div class="form-group">
                 <label>Temp (°C)</label>
-                <input class="input-field" type="text" placeholder="ej. 36.5" [(ngModel)]="nuevaObs.temp">
+                <input class="input-field" type="text" placeholder="ej. 36.5" [(ngModel)]="nuevaObs.temp" (ngModelChange)="onCamposEvaluablesChange()">
               </div>
             </div>
+            @if (hayVitalesParaEvaluar()) {
+              <button type="button" class="btn-secondary btn-evaluar-ia"
+                [disabled]="evaluandoUrgencia()" (click)="evaluarConIA()">
+                {{ evaluandoUrgencia() ? 'Evaluando...' : 'Evaluar con IA' }}
+              </button>
+            }
+            @if (evaluacionIAError()) {
+              <p class="ia-error">{{ evaluacionIAError() }}</p>
+            }
+            @if (evaluacionIA()) {
+              <div class="ia-evaluacion" [class]="'ia-evaluacion-' + evaluacionIA()!.urgenciaSugerida">
+                <div class="ia-evaluacion-header">
+                  <span class="ia-evaluacion-label">Urgencia sugerida por IA:</span>
+                  <span class="badge" [class]="'badge-' + evaluacionIA()!.urgenciaSugerida">
+                    {{ evaluacionIA()!.urgenciaSugerida }}
+                  </span>
+                </div>
+                <p class="ia-evaluacion-justificacion">{{ evaluacionIA()!.justificacion }}</p>
+                @if (evaluacionIA()!.urgenciaSugerida === 'urgente' && !sugerenciaIaAceptada()) {
+                  <button type="button" class="btn-primary btn-aceptar-ia" (click)="aceptarSugerenciaIA()">
+                    Aceptar sugerencia y marcar como urgente
+                  </button>
+                  <p class="ia-aviso-alerta">Si aceptás, se generará una alerta automática a los Familiares.</p>
+                } @else if (evaluacionIA()!.urgenciaSugerida !== 'urgente') {
+                  <button type="button" class="btn-secondary btn-aceptar-ia" (click)="aceptarSugerenciaIA()">
+                    Usar esta urgencia sugerida
+                  </button>
+                }
+                @if (sugerenciaIaAceptada()) {
+                  <p class="ia-aviso-alerta ia-aviso-confirmado">Se generará una alerta automática al guardar.</p>
+                }
+              </div>
+            }
           </div>
         </div>
         <div class="modal-footer">
-          <button class="btn-secondary" (click)="modalOpen.set(false)">Cancelar</button>
-          <button class="btn-primary" (click)="guardar()">Guardar observación</button>
-        </div>
-      </div>
-    </div>
-  }
-
-  @if (confirmDeleteId() !== null) {
-    <div class="modal-overlay" (click)="cerrarSiEsOverlay($event)">
-      <div class="modal modal-sm">
-        <div class="modal-header">
-          <h2>Confirmar eliminación</h2>
-        </div>
-        <div class="modal-body">
-          <p class="confirm-text">¿Estás seguro de que deseas eliminar esta observación? Esta acción no se puede deshacer.</p>
-        </div>
-        <div class="modal-footer">
-          <button class="btn-secondary" (click)="confirmDeleteId.set(null)">Cancelar</button>
-          <button class="btn-danger" (click)="confirmarEliminar()">Eliminar</button>
+          <button class="btn-secondary" (click)="cerrarModal()">Cancelar</button>
+          <button class="btn-primary" [disabled]="guardando()" (click)="guardar()">
+            {{ guardando() ? 'Guardando...' : 'Guardar observación' }}
+          </button>
         </div>
       </div>
     </div>

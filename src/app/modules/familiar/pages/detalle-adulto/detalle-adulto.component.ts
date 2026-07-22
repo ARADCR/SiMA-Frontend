@@ -2,7 +2,10 @@ import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, ActivatedRoute } from '@angular/router';
 import { AdultoMayorService } from '../../../../core/services/adulto-mayor.service';
-import { LecturaPulseraService } from '../../../../core/services/lectura-pulsera.service';
+import { MedicamentoService } from '../../../../core/services/medicamento.service';
+import { HistorialService } from '../../../../core/services/historial.service';
+import { AlertaService } from '../../../../core/services/alerta.service';
+import { DispositivoIotService } from '../../../../core/services/dispositivo-iot.service';
 import { FormularioAdultoComponent } from '../formulario-adulto/formulario-adulto.component';
 import { catchError, forkJoin, of } from 'rxjs';
 
@@ -10,8 +13,8 @@ type Tab = 'medicamentos' | 'historial' | 'alertas' | 'dispositivo';
 
 interface Medicamento { nombre: string; dosis: string; horario: string; estado: string; }
 interface Evento { fecha: string; tipo: string; descripcion: string; metodo: string; }
-interface Alerta { titulo: string; descripcion: string; tipo: string; hora: string; resuelta: boolean; }
-interface Dispositivo { nombre: string; id: string; estado: string; bateria: number | null; sync: string; tipo: 'pastillero' | 'pulsera'; }
+interface Alerta { id?: number; titulo: string; descripcion: string; tipo: string; hora: string; resuelta: boolean; }
+interface Dispositivo { nombre: string; id: string; estado: string; bateria: number; sync: string; }
 
 @Component({
   selector: 'app-detalle-adulto',
@@ -23,7 +26,10 @@ interface Dispositivo { nombre: string; id: string; estado: string; bateria: num
 export class DetalleAdultoComponent implements OnInit {
   private route = inject(ActivatedRoute);
   private adultoService = inject(AdultoMayorService);
-  private lecturaService = inject(LecturaPulseraService);
+  private medService = inject(MedicamentoService);
+  private historialSvc = inject(HistorialService);
+  private alertaSvc = inject(AlertaService);
+  private dispSvc = inject(DispositivoIotService);
 
   tabActiva = signal<Tab>('medicamentos');
   toast = signal<string | null>(null);
@@ -32,27 +38,14 @@ export class DetalleAdultoComponent implements OnInit {
   cargando = signal<boolean>(true);
   showModal = signal<boolean>(false);
 
-  // Dispositivos asociados reales y fallbacks
-  dispositivos = signal<Dispositivo[]>([]);
+  medicamentos: Medicamento[] = [];
+  historial: Evento[] = [];
+  alertas = signal<Alerta[]>([]);
 
-  medicamentos: Medicamento[] = [
-    { nombre: 'Losartán 50mg', dosis: '1 tableta', horario: '08:00 · 20:00', estado: 'activo' },
-    { nombre: 'Metformina 850mg', dosis: '1 tableta', horario: '08:00 · 14:00 · 20:00', estado: 'activo' },
-    { nombre: 'Atorvastatina 20mg', dosis: '1 tableta', horario: '21:00', estado: 'activo' },
-    { nombre: 'Omeprazol 20mg', dosis: '1 cápsula', horario: '07:00', estado: 'activo' },
-  ];
-
-  historial: Evento[] = [
-    { fecha: '27 jun, 12:00', tipo: 'Toma', descripcion: 'Atorvastatina 20mg — 1 tableta tomada', metodo: 'Pastillero ESP32' },
-    { fecha: '27 jun, 11:30', tipo: 'Alerta', descripcion: 'Ritmo cardíaco elevado: 108 BPM durante 12 min', metodo: 'Pulsera' },
-    { fecha: '27 jun, 08:00', tipo: 'Toma', descripcion: 'Losartán 50mg — 1 tableta tomada', metodo: 'Pastillero ESP32' },
-    { fecha: '27 jun, 07:00', tipo: 'Omitida', descripcion: 'Omeprazol 20mg — toma no confirmada', metodo: '—' },
-  ];
-
-  alertas = signal<Alerta[]>([
-    { titulo: 'Toma omitida', descripcion: 'Omeprazol no fue tomado a las 07:00.', tipo: 'urgente', hora: 'Hace 6 horas', resuelta: false },
-    { titulo: 'Ritmo cardíaco elevado', descripcion: 'Pico de 108 BPM a las 11:30, 12 minutos.', tipo: 'moderado', hora: 'Hace 2 horas', resuelta: false },
-  ]);
+  dispositivo: Dispositivo = {
+    nombre: 'Ninguno', id: 'Sin registrar',
+    estado: 'offline', bateria: 0, sync: 'Nunca'
+  };
 
   tabs: { id: Tab; label: string }[] = [
     { id: 'medicamentos', label: 'Medicamentos' },
@@ -64,46 +57,25 @@ export class DetalleAdultoComponent implements OnInit {
   ngOnInit(): void {
     const id = this.route.snapshot.paramMap.get('id');
     if (id) {
-      this.cargarAdulto(Number(id));
+      const numId = Number(id);
+      this.cargarAdulto(numId);
+      this.cargarMeds(numId);
+      this.cargarHistorial(numId);
+      this.cargarAlertas(numId);
+      this.cargarDispositivo(numId);
     }
   }
 
   private cargarAdulto(id: number): void {
     this.cargando.set(true);
-
-    forkJoin({
-      adulto: this.adultoService.getById(id),
-      ultimaLectura: this.lecturaService.obtenerUltimaLectura(id).pipe(catchError(() => of(null)))
-    }).subscribe({
-      next: ({ adulto, ultimaLectura }) => {
-        this.adulto = adulto;
-        this.adulto.edad = this.calcularEdad(adulto.fechaNacimiento);
-
-        const listaDispositivos: Dispositivo[] = [];
-
-        // Si tenemos la última lectura de la pulsera, extraemos sus datos reales (MAC, batería, sincronización)
-        if (ultimaLectura) {
-          listaDispositivos.push({
-            nombre: 'Pulsera de Salud',
-            id: ultimaLectura.identificadorFisico,
-            estado: 'online',
-            bateria: ultimaLectura.nivelBateria,
-            sync: this.formatearFecha(ultimaLectura.fechaMedicion),
-            tipo: 'pulsera'
-          });
+    this.adultoService.getById(id).subscribe({
+      next: (data) => {
+        this.adulto = data;
+        if (data && data.fechaNacimiento) {
+          this.adulto.edad = this.calcularEdad(data.fechaNacimiento);
+        } else if (this.adulto) {
+          this.adulto.edad = 0;
         }
-
-        // Agregamos el pastillero por defecto para preservar la visualización existente
-        listaDispositivos.push({
-          nombre: 'Pastillero ESP32',
-          id: 'AA:BB:CC:11:22:33',
-          estado: 'online',
-          bateria: 78,
-          sync: 'Hace 2 min',
-          tipo: 'pastillero'
-        });
-
-        this.dispositivos.set(listaDispositivos);
         this.cargando.set(false);
       },
       error: (err) => {
@@ -113,7 +85,94 @@ export class DetalleAdultoComponent implements OnInit {
     });
   }
 
+  private cargarMeds(id: number): void {
+    this.medService.getByAdulto(id).subscribe({
+      next: (meds) => {
+        this.medicamentos = (meds || []).map(m => ({
+          nombre: m.nombre || 'Sin nombre',
+          dosis: m.dosis || '',
+          horario: m.horarios && m.horarios.length > 0 
+            ? m.horarios.map(h => (h.horaProgramada || '').substring(0, 5)).join(' · ')
+            : 'Sin horarios programados',
+          estado: m.activo ? 'activo' : 'inactivo'
+        }));
+      },
+      error: () => {
+        this.medicamentos = [];
+      }
+    });
+  }
+
+  private cargarHistorial(id: number): void {
+    this.historialSvc.getHistorial(id, { size: 10 }).subscribe({
+      next: (page) => {
+        const content = (page && page.content) ? page.content : [];
+        this.historial = content.map(e => ({
+          fecha: this.formatearFecha(e.fechaHora),
+          tipo: e.tipo === 'toma' ? 'Toma' : e.tipo === 'alerta' ? 'Alerta' : 'IoT',
+          descripcion: e.descripcion || '',
+          metodo: e.tipo === 'toma' 
+            ? (e.meta && e.meta['confirmador'] ? String(e.meta['confirmador']) : 'Sistema')
+            : (e.tipo === 'actividad_iot' && e.meta && e.meta['tipoDispositivo'] ? String(e.meta['tipoDispositivo']).replace('_', ' ') : 'Sistema')
+        }));
+      },
+      error: () => {
+        this.historial = [];
+      }
+    });
+  }
+
+  private cargarAlertas(id: number): void {
+    this.alertaSvc.getActivas().subscribe({
+      next: (alertas) => {
+        const list = alertas || [];
+        const filtradas = list.filter(a => a.adultoMayorId === id);
+        this.alertas.set(filtradas.map(a => ({
+          id: a.id,
+          titulo: a.titulo || (a.tipo || '').replace('_', ' '),
+          descripcion: a.descripcion || '',
+          tipo: a.prioridad === 'alta' || a.prioridad === 'critica' ? 'urgente' : 'moderado',
+          hora: this.formatearTiempoRelativo(a.timestamp),
+          resuelta: a.estado === 'resuelta'
+        })));
+      },
+      error: () => {
+        this.alertas.set([]);
+      }
+    });
+  }
+
+  private cargarDispositivo(id: number): void {
+    this.dispSvc.listarPorAdulto(id).subscribe({
+      next: (res) => {
+        const list = (res && res.data) ? res.data : [];
+        if (list.length > 0) {
+          const d = list[0];
+          this.dispositivo = {
+            nombre: d.tipoDispositivo === 'pastillero_esp32' ? 'Pastillero ESP32' : 'Pulsera Inteligente',
+            id: d.identificadorFisico || 'Sin ID',
+            estado: d.activo ? 'online' : 'offline',
+            bateria: d.tipoDispositivo === 'pastillero_esp32' ? 85 : 92,
+            sync: 'Hace pocos minutos'
+          };
+        } else {
+          this.dispositivo = {
+            nombre: 'Ninguno', id: 'Sin registrar',
+            estado: 'offline', bateria: 0, sync: 'Nunca'
+          };
+        }
+      },
+      error: () => {
+        this.dispositivo = {
+          nombre: 'Ninguno', id: 'Sin registrar',
+          estado: 'offline', bateria: 0, sync: 'Nunca'
+        };
+      }
+    });
+  }
+
   private calcularEdad(fecha: string): number {
+    if (!fecha) return 0;
     const birthDate = new Date(fecha);
     const today = new Date();
     let age = today.getFullYear() - birthDate.getFullYear();
@@ -122,6 +181,36 @@ export class DetalleAdultoComponent implements OnInit {
       age--;
     }
     return age;
+  }
+
+  private formatearFecha(fechaStr: string): string {
+    if (!fechaStr) return '';
+    try {
+      const date = new Date(fechaStr);
+      return date.toLocaleDateString('es-MX', {
+        day: '2-digit',
+        month: 'short',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    } catch (e) {
+      return fechaStr;
+    }
+  }
+
+  private formatearTiempoRelativo(fechaStr: string): string {
+    if (!fechaStr) return '';
+    try {
+      const date = new Date(fechaStr);
+      const diffMs = new Date().getTime() - date.getTime();
+      const diffMins = Math.floor(diffMs / 60000);
+      if (diffMins < 60) return `Hace ${diffMins} min`;
+      const diffHours = Math.floor(diffMins / 60);
+      if (diffHours < 24) return `Hace ${diffHours} horas`;
+      return date.toLocaleDateString();
+    } catch (e) {
+      return '';
+    }
   }
 
   iniciales(): string {
@@ -137,9 +226,16 @@ export class DetalleAdultoComponent implements OnInit {
   }
 
   marcarResuelta(idx: number): void {
-    this.alertas.update(list => list.map((a, i) => i === idx ? { ...a, resuelta: true } : a));
-    this.toast.set('Alerta marcada como resuelta');
-    setTimeout(() => this.toast.set(null), 3500);
+    const alerta = this.alertas()[idx];
+    if (alerta && alerta.id) {
+      this.alertaSvc.resolver(alerta.id, 'Resuelta desde detalle de familiar').subscribe({
+        next: () => {
+          this.alertas.update(list => list.map((a, i) => i === idx ? { ...a, resuelta: true } : a));
+          this.toast.set('Alerta marcada como resuelta');
+          setTimeout(() => this.toast.set(null), 3500);
+        }
+      });
+    }
   }
 
   abrirModal(): void {

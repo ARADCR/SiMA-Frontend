@@ -28,6 +28,11 @@ export const FAMILIAR_ROUTES: Routes = [
     title: 'Historial — SiMA'
   },
   {
+    path: 'observaciones',
+    loadComponent: () => import('./pages/observaciones/observaciones.component').then(m => m.ObservacionesFamiliarComponent),
+    title: 'Notas de Observación — SiMA'
+  },
+  {
     path: 'alertas',
     loadComponent: () => import('./pages/alertas/alertas.component').then(m => m.AlertasComponent),
     title: 'Alertas — SiMA'

@@ -1,0 +1,51 @@
+<div class="page">
+  <div class="header">
+    <div>
+      <h1 class="title">Notificaciones y Solicitudes</h1>
+      <p class="sub">Gestiona las solicitudes de cuidado enviadas por familiares</p>
+    </div>
+  </div>
+
+  <div class="main-layout">
+    @if (loading()) {
+      <div style="text-align:center; color:#9CABB8; padding:20px;">Cargando solicitudes...</div>
+    } @else {
+      @if (solicitudes().length === 0) {
+        <div class="card empty-state">
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="currentColor" style="color:#D0D8E0"><path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2zm6-6v-5c0-3.07-1.63-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.64 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2zm-2 1H8v-6c0-2.48 1.51-4.5 4-4.5s4 2.02 4 4.5v6z"/></svg>
+          <p style="color:#9CABB8; margin-top:12px">No tienes solicitudes pendientes.</p>
+        </div>
+      } @else {
+        <div class="solicitudes-list">
+          @for (s of solicitudes(); track s.idSolicitud) {
+            <div class="card solicitud-card">
+              <div class="card-content">
+                <div class="solicitud-info">
+                  <h3 style="margin:0; font-size:16px; color:#1B2B3A">Solicitud de cuidado para {{ s.nombreAdulto }}</h3>
+                  <p style="margin:4px 0 0 0; font-size:14px; color:#5C6B7A">Enviada por {{ s.nombreFamiliar }} ({{ s.correoFamiliar }})</p>
+                  <span style="font-size:12px; color:#9CABB8; display:block; margin-top:8px">{{ s.fechaCreacion | date:'medium' }}</span>
+                </div>
+                <div class="card-actions">
+                  <button class="btn-outline" style="color:#D32F2F; border-color:#FFCDD2" (click)="responder(s.idSolicitud, false)">Rechazar</button>
+                  <button class="btn-primary" (click)="responder(s.idSolicitud, true)">Aceptar Solicitud</button>
+                </div>
+              </div>
+            </div>
+          }
+        </div>
+      }
+    }
+  </div>
+</div>
+
+<!-- Toast -->
+@if (toast()) {
+  <div class="toast" [ngClass]="'toast-' + toast()!.type">
+    <div style="font-size: 18px; margin-right: 8px;">
+      @if (toast()!.type === 'success') { ✅ }
+      @if (toast()!.type === 'error') { ⚠️ }
+      @if (toast()!.type === 'info') { ℹ️ }
+    </div>
+    {{ toast()!.msg }}
+  </div>
+}

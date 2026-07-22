@@ -40,7 +40,14 @@
           <div style="font-size:15px; font-weight:600; color:#1B2B3A">Asistente SiMA</div>
           <div style="font-size:12px; color:#52B788">● En línea</div>
         </div>
-        <span class="powered-badge">Powered by Claude AI</span>
+        @if (adultos().length > 1) {
+        <select class="chat-adulto-select" [ngModel]="adultoSeleccionado()" (ngModelChange)="adultoSeleccionado.set($event)">
+          @for (a of adultos(); track a.idAdulto) {
+          <option [value]="a.idAdulto">{{ a.nombre }} {{ a.apellido }}</option>
+          }
+        </select>
+        }
+        <span class="powered-badge">Powered by DeepSeek AI</span>
       </div>
       <div class="messages" #messagesContainer>
         @for (msg of mensajes(); track msg.id) {

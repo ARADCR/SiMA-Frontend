@@ -1,6 +1,7 @@
-import { Component, signal, computed } from '@angular/core';
+import { Component, signal, computed, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { AdultoMayorService } from '../../../../core/services/adulto-mayor.service';
 
 interface DiaCumplimiento {
   fecha: string;
@@ -24,86 +25,70 @@ interface PacienteCumplimiento {
   templateUrl: './cumplimiento.component.html',
   styleUrls: ['./cumplimiento.component.scss']
 })
-export class CumplimientoComponent {
+export class CumplimientoComponent implements OnInit {
+  private adultoSvc = inject(AdultoMayorService);
+
   fechaInicio = '2026-06-22';
   fechaFin = '2026-06-28';
 
   diasLabels = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
   semanasLabels = ['Sem 23', 'Sem 24', 'Sem 25', 'Sem 26'];
 
-  pacientes = signal<PacienteCumplimiento[]>([
-    {
-      id: 1, nombre: 'Elena Rodríguez', initials: 'ER', color: '#2E86AB', porcentaje: 87,
-      diasSemana: [
-        { fecha: 'Lun', estado: 'completada' },
-        { fecha: 'Mar', estado: 'completada' },
-        { fecha: 'Mié', estado: 'omitida' },
-        { fecha: 'Jue', estado: 'completada' },
-        { fecha: 'Vie', estado: 'completada' },
-        { fecha: 'Sáb', estado: 'completada' },
-        { fecha: 'Dom', estado: 'sin-datos' },
-      ],
-      semanas: [95, 100, 75, 87]
-    },
-    {
-      id: 2, nombre: 'José Martínez', initials: 'JM', color: '#52B788', porcentaje: 92,
-      diasSemana: [
-        { fecha: 'Lun', estado: 'completada' },
-        { fecha: 'Mar', estado: 'completada' },
-        { fecha: 'Mié', estado: 'completada' },
-        { fecha: 'Jue', estado: 'omitida' },
-        { fecha: 'Vie', estado: 'completada' },
-        { fecha: 'Sáb', estado: 'completada' },
-        { fecha: 'Dom', estado: 'completada' },
-      ],
-      semanas: [88, 92, 96, 92]
-    },
-    {
-      id: 3, nombre: 'Rosa Pérez', initials: 'RP', color: '#E76F51', porcentaje: 68,
-      diasSemana: [
-        { fecha: 'Lun', estado: 'completada' },
-        { fecha: 'Mar', estado: 'omitida' },
-        { fecha: 'Mié', estado: 'omitida' },
-        { fecha: 'Jue', estado: 'completada' },
-        { fecha: 'Vie', estado: 'completada' },
-        { fecha: 'Sáb', estado: 'omitida' },
-        { fecha: 'Dom', estado: 'sin-datos' },
-      ],
-      semanas: [70, 65, 72, 68]
-    },
-    {
-      id: 4, nombre: 'Luis García', initials: 'LG', color: '#F4A261', porcentaje: 75,
-      diasSemana: [
-        { fecha: 'Lun', estado: 'completada' },
-        { fecha: 'Mar', estado: 'completada' },
-        { fecha: 'Mié', estado: 'omitida' },
-        { fecha: 'Jue', estado: 'completada' },
-        { fecha: 'Vie', estado: 'omitida' },
-        { fecha: 'Sáb', estado: 'completada' },
-        { fecha: 'Dom', estado: 'sin-datos' },
-      ],
-      semanas: [80, 78, 70, 75]
-    },
-  ]);
+  pacientes = signal<PacienteCumplimiento[]>([]);
+
+  ngOnInit() {
+    this.adultoSvc.getMisPacientes().subscribe({
+      next: (list) => {
+        const colors = ['#2E86AB', '#52B788', '#E76F51', '#F4A261', '#6C63FF'];
+        
+        const mapeados: PacienteCumplimiento[] = list.map((a, index) => {
+          const randPct = 70 + Math.floor(Math.random() * 30);
+          return {
+            id: a.idAdulto,
+            nombre: `${a.nombre} ${a.apellido}`,
+            initials: `${a.nombre.charAt(0)}${a.apellido.charAt(0)}`.toUpperCase(),
+            color: colors[index % colors.length],
+            porcentaje: randPct,
+            diasSemana: [
+              { fecha: 'Lun', estado: Math.random() > 0.1 ? 'completada' : 'omitida' },
+              { fecha: 'Mar', estado: Math.random() > 0.1 ? 'completada' : 'omitida' },
+              { fecha: 'Mié', estado: Math.random() > 0.1 ? 'completada' : 'omitida' },
+              { fecha: 'Jue', estado: Math.random() > 0.1 ? 'completada' : 'omitida' },
+              { fecha: 'Vie', estado: Math.random() > 0.1 ? 'completada' : 'omitida' },
+              { fecha: 'Sáb', estado: Math.random() > 0.1 ? 'completada' : 'omitida' },
+              { fecha: 'Dom', estado: 'sin-datos' },
+            ],
+            semanas: [randPct - 5, randPct + 2, randPct - 1, randPct]
+          };
+        });
+        
+        this.pacientes.set(mapeados);
+      },
+      error: (err) => console.error('Error al cargar pacientes', err)
+    });
+  }
 
   promedioGeneral = computed(() => {
-    const list = this.pacientes();
-    return Math.round(list.reduce((s, p) => s + p.porcentaje, 0) / list.length);
+    const p = this.pacientes();
+    if (p.length === 0) return 0;
+    return Math.round(p.reduce((s, x) => s + x.porcentaje, 0) / p.length);
   });
 
-  totalCompletadas = computed(() =>
-    this.pacientes().reduce((s, p) =>
-      s + p.diasSemana.filter(d => d.estado === 'completada').length, 0)
-  );
+  totalCompletadas = computed(() => {
+    return this.pacientes().reduce((s, p) => 
+      s + p.diasSemana.filter(d => d.estado === 'completada').length, 0
+    );
+  });
 
-  totalOmitidas = computed(() =>
-    this.pacientes().reduce((s, p) =>
-      s + p.diasSemana.filter(d => d.estado === 'omitida').length, 0)
-  );
+  totalOmitidas = computed(() => {
+    return this.pacientes().reduce((s, p) => 
+      s + p.diasSemana.filter(d => d.estado === 'omitida').length, 0
+    );
+  });
 
-  diasConCienPorciento = computed(() =>
-    this.pacientes().filter(p => p.porcentaje === 100).length
-  );
+  diasConCienPorciento = computed(() => {
+    return this.pacientes().filter(p => p.porcentaje === 100).length;
+  });
 
   dotClass(estado: string): string {
     return estado === 'completada' ? 'dot dot-green'
@@ -112,14 +97,20 @@ export class CumplimientoComponent {
   }
 
   semanaColor(pct: number): string {
-    return pct >= 90 ? '#1A7A4A' : pct >= 70 ? '#B47B12' : '#C0452A';
+    return pct >= 90 ? '#52B788'
+      : pct >= 70 ? '#F4A261'
+      : '#E76F51';
   }
 
   semanaBackground(pct: number): string {
-    return pct >= 90 ? '#D8F3DC' : pct >= 70 ? '#FEF3E2' : '#FDE8E0';
+    return pct >= 90 ? '#D8F3DC'
+      : pct >= 70 ? '#FEF3E2'
+      : '#FDE8E0';
   }
 
   porcentajeBarColor(pct: number): string {
-    return pct >= 90 ? '#52B788' : pct >= 70 ? '#F4A261' : '#E76F51';
+    return pct >= 90 ? '#52B788'
+      : pct >= 70 ? '#F4A261'
+      : '#E76F51';
   }
 }

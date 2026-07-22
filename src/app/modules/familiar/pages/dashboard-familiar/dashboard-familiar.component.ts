@@ -1,7 +1,15 @@
-import { Component, inject, signal, computed } from '@angular/core';
+import { Component, OnInit, inject, signal, computed, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { AuthService } from '../../../../core/auth/auth.service';
+import { AdultoMayorService } from '../../../../core/services/adulto-mayor.service';
+import { RegistroTomaService, RegistroTomaResponse } from '../../../../core/services/registro-toma.service';
+import { AlertaService } from '../../../../core/services/alerta.service';
+import { HistorialService } from '../../../../core/services/historial.service';
+import { ObservacionService } from '../../../../core/services/observacion.service';
+import { AiService, ResumenAlertasIAResponse, BriefingIAResponse } from '../../../../core/services/ai.service';
+import { ApiService } from '../../../../core/services/api.service';
+import { FormsModule } from '@angular/forms';
 
 interface TodayMed {
   nombre: string;
@@ -29,52 +37,225 @@ interface Adulto {
 @Component({
   selector: 'app-dashboard-familiar',
   standalone: true,
-  imports: [CommonModule, RouterModule],
+  imports: [CommonModule, RouterModule, FormsModule],
   templateUrl: './dashboard-familiar.component.html',
   styleUrls: ['./dashboard-familiar.component.scss']
 })
-export class DashboardFamiliarComponent {
+export class DashboardFamiliarComponent implements OnInit {
   protected auth = inject(AuthService);
+  private adultoSvc = inject(AdultoMayorService);
+  private registroTomaService = inject(RegistroTomaService);
+  private alertaSvc = inject(AlertaService);
+  private historialSvc = inject(HistorialService);
+  private observacionSvc = inject(ObservacionService);
+  private aiSvc = inject(AiService);
+  private api = inject(ApiService);
 
-  adultoActivo = signal<number>(1);
+  adultoActivo = signal<number | null>(null);
   toast = signal<string | null>(null);
+  loading = signal(true);
 
-  adultos: Adulto[] = [
-    { id: 1, nombre: 'Elena Rodríguez', initials: 'ER', activo: true },
-    { id: 2, nombre: 'José Rodríguez', initials: 'JR', activo: true },
-  ];
+  resumenAlertasIA = signal<ResumenAlertasIAResponse | null>(null);
+  loadingResumenIA = signal(false);
 
-  medicamentosHoy: TodayMed[] = [
-    { nombre: 'Losartán 50mg', dosis: '1 tableta', hora: '08:00', estado: 'tomado' },
-    { nombre: 'Metformina 850mg', dosis: '1 tableta', hora: '08:00', estado: 'tomado' },
-    { nombre: 'Atorvastatina 20mg', dosis: '1 tableta', hora: '12:00', estado: 'tomado' },
-    { nombre: 'Metformina 850mg', dosis: '1 tableta', hora: '14:00', estado: 'pendiente' },
-  ];
+  // HU-25: briefing diario inteligente ("Tu resumen de hoy")
+  briefing = signal<BriefingIAResponse | null>(null);
+  briefingCargando = signal(false);
+  briefingError = signal(false);
 
-  alertas = signal<Alerta[]>([
-    { id: 1, titulo: 'Toma omitida', descripcion: 'Omeprazol 20mg no fue tomado a las 07:00. Sin confirmación del pastillero.', tipo: 'urgente', hora: 'Hace 6 horas', resuelta: false },
-    { id: 2, titulo: 'Ritmo cardíaco elevado', descripcion: 'Se detectó un pico de 108 BPM a las 11:30 que duró 12 minutos.', tipo: 'moderado', hora: 'Hace 2 horas', resuelta: false },
-  ]);
+  adultos: Adulto[] = [];
+  medicamentosHoy = signal<TodayMed[]>([]);
+  alertas = signal<Alerta[]>([]);
+  ultimoEvento = signal<{ titulo: string; metodo: string; hora: string } | null>(null);
+  observaciones: { idCuidador: number, cuidador: string; initials: string; hora: string; texto: string }[] = [];
+
+  modalResenaOpen = signal(false);
+  resenaPayload = { idCuidador: 0, cuidadorNombre: '', puntos: 5, texto: '' };
 
   alertasActivas = computed(() => this.alertas().filter(a => !a.resuelta));
+  tomadas = computed(() => this.medicamentosHoy().filter(m => m.estado === 'tomado').length);
+  totalMeds = computed(() => this.medicamentosHoy().length);
+  cumplimientoPct = computed(() => {
+    const total = this.totalMeds();
+    if (total === 0) return 0;
+    return Math.round((this.tomadas() / total) * 100);
+  });
+  proxima = computed(() => this.medicamentosHoy().find(m => m.estado === 'pendiente') ?? null);
 
-  tomadas = computed(() => this.medicamentosHoy.filter(m => m.estado === 'tomado').length);
-  totalMeds = computed(() => this.medicamentosHoy.length);
-  cumplimientoPct = computed(() => Math.round((this.tomadas() / this.totalMeds()) * 100));
-  proxima = computed(() => this.medicamentosHoy.find(m => m.estado === 'pendiente') ?? null);
+  adultoActivoObj = computed(() => this.adultos.find(a => a.id === this.adultoActivo()) ?? this.adultos[0]);
 
-  observaciones = [
-    { cuidador: 'Carlos Mendoza', initials: 'CM', hora: 'Hoy, 11:45', texto: 'La señora Elena desayunó bien y caminó por el jardín durante 20 minutos. Buen ánimo.' },
-    { cuidador: 'Carlos Mendoza', initials: 'CM', hora: 'Hoy, 08:30', texto: 'Presión arterial matutina: 130/85. Dentro de rango esperado.' },
-  ];
+  constructor() {
+    effect(() => {
+      const idAdulto = this.adultoActivo();
+      if (idAdulto != null) {
+        this.cargarTomasDelDia(idAdulto);
+      }
+    });
+  }
+
+  ngOnInit(): void {
+    this.cargarAdultos();
+    this.cargarBriefing();
+  }
+
+  cargarBriefing(): void {
+    this.briefingCargando.set(true);
+    this.briefingError.set(false);
+    this.aiSvc.getBriefing().subscribe({
+      next: (data) => {
+        this.briefing.set(data);
+        this.briefingCargando.set(false);
+      },
+      error: (err) => {
+        console.error('Error al cargar el briefing IA', err);
+        this.briefingError.set(true);
+        this.briefingCargando.set(false);
+      }
+    });
+  }
+
+  refrescarBriefing(): void {
+    this.briefingCargando.set(true);
+    this.briefingError.set(false);
+    this.aiSvc.refreshBriefing().subscribe({
+      next: (data) => {
+        this.briefing.set(data);
+        this.briefingCargando.set(false);
+      },
+      error: (err) => {
+        console.error('Error al refrescar el briefing IA', err);
+        this.briefingError.set(true);
+        this.briefingCargando.set(false);
+      }
+    });
+  }
+
+  private cargarAdultos(): void {
+    this.loading.set(true);
+    this.adultoSvc.getMisPacientes().subscribe({
+      next: (list) => {
+        this.adultos = list.map(a => ({
+          id: a.idAdulto,
+          nombre: `${a.nombre} ${a.apellido}`,
+          initials: (a.nombre.charAt(0) + a.apellido.charAt(0)).toUpperCase(),
+          activo: a.activo
+        }));
+
+        if (this.adultos.length > 0) {
+          const firstId = this.adultos[0].id;
+          this.adultoActivo.set(firstId);
+          this.cargarDatosAdulto(firstId);
+        } else {
+          this.loading.set(false);
+        }
+      },
+      error: () => {
+        this.loading.set(false);
+      }
+    });
+  }
+
+  cargarTomasDelDia(idAdulto: number): void {
+    this.registroTomaService.getTomasDelDia(idAdulto).subscribe({
+      next: (res: RegistroTomaResponse[]) => {
+        const meds = res.map(toma => ({
+          nombre: toma.horario.medicamento.nombre,
+          dosis: toma.horario.medicamento.dosis,
+          hora: toma.horario.horaProgramada.substring(0, 5),
+          estado: (toma.estado === 'confirmado_manual' ? 'tomado' : toma.estado) as TodayMed['estado']
+        }));
+        this.medicamentosHoy.set(meds);
+      },
+      error: err => {
+        console.error('Error al cargar tomas', err);
+        this.showToast('Error al cargar medicamentos del día');
+      }
+    });
+  }
+
+
 
   seleccionarAdulto(id: number): void {
     this.adultoActivo.set(id);
+    this.cargarDatosAdulto(id);
+  }
+
+  private cargarDatosAdulto(idAdulto: number): void {
+    // 1. Cargar alertas activas
+    this.alertaSvc.getActivas().subscribe({
+      next: (alertas) => {
+        const filtradas = alertas.filter(a => a.adultoMayorId === idAdulto);
+        this.alertas.set(filtradas.map(a => ({
+          id: a.id,
+          titulo: a.titulo || a.tipo.replace('_', ' '),
+          descripcion: a.descripcion,
+          tipo: a.prioridad === 'alta' || a.prioridad === 'critica' ? 'urgente' : 'moderado',
+          hora: this.formatearTiempoRelativo(a.timestamp),
+          resuelta: a.estado === 'resuelta'
+        })));
+      }
+    });
+
+    // 2. Cargar último evento del historial
+    this.historialSvc.getHistorial(idAdulto, { size: 1 }).subscribe({
+      next: (page) => {
+        if (page && page.content && page.content.length > 0) {
+          const e = page.content[0];
+          this.ultimoEvento.set({
+            titulo: e.titulo,
+            metodo: e.tipo === 'toma'
+              ? (e.meta && e.meta['confirmador'] ? String(e.meta['confirmador']) : 'Sistema')
+              : (e.tipo === 'actividad_iot' && e.meta && e.meta['tipoDispositivo'] ? String(e.meta['tipoDispositivo']).replace('_', ' ') : 'Sistema'),
+            hora: this.formatearTiempoRelativo(e.fechaHora)
+          });
+        } else {
+          this.ultimoEvento.set(null);
+        }
+      }
+    });
+
+    // 3. Cargar últimas observaciones del cuidador
+    this.observacionSvc.listarPorAdulto(idAdulto).subscribe({
+      next: (obs) => {
+        this.observaciones = obs
+          .slice(0, 2)
+          .map(o => ({
+            idCuidador: o.idCuidador,
+            cuidador: o.cuidadorNombre,
+            initials: o.cuidadorNombre.split(' ').map(p => p.charAt(0)).join('').toUpperCase().slice(0, 2),
+            hora: this.formatearTiempoRelativo(o.fechaHora),
+            texto: o.texto
+          }));
+      }
+    });
+
+    // 4. Cargar resumen inteligente de alertas del día
+    this.cargarResumenAlertasIA(idAdulto);
+
+    this.loading.set(false);
+  }
+
+  private cargarResumenAlertasIA(idAdulto: number): void {
+    this.loadingResumenIA.set(true);
+    this.resumenAlertasIA.set(null);
+    this.aiSvc.getResumenAlertas(idAdulto).subscribe({
+      next: (resumen) => {
+        this.resumenAlertasIA.set(resumen);
+        this.loadingResumenIA.set(false);
+      },
+      error: () => {
+        this.loadingResumenIA.set(false);
+      }
+    });
   }
 
   marcarResuelta(id: number): void {
-    this.alertas.update(list => list.map(a => a.id === id ? { ...a, resuelta: true } : a));
-    this.showToast('Alerta marcada como resuelta');
+    this.alertaSvc.resolver(id, 'Resuelta desde dashboard').subscribe({
+      next: () => {
+        this.alertas.update(list => list.map(a => a.id === id ? { ...a, resuelta: true } : a));
+        this.showToast('Alerta marcada como resuelta');
+      }
+    });
   }
 
   private showToast(msg: string): void {
@@ -82,5 +263,51 @@ export class DashboardFamiliarComponent {
     setTimeout(() => this.toast.set(null), 3500);
   }
 
-  adultoActivoObj = computed(() => this.adultos.find(a => a.id === this.adultoActivo()) ?? this.adultos[0]);
+  private formatearTiempoRelativo(fechaStr: string): string {
+    if (!fechaStr) return '';
+    try {
+      const date = new Date(fechaStr);
+      const diffMs = new Date().getTime() - date.getTime();
+      const diffMins = Math.floor(diffMs / 60000);
+      if (diffMins < 60) return `Hace ${diffMins} min`;
+      const diffHours = Math.floor(diffMins / 60);
+      if (diffHours < 24) return `Hace ${diffHours} horas`;
+      return date.toLocaleDateString();
+    } catch (e) {
+      return '';
+    }
+  }
+
+  abrirResenaModal(idCuidador: number, nombre: string): void {
+    this.resenaPayload = { idCuidador, cuidadorNombre: nombre, puntos: 5, texto: '' };
+    this.modalResenaOpen.set(true);
+  }
+
+  cerrarResenaModal(): void {
+    this.modalResenaOpen.set(false);
+  }
+
+  enviarResena(): void {
+    if (this.resenaPayload.puntos < 1 || this.resenaPayload.puntos > 5) {
+      this.showToast('La calificación debe estar entre 1 y 5');
+      return;
+    }
+    this.api.post('/familiar/resenas', {
+      idCuidador: this.resenaPayload.idCuidador,
+      puntos: this.resenaPayload.puntos,
+      texto: this.resenaPayload.texto
+    }).subscribe({
+      next: () => {
+        this.showToast('¡Gracias por tu reseña!');
+        this.cerrarResenaModal();
+      },
+      error: (err) => {
+        if (err.error?.message === 'Ya dejaste una reseña para este cuidador') {
+          this.showToast('Ya habías calificado a este cuidador anteriormente.');
+        } else {
+          this.showToast('Ocurrió un error al enviar la reseña.');
+        }
+      }
+    });
+  }
 }
