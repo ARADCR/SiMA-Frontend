@@ -22,9 +22,9 @@ export class ObservacionesComponent implements OnInit {
   private observacionSvc = inject(ObservacionService);
   private aiSvc = inject(AiService);
 
-  busqueda = '';
-  pacienteFiltro = '';
-  urgenciaFiltro = '';
+  busqueda = signal('');
+  pacienteFiltro = signal('');
+  urgenciaFiltro = signal('');
   modalOpen = signal(false);
   toast = signal<string | null>(null);
   loading = signal(true);
@@ -83,12 +83,15 @@ export class ObservacionesComponent implements OnInit {
 
   obsFiltradas = computed(() => {
     let list = this.observaciones();
-    if (this.busqueda) {
-      const q = this.busqueda.toLowerCase();
-      list = list.filter(o => o.texto.toLowerCase().includes(q) || this.nombrePaciente(o.idAdulto).toLowerCase().includes(q));
+    const q = this.busqueda();
+    if (q) {
+      const qLower = q.toLowerCase();
+      list = list.filter(o => o.texto.toLowerCase().includes(qLower) || this.nombrePaciente(o.idAdulto).toLowerCase().includes(qLower));
     }
-    if (this.pacienteFiltro) list = list.filter(o => String(o.idAdulto) === this.pacienteFiltro);
-    if (this.urgenciaFiltro) list = list.filter(o => o.urgencia === this.urgenciaFiltro);
+    const pf = this.pacienteFiltro();
+    if (pf) list = list.filter(o => String(o.idAdulto) === pf);
+    const uf = this.urgenciaFiltro();
+    if (uf) list = list.filter(o => o.urgencia === uf);
     return list;
   });
 
@@ -219,9 +222,9 @@ export class ObservacionesComponent implements OnInit {
   }
 
   resetFiltros(): void {
-    this.busqueda = '';
-    this.pacienteFiltro = '';
-    this.urgenciaFiltro = '';
+    this.busqueda.set('');
+    this.pacienteFiltro.set('');
+    this.urgenciaFiltro.set('');
   }
 
   private showToast(msg: string): void {

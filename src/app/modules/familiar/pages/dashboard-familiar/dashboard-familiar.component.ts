@@ -7,7 +7,9 @@ import { RegistroTomaService, RegistroTomaResponse } from '../../../../core/serv
 import { AlertaService } from '../../../../core/services/alerta.service';
 import { HistorialService } from '../../../../core/services/historial.service';
 import { ObservacionService } from '../../../../core/services/observacion.service';
-import { AiService, ResumenAlertasIAResponse } from '../../../../core/services/ai.service';
+import { AiService, ResumenAlertasIAResponse, BriefingIAResponse } from '../../../../core/services/ai.service';
+import { ApiService } from '../../../../core/services/api.service';
+import { FormsModule } from '@angular/forms';
 
 interface TodayMed {
   nombre: string;
@@ -35,7 +37,7 @@ interface Adulto {
 @Component({
   selector: 'app-dashboard-familiar',
   standalone: true,
-  imports: [CommonModule, RouterModule],
+  imports: [CommonModule, RouterModule, FormsModule],
   templateUrl: './dashboard-familiar.component.html',
   styleUrls: ['./dashboard-familiar.component.scss']
 })
@@ -47,6 +49,7 @@ export class DashboardFamiliarComponent implements OnInit {
   private historialSvc = inject(HistorialService);
   private observacionSvc = inject(ObservacionService);
   private aiSvc = inject(AiService);
+  private api = inject(ApiService);
 
   adultoActivo = signal<number | null>(null);
   toast = signal<string | null>(null);
@@ -55,11 +58,19 @@ export class DashboardFamiliarComponent implements OnInit {
   resumenAlertasIA = signal<ResumenAlertasIAResponse | null>(null);
   loadingResumenIA = signal(false);
 
+  // HU-25: briefing diario inteligente ("Tu resumen de hoy")
+  briefing = signal<BriefingIAResponse | null>(null);
+  briefingCargando = signal(false);
+  briefingError = signal(false);
+
   adultos: Adulto[] = [];
   medicamentosHoy = signal<TodayMed[]>([]);
   alertas = signal<Alerta[]>([]);
   ultimoEvento = signal<{ titulo: string; metodo: string; hora: string } | null>(null);
-  observaciones: { cuidador: string; initials: string; hora: string; texto: string }[] = [];
+  observaciones: { idCuidador: number, cuidador: string; initials: string; hora: string; texto: string }[] = [];
+
+  modalResenaOpen = signal(false);
+  resenaPayload = { idCuidador: 0, cuidadorNombre: '', puntos: 5, texto: '' };
 
   alertasActivas = computed(() => this.alertas().filter(a => !a.resuelta));
   tomadas = computed(() => this.medicamentosHoy().filter(m => m.estado === 'tomado').length);
@@ -84,6 +95,39 @@ export class DashboardFamiliarComponent implements OnInit {
 
   ngOnInit(): void {
     this.cargarAdultos();
+    this.cargarBriefing();
+  }
+
+  cargarBriefing(): void {
+    this.briefingCargando.set(true);
+    this.briefingError.set(false);
+    this.aiSvc.getBriefing().subscribe({
+      next: (data) => {
+        this.briefing.set(data);
+        this.briefingCargando.set(false);
+      },
+      error: (err) => {
+        console.error('Error al cargar el briefing IA', err);
+        this.briefingError.set(true);
+        this.briefingCargando.set(false);
+      }
+    });
+  }
+
+  refrescarBriefing(): void {
+    this.briefingCargando.set(true);
+    this.briefingError.set(false);
+    this.aiSvc.refreshBriefing().subscribe({
+      next: (data) => {
+        this.briefing.set(data);
+        this.briefingCargando.set(false);
+      },
+      error: (err) => {
+        console.error('Error al refrescar el briefing IA', err);
+        this.briefingError.set(true);
+        this.briefingCargando.set(false);
+      }
+    });
   }
 
   private cargarAdultos(): void {
@@ -174,6 +218,7 @@ export class DashboardFamiliarComponent implements OnInit {
         this.observaciones = obs
           .slice(0, 2)
           .map(o => ({
+            idCuidador: o.idCuidador,
             cuidador: o.cuidadorNombre,
             initials: o.cuidadorNombre.split(' ').map(p => p.charAt(0)).join('').toUpperCase().slice(0, 2),
             hora: this.formatearTiempoRelativo(o.fechaHora),
@@ -229,5 +274,38 @@ export class DashboardFamiliarComponent implements OnInit {
     } catch (e) {
       return '';
     }
+  }
+
+  abrirResenaModal(idCuidador: number, nombre: string): void {
+    this.resenaPayload = { idCuidador, cuidadorNombre: nombre, puntos: 5, texto: '' };
+    this.modalResenaOpen.set(true);
+  }
+
+  cerrarResenaModal(): void {
+    this.modalResenaOpen.set(false);
+  }
+
+  enviarResena(): void {
+    if (this.resenaPayload.puntos < 1 || this.resenaPayload.puntos > 5) {
+      this.showToast('La calificación debe estar entre 1 y 5');
+      return;
+    }
+    this.api.post('/familiar/resenas', {
+      idCuidador: this.resenaPayload.idCuidador,
+      puntos: this.resenaPayload.puntos,
+      texto: this.resenaPayload.texto
+    }).subscribe({
+      next: () => {
+        this.showToast('¡Gracias por tu reseña!');
+        this.cerrarResenaModal();
+      },
+      error: (err) => {
+        if (err.error?.message === 'Ya dejaste una reseña para este cuidador') {
+          this.showToast('Ya habías calificado a este cuidador anteriormente.');
+        } else {
+          this.showToast('Ocurrió un error al enviar la reseña.');
+        }
+      }
+    });
   }
 }

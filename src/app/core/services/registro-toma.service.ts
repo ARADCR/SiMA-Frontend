@@ -57,4 +57,26 @@ export class RegistroTomaService {
       map(res => res.data)
     );
   }
+
+  /**
+   * Registra una toma como omitida por el cuidador.
+   */
+  omitirToma(idRegistro: number): Observable<RegistroTomaResponse> {
+    const body: RegistroTomaRequest = {
+      idRegistro,
+      metodoConfirmacion: 'omision_cuidador'
+    };
+    return this.api.post<RegistroTomaResponse>('/tomas/omitir', body).pipe(
+      map(res => res.data)
+    );
+  }
+
+  /**
+   * Revierte una toma confirmada u omitida a estado pendiente.
+   */
+  revertirToma(idRegistro: number): Observable<RegistroTomaResponse> {
+    return this.api.post<RegistroTomaResponse>(`/tomas/revertir/${idRegistro}`, {}).pipe(
+      map(res => res.data)
+    );
+  }
 }

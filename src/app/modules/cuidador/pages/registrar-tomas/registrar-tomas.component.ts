@@ -31,14 +31,14 @@ export class RegistrarTomasComponent implements OnInit {
   private registroTomaService = inject(RegistroTomaService);
   private adultoMayorService = inject(AdultoMayorService);
 
-  pacienteFiltro = '';
+  pacienteFiltro = signal('');
 
   tomas = signal<Toma[]>([]);
   toast = signal<{ msg: string; type: 'success' | 'error' } | null>(null);
 
   tomasFiltradas = computed(() =>
-    this.pacienteFiltro
-      ? this.tomas().filter(t => t.paciente === this.pacienteFiltro)
+    this.pacienteFiltro()
+      ? this.tomas().filter(t => t.paciente === this.pacienteFiltro())
       : this.tomas()
   );
 
@@ -103,30 +103,46 @@ export class RegistrarTomasComponent implements OnInit {
   }
 
   registrar(t: Toma, estado: EstadoToma): void {
-    if (estado !== 'tomado') return; // We only support marking as 'tomado' via API in this view for now
-
-    const request: RegistroTomaRequest = {
-      idRegistro: t.id,
-      metodoConfirmacion: 'manual_cuidador'
-    };
-
-    this.registroTomaService.confirmarToma(request).subscribe({
-      next: () => {
-        this.tomas.update(list => list.map(x => x.id === t.id ? { ...x, estado: 'tomado' } : x));
-        this.showToast(`Toma de ${t.medicamento} registrada correctamente`, 'success');
-      },
-      error: (err) => {
-        console.error('Error al confirmar', err);
-        this.showToast(`Error al confirmar toma de ${t.medicamento}`, 'error');
-      }
-    });
+    if (estado === 'tomado') {
+      const request: RegistroTomaRequest = {
+        idRegistro: t.id,
+        metodoConfirmacion: 'manual_cuidador'
+      };
+      this.registroTomaService.confirmarToma(request).subscribe({
+        next: () => {
+          this.tomas.update(list => list.map(x => x.id === t.id ? { ...x, estado: 'tomado' } : x));
+          this.showToast(`Toma de ${t.medicamento} registrada correctamente`, 'success');
+        },
+        error: (err) => {
+          console.error('Error al confirmar', err);
+          this.showToast(`Error al confirmar toma de ${t.medicamento}`, 'error');
+        }
+      });
+    } else if (estado === 'omitido') {
+      this.registroTomaService.omitirToma(t.id).subscribe({
+        next: () => {
+          this.tomas.update(list => list.map(x => x.id === t.id ? { ...x, estado: 'omitido' } : x));
+          this.showToast(`Toma de ${t.medicamento} marcada como omitida`, 'success');
+        },
+        error: (err) => {
+          console.error('Error al omitir', err);
+          this.showToast(`Error al omitir toma de ${t.medicamento}`, 'error');
+        }
+      });
+    }
   }
 
   revertir(t: Toma): void {
-    // Note: the backend does not currently support reverting a confirmation. 
-    // This just updates the frontend state.
-    this.tomas.update(list => list.map(x => x.id === t.id ? { ...x, estado: 'pendiente' } : x));
-    this.showToast('Toma revertida a pendiente (solo visual)', 'success');
+    this.registroTomaService.revertirToma(t.id).subscribe({
+      next: () => {
+        this.tomas.update(list => list.map(x => x.id === t.id ? { ...x, estado: 'pendiente' } : x));
+        this.showToast(`Toma de ${t.medicamento} revertida a pendiente`, 'success');
+      },
+      error: (err) => {
+        console.error('Error al revertir', err);
+        this.showToast(`Error al revertir toma de ${t.medicamento}`, 'error');
+      }
+    });
   }
 
   badgeClass(e: EstadoToma): string {

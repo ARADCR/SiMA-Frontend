@@ -4,7 +4,7 @@
       <h1 class="title">Registrar Tomas</h1>
       <p class="sub">Gestión de administración de medicamentos · hoy</p>
     </div>
-    <select class="select-input" [(ngModel)]="pacienteFiltro">
+    <select class="select-input" [ngModel]="pacienteFiltro()" (ngModelChange)="pacienteFiltro.set($event)">
       <option value="">Todos los pacientes</option>
       @for (t of pacientesUnicos(); track t.idAdulto) {
         <option [value]="t.paciente">{{ t.paciente }}</option>

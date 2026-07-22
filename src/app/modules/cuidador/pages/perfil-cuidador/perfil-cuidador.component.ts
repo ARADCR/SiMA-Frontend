@@ -2,24 +2,12 @@ import { Component, OnInit, signal, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AiService, AnalisisPerfilResponse } from '../../../../core/services/ai.service';
-import { CuidadorPerfilService, DatosContactoCuidador } from '../../../../core/services/cuidador-perfil.service';
+import { CuidadorPerfilService, DatosContactoCuidador, ResenaResponse, CredencialResponse, CrearCredencialRequest } from '../../../../core/services/cuidador-perfil.service';
+import { AuthService } from '../../../../core/auth/auth.service';
+import { VinculacionService, SolicitudVinculacion } from '../../../../core/services/vinculacion.service';
+import { computed } from '@angular/core';
 
 type Tab = 'info' | 'credenciales' | 'solicitudes' | 'resenas';
-
-interface Credencial {
-  id: number; tipo: string; nombre: string; fecha: string;
-  estado: 'verificado' | 'pendiente' | 'rechazado';
-}
-
-interface Solicitud {
-  id: number; familia: string; adulto: string; initials: string;
-  fecha: string; mensaje: string;
-}
-
-interface Resena {
-  id: number; familia: string; initials: string; puntos: number;
-  texto: string; fecha: string;
-}
 
 @Component({
   selector: 'app-perfil-cuidador',
@@ -31,8 +19,32 @@ interface Resena {
 export class PerfilCuidadorComponent implements OnInit {
   private aiService = inject(AiService);
   private cuidadorPerfilService = inject(CuidadorPerfilService);
+  private authService = inject(AuthService);
+  private vinculacionService = inject(VinculacionService);
 
   activeTab = signal<Tab>('info');
+
+  perfilNombre = signal<string>('');
+  perfilApellido = signal<string>('');
+
+  nombreCuidador = computed(() => {
+    if (this.perfilNombre() && this.perfilApellido()) {
+      return `${this.perfilNombre()} ${this.perfilApellido()}`;
+    }
+    return this.authService.usuarioActual?.nombre || 'Cuidador';
+  });
+  inicialesCuidador = computed(() => {
+    const parts = this.nombreCuidador().trim().split(' ');
+    if (parts.length === 1) return parts[0].substring(0, 2).toUpperCase();
+    return (parts[0][0] + parts[1][0]).toUpperCase();
+  });
+
+  stats = signal({
+    pacientes: 0,
+    calificacion: 0.0,
+    tomasRegistradas: 0,
+    cumplimiento: 0
+  });
 
   descripcionPerfil = '';
   analizando = signal(false);
@@ -61,6 +73,16 @@ export class PerfilCuidadorComponent implements OnInit {
   formTarifaHora: number | null = null;
   formDisponibilidad: string | null = null;
 
+  // Credenciales
+  credenciales = signal<CredencialResponse[]>([]);
+  modalCredencialOpen = signal(false);
+  subiendoCredencial = signal(false);
+  credencialPayload: CrearCredencialRequest = {
+    tipo: 'Certificación',
+    nombre: '',
+    archivoFalsoNombre: ''
+  };
+
   ngOnInit(): void {
     this.aiService.obtenerPerfilCuidador().subscribe({
       next: (perfil) => {
@@ -75,11 +97,43 @@ export class PerfilCuidadorComponent implements OnInit {
     });
 
     this.cargarDatosContacto();
+
+    this.cuidadorPerfilService.obtenerStats().subscribe({
+      next: (statsData) => {
+        this.stats.set(statsData);
+      },
+      error: () => { /* mantiene los valores en 0 */ }
+    });
+
+    this.cuidadorPerfilService.obtenerResenas().subscribe({
+      next: (data) => this.resenas.set(data),
+      error: () => {}
+    });
+
+    this.vinculacionService.getPendientes().subscribe({
+      next: (res) => {
+        if (res.data) {
+          this.solicitudes.set(res.data);
+        }
+      },
+      error: () => {}
+    });
+
+    this.cargarCredenciales();
+  }
+
+  private cargarCredenciales(): void {
+    this.cuidadorPerfilService.obtenerCredenciales().subscribe({
+      next: (data) => this.credenciales.set(data),
+      error: () => {}
+    });
   }
 
   private cargarDatosContacto(): void {
     this.cuidadorPerfilService.obtenerPerfil().subscribe({
       next: (datos) => {
+        this.perfilNombre.set(datos.nombre || '');
+        this.perfilApellido.set(datos.apellido || '');
         this.correo.set(datos.correo);
         this.telefono.set(datos.telefono);
         this.ciudad.set(datos.ciudad);
@@ -98,6 +152,12 @@ export class PerfilCuidadorComponent implements OnInit {
     this.formDisponibilidad = this.disponibilidad();
     this.contactoError.set(null);
     this.editandoContacto.set(true);
+    
+    // Smooth scroll to the form
+    setTimeout(() => {
+      const formEl = document.querySelector('.info-section.full-width');
+      if (formEl) formEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 100);
   }
 
   cancelarEdicion(): void {
@@ -183,27 +243,67 @@ export class PerfilCuidadorComponent implements OnInit {
 
   stars = [1, 2, 3, 4, 5];
 
-  credenciales: Credencial[] = [
-    { id: 1, tipo: 'Certificación', nombre: 'Técnico en cuidados de salud — CONALEP', fecha: '15/01/2024', estado: 'verificado' },
-    { id: 2, tipo: 'Identificación', nombre: 'INE / Credencial de elector', fecha: '10/03/2024', estado: 'verificado' },
-    { id: 3, tipo: 'Antecedentes', nombre: 'No antecedentes penales — PGJDF', fecha: '05/05/2024', estado: 'pendiente' },
-  ];
+  abrirModalCredencial(): void {
+    this.credencialPayload = { tipo: 'Certificación', nombre: '', archivoFalsoNombre: '' };
+    this.modalCredencialOpen.set(true);
+  }
 
-  solicitudes: Solicitud[] = [
-    { id: 1, familia: 'Familia García', adulto: 'Luis García', initials: 'FG', fecha: '27/06/2026',
-      mensaje: 'Buscamos cuidador con experiencia en hipertensión para nuestro padre de 80 años. Turno matutino de lunes a viernes.' },
-    { id: 2, familia: 'Familia Ramírez', adulto: 'Carmen Ramírez', initials: 'FR', fecha: '25/06/2026',
-      mensaje: 'Necesitamos apoyo para adulta mayor con demencia leve. Turno vespertino.' },
-  ];
+  cerrarModalCredencial(): void {
+    this.modalCredencialOpen.set(false);
+  }
 
-  resenas: Resena[] = [
-    { id: 1, familia: 'Familia Rodríguez', initials: 'FR', puntos: 5,
-      texto: 'Carlos es increíblemente profesional y dedicado. Mi madre está muy cómoda con él y siempre nos informa de cualquier cambio.', fecha: 'Jun 2026' },
-    { id: 2, familia: 'Familia Martínez', initials: 'FM', puntos: 5,
-      texto: 'Puntual, respetuoso y muy atento. Lo recomendamos ampliamente a cualquier familia que necesite cuidados de calidad.', fecha: 'May 2026' },
-    { id: 3, familia: 'Familia Pérez', initials: 'FP', puntos: 4,
-      texto: 'Muy buen cuidador. Tiene mucha experiencia y se nota. A veces tarda en responder mensajes pero en persona es excelente.', fecha: 'Abr 2026' },
-  ];
+  onFileSelected(event: any): void {
+    const file = event.target.files[0];
+    if (file) {
+      this.credencialPayload.archivoFalsoNombre = file.name;
+    }
+  }
+
+  subirCredencial(): void {
+    if (!this.credencialPayload.nombre.trim()) return;
+
+    this.subiendoCredencial.set(true);
+    this.cuidadorPerfilService.subirCredencial(this.credencialPayload).subscribe({
+      next: (nueva) => {
+        this.credenciales.update(c => [nueva, ...c]);
+        this.subiendoCredencial.set(false);
+        this.cerrarModalCredencial();
+      },
+      error: () => {
+        this.subiendoCredencial.set(false);
+        alert('Ocurrió un error al subir el documento. Intentá nuevamente.');
+      }
+    });
+  }
+
+  solicitudes = signal<SolicitudVinculacion[]>([]);
+
+  aceptarSolicitud(id: number): void {
+    this.vinculacionService.responderSolicitud(id, true).subscribe({
+      next: () => {
+        this.solicitudes.update(sols => sols.filter(s => s.idSolicitud !== id));
+      },
+      error: () => alert('Ocurrió un error al aceptar la solicitud.')
+    });
+  }
+
+  rechazarSolicitud(id: number): void {
+    this.vinculacionService.responderSolicitud(id, false).subscribe({
+      next: () => {
+        this.solicitudes.update(sols => sols.filter(s => s.idSolicitud !== id));
+      },
+      error: () => alert('Ocurrió un error al rechazar la solicitud.')
+    });
+  }
+
+  getInitials(nombreFamiliar: string): string {
+    if (!nombreFamiliar) return 'F';
+    const parts = nombreFamiliar.trim().split(' ');
+    if (parts.length === 1) return parts[0].substring(0, 2).toUpperCase();
+    return (parts[0][0] + parts[1][0]).toUpperCase();
+  }
+
+  resenas = signal<ResenaResponse[]>([]);
 
   credBadgeClass(e: string): string { return `badge badge-${e}`; }
   credLabel(e: string): string {

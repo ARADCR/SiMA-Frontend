@@ -1,33 +1,33 @@
 <div class="page">
   <div class="card profile-header">
-    <div class="avatar-lg">CA</div>
+    <div class="avatar-lg">{{ inicialesCuidador() }}</div>
     <div class="profile-info">
       <div class="profile-name-row">
-        <h1 class="profile-name">Carlos Andrade</h1>
+        <h1 class="profile-name">{{ nombreCuidador() }}</h1>
         <span class="verified-badge">
           <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
           Verificado
         </span>
       </div>
-      <p class="profile-role">Cuidador profesional · 8 años de experiencia</p>
+      <p class="profile-role">Cuidador profesional {{ experienciaMostrada() ? '· ' + experienciaMostrada() : '' }}</p>
       <div class="profile-stats">
         <div class="pstat">
-          <span class="pstat-val">4</span>
+          <span class="pstat-val">{{ stats().pacientes }}</span>
           <span class="pstat-lbl">Pacientes</span>
         </div>
         <div class="pstat-div"></div>
         <div class="pstat">
-          <span class="pstat-val">4.8★</span>
+          <span class="pstat-val">{{ stats().calificacion }}★</span>
           <span class="pstat-lbl">Calificación</span>
         </div>
         <div class="pstat-div"></div>
         <div class="pstat">
-          <span class="pstat-val">127</span>
+          <span class="pstat-val">{{ stats().tomasRegistradas }}</span>
           <span class="pstat-lbl">Tomas registradas</span>
         </div>
         <div class="pstat-div"></div>
         <div class="pstat">
-          <span class="pstat-val">98%</span>
+          <span class="pstat-val">{{ stats().cumplimiento }}%</span>
           <span class="pstat-lbl">Cumplimiento</span>
         </div>
       </div>
@@ -205,12 +205,15 @@
     <div class="card tab-panel">
       <div class="cred-header">
         <span class="section-title">Documentos y certificaciones</span>
-        <button class="btn-primary-sm">
+        <button class="btn-primary-sm" (click)="abrirModalCredencial()">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
           Subir documento
         </button>
       </div>
-      @for (cred of credenciales; track cred.id) {
+      @if (credenciales().length === 0) {
+        <p style="text-align:center; padding:30px; color:#5C6B7A; font-size:14px">Aún no has subido documentos ni credenciales.</p>
+      }
+      @for (cred of credenciales(); track cred.id) {
         <div class="cred-row">
           <div class="cred-icon">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
@@ -231,17 +234,20 @@
   @if (activeTab() === 'solicitudes') {
     <div class="card tab-panel">
       <div class="section-title" style="margin-bottom:20px">Solicitudes de familias</div>
-      @for (sol of solicitudes; track sol.id) {
+      @if (solicitudes().length === 0) {
+        <p style="text-align:center; padding:30px; color:#5C6B7A; font-size:14px">No tienes solicitudes pendientes.</p>
+      }
+      @for (sol of solicitudes(); track sol.idSolicitud) {
         <div class="sol-card">
-          <div class="avatar-med" style="background:#2E86AB">{{ sol.initials }}</div>
+          <div class="avatar-med" style="background:#2E86AB">{{ getInitials(sol.nombreFamiliar) }}</div>
           <div class="sol-info">
-            <div class="sol-familia">{{ sol.familia }}</div>
-            <div class="sol-adulto">Para: {{ sol.adulto }} · {{ sol.fecha }}</div>
-            <p class="sol-mensaje">{{ sol.mensaje }}</p>
+            <div class="sol-familia">{{ sol.nombreFamiliar }}</div>
+            <div class="sol-adulto">Para: {{ sol.nombreAdulto }} · {{ sol.fechaCreacion | date:'dd/MM/yyyy' }}</div>
+            <p class="sol-mensaje">Solicitud de vinculación recibida. Por favor, aceptá o rechazá la solicitud para contactar con la familia.</p>
           </div>
           <div class="sol-actions">
-            <button class="btn-sm btn-green">Aceptar</button>
-            <button class="btn-sm btn-outline-sm">Rechazar</button>
+            <button class="btn-sm btn-green" (click)="aceptarSolicitud(sol.idSolicitud)">Aceptar</button>
+            <button class="btn-sm btn-outline-sm" (click)="rechazarSolicitud(sol.idSolicitud)">Rechazar</button>
           </div>
         </div>
       }
@@ -251,19 +257,22 @@
   @if (activeTab() === 'resenas') {
     <div class="card tab-panel">
       <div class="resenas-summary">
-        <div class="rating-big">4.8</div>
+        <div class="rating-big">{{ stats().calificacion | number:'1.1-1' }}</div>
         <div>
           <div class="stars-row">
             @for (s of stars; track s) {
-              <svg width="20" height="20" viewBox="0 0 24 24" [style.fill]="s <= 4 ? '#F4A261' : '#E2EAF0'">
+              <svg width="20" height="20" viewBox="0 0 24 24" [style.fill]="starFill(s, stats().calificacion)">
                 <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/>
               </svg>
             }
           </div>
-          <div class="rating-sub">Basado en 24 reseñas</div>
+          <div class="rating-sub">Basado en {{ resenas().length }} reseña{{ resenas().length === 1 ? '' : 's' }}</div>
         </div>
       </div>
-      @for (r of resenas; track r.id) {
+      @if (resenas().length === 0) {
+        <p style="text-align:center; padding:30px; color:#5C6B7A; font-size:14px">Aún no hay reseñas.</p>
+      }
+      @for (r of resenas(); track r.id) {
         <div class="resena-row">
           <div class="avatar-sm" style="background:#52B788">{{ r.initials }}</div>
           <div class="resena-body">
@@ -285,3 +294,62 @@
     </div>
   }
 </div>
+
+<!-- Modal Subir Credencial -->
+@if (modalCredencialOpen()) {
+  <div class="modal-overlay" (click)="cerrarModalCredencial()">
+    <div class="modal" style="height: fit-content; max-width: 480px;" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2 class="modal-title">Subir nuevo documento</h2>
+        <button class="modal-close" (click)="cerrarModalCredencial()">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <p class="text-muted" style="margin-bottom:15px; font-size:13px">
+          Sube tus certificaciones, identificaciones o documentos para que nuestro equipo los verifique y aumentes la confianza en tu perfil.
+        </p>
+        
+        <div class="form-group" style="margin-bottom: 20px;">
+          <label>Tipo de documento <span class="required">*</span></label>
+          <select [(ngModel)]="credencialPayload.tipo">
+            <option value="Certificación">Certificación (Cursos, títulos, etc.)</option>
+            <option value="Identificación">Identificación (INE, Pasaporte)</option>
+            <option value="Antecedentes">Antecedentes Penales</option>
+            <option value="Otro">Otro Documento</option>
+          </select>
+        </div>
+
+        <div class="form-group" style="margin-bottom: 20px;">
+          <label>Nombre del documento <span class="required">*</span></label>
+          <input type="text" [(ngModel)]="credencialPayload.nombre" placeholder="Ej: Técnico en Enfermería - Cruz Roja">
+        </div>
+
+        <div class="form-group">
+          <label>Archivo <span class="required">*</span></label>
+          <div style="border: 2px dashed #E2E8F0; padding: 20px; text-align: center; border-radius: 8px; background: #F7FAFC;">
+            <input type="file" id="fileUpload" (change)="onFileSelected($event)" style="display:none" accept=".pdf,.jpg,.jpeg,.png">
+            <label for="fileUpload" class="btn btn-secondary" style="margin: 0 auto;">Seleccionar Archivo</label>
+            @if (credencialPayload.archivoFalsoNombre) {
+              <p style="margin-top: 10px; font-size: 13px; color: #0891B2; font-weight: 600;">
+                Archivo listo: {{ credencialPayload.archivoFalsoNombre }}
+              </p>
+            } @else {
+              <p style="margin-top: 10px; font-size: 12px; color: #9CABB8;">
+                Archivos soportados: PDF, JPG, PNG (Max 5MB)
+              </p>
+            }
+          </div>
+        </div>
+
+      </div>
+      <div class="modal-footer" style="justify-content: flex-end;">
+        <button type="button" class="btn btn-secondary" (click)="cerrarModalCredencial()" [disabled]="subiendoCredencial()">Cancelar</button>
+        <button type="button" class="btn btn-primary" (click)="subirCredencial()" [disabled]="subiendoCredencial() || !credencialPayload.nombre || !credencialPayload.archivoFalsoNombre">
+          {{ subiendoCredencial() ? 'Subiendo...' : 'Guardar y Enviar' }}
+        </button>
+      </div>
+    </div>
+  </div>
+}
+

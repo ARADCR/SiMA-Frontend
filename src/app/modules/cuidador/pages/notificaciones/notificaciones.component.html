@@ -40,5 +40,12 @@
 
 <!-- Toast -->
 @if (toast()) {
-  <div class="toast show">{{ toast() }}</div>
+  <div class="toast" [ngClass]="'toast-' + toast()!.type">
+    <div style="font-size: 18px; margin-right: 8px;">
+      @if (toast()!.type === 'success') { ✅ }
+      @if (toast()!.type === 'error') { ⚠️ }
+      @if (toast()!.type === 'info') { ℹ️ }
+    </div>
+    {{ toast()!.msg }}
+  </div>
 }
