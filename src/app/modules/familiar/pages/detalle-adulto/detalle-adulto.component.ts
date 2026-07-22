@@ -6,6 +6,7 @@ import { MedicamentoService } from '../../../../core/services/medicamento.servic
 import { HistorialService } from '../../../../core/services/historial.service';
 import { AlertaService } from '../../../../core/services/alerta.service';
 import { DispositivoIotService } from '../../../../core/services/dispositivo-iot.service';
+import { LecturaPulseraService } from '../../../../core/services/lectura-pulsera.service';
 import { FormularioAdultoComponent } from '../formulario-adulto/formulario-adulto.component';
 import { catchError, forkJoin, of } from 'rxjs';
 
@@ -14,7 +15,7 @@ type Tab = 'medicamentos' | 'historial' | 'alertas' | 'dispositivo';
 interface Medicamento { nombre: string; dosis: string; horario: string; estado: string; }
 interface Evento { fecha: string; tipo: string; descripcion: string; metodo: string; }
 interface Alerta { id?: number; titulo: string; descripcion: string; tipo: string; hora: string; resuelta: boolean; }
-interface Dispositivo { nombre: string; id: string; estado: string; bateria: number; sync: string; }
+interface Dispositivo { nombre: string; id: string; tipo: string; estado: string; bateria: number | null; sync: string; }
 
 @Component({
   selector: 'app-detalle-adulto',
@@ -30,6 +31,7 @@ export class DetalleAdultoComponent implements OnInit {
   private historialSvc = inject(HistorialService);
   private alertaSvc = inject(AlertaService);
   private dispSvc = inject(DispositivoIotService);
+  private lecturaPulseraService = inject(LecturaPulseraService);
 
   tabActiva = signal<Tab>('medicamentos');
   toast = signal<string | null>(null);
@@ -42,10 +44,7 @@ export class DetalleAdultoComponent implements OnInit {
   historial: Evento[] = [];
   alertas = signal<Alerta[]>([]);
 
-  dispositivo: Dispositivo = {
-    nombre: 'Ninguno', id: 'Sin registrar',
-    estado: 'offline', bateria: 0, sync: 'Nunca'
-  };
+  dispositivos = signal<Dispositivo[]>([]);
 
   tabs: { id: Tab; label: string }[] = [
     { id: 'medicamentos', label: 'Medicamentos' },
@@ -143,31 +142,61 @@ export class DetalleAdultoComponent implements OnInit {
   }
 
   private cargarDispositivo(id: number): void {
-    this.dispSvc.listarPorAdulto(id).subscribe({
-      next: (res) => {
-        const list = (res && res.data) ? res.data : [];
-        if (list.length > 0) {
-          const d = list[0];
-          this.dispositivo = {
-            nombre: d.tipoDispositivo === 'pastillero_esp32' ? 'Pastillero ESP32' : 'Pulsera Inteligente',
-            id: d.identificadorFisico || 'Sin ID',
-            estado: d.activo ? 'online' : 'offline',
-            bateria: d.tipoDispositivo === 'pastillero_esp32' ? 85 : 92,
-            sync: 'Hace pocos minutos'
-          };
-        } else {
-          this.dispositivo = {
-            nombre: 'Ninguno', id: 'Sin registrar',
-            estado: 'offline', bateria: 0, sync: 'Nunca'
-          };
-        }
-      },
-      error: () => {
-        this.dispositivo = {
-          nombre: 'Ninguno', id: 'Sin registrar',
-          estado: 'offline', bateria: 0, sync: 'Nunca'
-        };
+    forkJoin({
+      dispositivos: this.dispSvc.listarPorAdulto(id).pipe(catchError(() => of({ data: [] }))),
+      ultimaPulsera: this.lecturaPulseraService.obtenerUltimaLectura(id).pipe(catchError(() => of(null)))
+    }).subscribe(({ dispositivos, ultimaPulsera }) => {
+      const list = (dispositivos && dispositivos.data) ? dispositivos.data : [];
+      let result: Dispositivo[] = [];
+
+      if (list.length > 0) {
+        result = list.map((d: any) => {
+          const esPulsera = d.tipoDispositivo !== 'pastillero_esp32';
+          if (esPulsera && ultimaPulsera) {
+            return {
+              nombre: 'Pulsera Inteligente',
+              tipo: 'pulsera',
+              id: ultimaPulsera.identificadorFisico || d.identificadorFisico || 'Sin ID',
+              estado: 'online',
+              bateria: ultimaPulsera.nivelBateria !== null ? ultimaPulsera.nivelBateria : 100,
+              sync: ultimaPulsera.fechaRecepcion ? this.formatearFecha(ultimaPulsera.fechaRecepcion) : (ultimaPulsera.fechaMedicion ? this.formatearFecha(ultimaPulsera.fechaMedicion) : 'Hace pocos minutos')
+            };
+          } else if (esPulsera) {
+            return {
+              nombre: 'Pulsera Inteligente',
+              tipo: 'pulsera',
+              id: d.identificadorFisico || 'Sin ID',
+              estado: d.activo ? 'online' : 'offline',
+              bateria: null,
+              sync: d.ultimaConexion ? this.formatearFecha(d.ultimaConexion) : 'Sin sincronización'
+            };
+          } else {
+            return {
+              nombre: 'Pastillero ESP32',
+              tipo: 'pastillero',
+              id: d.identificadorFisico || 'Sin ID',
+              estado: d.activo ? 'online' : 'offline',
+              bateria: 85,
+              sync: d.ultimaConexion ? this.formatearFecha(d.ultimaConexion) : 'Hace pocos minutos'
+            };
+          }
+        });
       }
+
+      // Si no se encontró pulsera en el listado pero existe una lectura real de pulsera en la BD
+      const tienePulseraEnLista = result.some(d => d.tipo === 'pulsera');
+      if (!tienePulseraEnLista && ultimaPulsera) {
+        result.push({
+          nombre: 'Pulsera Inteligente',
+          tipo: 'pulsera',
+          id: ultimaPulsera.identificadorFisico || 'FF:FF:FF:F2:02:00',
+          estado: 'online',
+          bateria: ultimaPulsera.nivelBateria !== null ? ultimaPulsera.nivelBateria : 100,
+          sync: ultimaPulsera.fechaRecepcion ? this.formatearFecha(ultimaPulsera.fechaRecepcion) : this.formatearFecha(ultimaPulsera.fechaMedicion)
+        });
+      }
+
+      this.dispositivos.set(result);
     });
   }
 
@@ -181,21 +210,6 @@ export class DetalleAdultoComponent implements OnInit {
       age--;
     }
     return age;
-  }
-
-  private formatearFecha(fechaStr: string): string {
-    if (!fechaStr) return '';
-    try {
-      const date = new Date(fechaStr);
-      return date.toLocaleDateString('es-MX', {
-        day: '2-digit',
-        month: 'short',
-        hour: '2-digit',
-        minute: '2-digit'
-      });
-    } catch (e) {
-      return fechaStr;
-    }
   }
 
   private formatearTiempoRelativo(fechaStr: string): string {
