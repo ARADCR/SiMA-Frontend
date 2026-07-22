@@ -109,29 +109,51 @@
     }
 
     @if (tabActiva() === 'dispositivo') {
-      <div class="dispositivo-card card">
-        <div class="disp-header">
-          <div class="disp-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M6.5 10h-2v5h2v-5zm4 0h-2v5h2v-5zm8.5 7H4v2h15v-2zm-4.5-7h-2v5h2v-5zM11.5 1L2 6v2h19V6l-9.5-5z"/></svg></div>
-          <div>
-            <div class="disp-nombre">{{ dispositivo.nombre }}</div>
-            <div class="disp-id">{{ dispositivo.id }}</div>
-          </div>
-          <span class="badge" [class.badge-green]="dispositivo.estado === 'online'" [class.badge-gray]="dispositivo.estado !== 'online'">
-            {{ dispositivo.estado === 'online' ? 'En línea' : 'Sin conexión' }}
-          </span>
+      <div class="devices-list" style="display: flex; flex-direction: column; gap: 16px;">
+        <div class="devices-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px;">
+          @for (disp of dispositivos(); track disp.id) {
+            <div class="dispositivo-card card" style="margin-bottom: 0; display: flex; flex-direction: column;">
+              <div class="disp-header">
+                <div class="disp-icon">
+                  @if (disp.tipo === 'pulsera') {
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+                  } @else {
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M6.5 10h-2v5h2v-5zm4 0h-2v5h2v-5zm8.5 7H4v2h15v-2zm-4.5-7h-2v5h2v-5zM11.5 1L2 6v2h19V6l-9.5-5z"/></svg>
+                  }
+                </div>
+                <div>
+                  <div class="disp-nombre">{{ disp.nombre }}</div>
+                  <div class="disp-id">MAC/ID: {{ disp.id }}</div>
+                </div>
+                <span class="badge" [class.badge-green]="disp.estado === 'online'" [class.badge-gray]="disp.estado !== 'online'">
+                  {{ disp.estado === 'online' ? 'En línea' : 'Sin conexión' }}
+                </span>
+              </div>
+              <div class="disp-stats" style="flex: 1; display: flex; flex-direction: column; justify-content: center;">
+                <div class="dstat">
+                  <div class="dstat-label">Batería</div>
+                  <div class="dstat-val" [style.color]="disp.bateria !== null && disp.bateria < 20 ? '#C0452A' : '#52B788'">
+                    {{ disp.bateria !== null ? disp.bateria + '%' : '--' }}
+                  </div>
+                  <div class="battery-bar">
+                    <div class="battery-fill" 
+                         [style.width.%]="disp.bateria || 0"
+                         [style.background]="disp.bateria !== null && disp.bateria < 20 ? '#C0452A' : '#52B788'">
+                    </div>
+                  </div>
+                </div>
+                <div class="dstat">
+                  <div class="dstat-label">Última sincronización</div>
+                  <div class="dstat-val" style="font-size:15px">{{ disp.sync }}</div>
+                </div>
+              </div>
+            </div>
+          }
         </div>
-        <div class="disp-stats">
-          <div class="dstat">
-            <div class="dstat-label">Batería</div>
-            <div class="dstat-val" style="color:#52B788">{{ dispositivo.bateria }}%</div>
-            <div class="battery-bar"><div class="battery-fill" [style.width.%]="dispositivo.bateria"></div></div>
-          </div>
-          <div class="dstat">
-            <div class="dstat-label">Última sincronización</div>
-            <div class="dstat-val" style="font-size:15px">{{ dispositivo.sync }}</div>
-          </div>
-        </div>
-        <a routerLink="/familiar/actividad-iot" class="btn-outline mt-16 inline-block">Ver actividad IoT</a>
+        @if (dispositivos().length === 0) {
+          <div class="empty-state card">No hay dispositivos asociados a este adulto mayor.</div>
+        }
+        <a routerLink="/familiar/actividad-iot" class="btn-outline mt-16 inline-block" style="text-align: center; text-decoration: none;">Ver actividad IoT</a>
       </div>
     }
   </div>

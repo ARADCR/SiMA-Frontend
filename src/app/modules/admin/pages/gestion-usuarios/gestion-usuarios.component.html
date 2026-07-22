@@ -84,9 +84,8 @@
                   <button
                     class="toggle-btn"
                     [class.active]="u.activo"
-                    [disabled]="!u.activo"
-                    (click)="confirmarDesactivar(u)"
-                    [attr.aria-label]="u.activo ? 'Desactivar' : 'Inactivo'">
+                    (click)="abrirModalEstado(u)"
+                    [attr.aria-label]="u.activo ? 'Desactivar' : 'Activar'">
                     <span class="toggle-dot"></span>
                   </button>
                 </td>
@@ -162,6 +161,42 @@
       <div class="modal-footer">
         <button class="btn-secondary" (click)="closeModal()">Cancelar</button>
         <button class="btn-primary" (click)="guardar()">{{ modalMode() === 'crear' ? 'Crear usuario' : 'Guardar cambios' }}</button>
+      </div>
+    </div>
+  </div>
+}
+
+@if (showDeleteModal) {
+  <div class="modal-overlay" (click)="cerrarModalEstado()">
+    <div class="modal modal--sm" (click)="$event.stopPropagation()" role="dialog" aria-modal="true" style="text-align: center;">
+      <div class="modal-body" style="padding: 32px 24px 16px;">
+        <div class="delete-icon-wrap" [style.background]="usuarioParaEliminar?.activo ? '#FEF2F2' : '#DCFCE7'" [style.color]="usuarioParaEliminar?.activo ? '#EF4444' : '#16A34A'">
+          @if (usuarioParaEliminar?.activo) {
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+              <line x1="12" y1="9" x2="12" y2="13"></line>
+              <line x1="12" y1="17" x2="12.01" y2="17"></line>
+            </svg>
+          } @else {
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+              <polyline points="22 4 12 14.01 9 11.01"></polyline>
+            </svg>
+          }
+        </div>
+        <h3 class="delete-title">{{ usuarioParaEliminar?.activo ? 'Desactivar Cuenta' : 'Reactivar Cuenta' }}</h3>
+        <p class="delete-msg">
+          ¿Estás seguro de que deseas {{ usuarioParaEliminar?.activo ? 'desactivar' : 'reactivar' }} la cuenta de
+          <strong>{{ usuarioParaEliminar?.nombre }} {{ usuarioParaEliminar?.apellido }}</strong>?
+        </p>
+        <p class="delete-sub">{{ usuarioParaEliminar?.activo ? 'El historial del usuario se conservará pero no podrá ingresar a la plataforma.' : 'El usuario recuperará el acceso a la plataforma con sus credenciales actuales.' }}</p>
+      </div>
+      <div class="modal-footer modal-footer--center">
+        <button class="btn-secondary" (click)="cerrarModalEstado()">Cancelar</button>
+        <button class="btn-danger" (click)="confirmarEstado()" [disabled]="eliminando" [style.background]="usuarioParaEliminar?.activo ? '#EF4444' : '#16A34A'" id="btn-confirmar-estado">
+          <span class="spinner" *ngIf="eliminando"></span>
+          {{ eliminando ? 'Procesando...' : (usuarioParaEliminar?.activo ? 'Sí, desactivar' : 'Sí, reactivar') }}
+        </button>
       </div>
     </div>
   </div>

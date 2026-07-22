@@ -69,6 +69,27 @@
   &:hover { background: #F7FAFC; }
 }
 
+.btn-danger {
+  padding: 10px 20px;
+  background: #EF4444;
+  color: white !important;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+
+  &:hover {
+    filter: brightness(0.9);
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+}
+
 .toolbar {
   display: flex;
   gap: 10px;
@@ -412,3 +433,45 @@
 
 @keyframes fadeIn    { from { opacity: 0; } to { opacity: 1; } }
 @keyframes slideInUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+
+/* Delete/Reactivar Modal Specific */
+.delete-icon-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 20px;
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+}
+
+.delete-title {
+  color: #1B2B3A;
+  font-size: 19px;
+  font-weight: 700;
+  margin: 0 0 10px;
+}
+
+.delete-msg {
+  font-size: 14px;
+  color: #5C6B7A;
+  margin: 0 0 12px;
+  line-height: 1.5;
+  strong { color: #1B2B3A; }
+}
+
+.delete-sub {
+  font-size: 13px;
+  color: #9CABB8;
+  margin: 0;
+}
+
+.modal--sm {
+  max-width: 440px;
+}
+
+.modal-footer--center {
+  justify-content: center;
+  gap: 12px;
+}
+
