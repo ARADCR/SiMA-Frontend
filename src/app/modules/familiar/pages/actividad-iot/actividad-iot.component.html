@@ -14,18 +14,21 @@
   </div>
 
   <div class="devices-grid">
-    <!-- Pastillero (Dinámico y condicional) -->
-    @if (pastilleroConectado()) {
-      <div class="card device-card">
+    <!-- Pastillero (Dinámico) -->
+    <div class="card device-card">
       <div class="device-header">
         <div class="device-icon" style="background:#EBF5FB; color:#2E86AB">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M6.5 10h-2v5h2v-5zm4 0h-2v5h2v-5zm8.5 7H4v2h15v-2zm-4.5-7h-2v5h2v-5zM11.5 1L2 6v2h19V6l-9.5-5z"/></svg>
+           <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M6.5 10h-2v5h2v-5zm4 0h-2v5h2v-5zm8.5 7H4v2h15v-2zm-4.5-7h-2v5h2v-5zM11.5 1L2 6v2h19V6l-9.5-5z"/></svg>
         </div>
         <div>
           <div class="device-name">Pastillero Inteligente</div>
           <div class="device-id">ID: ESP32-001</div>
         </div>
-        <span class="badge badge-green">En línea</span>
+        @if (pastilleroConectado()) {
+          <span class="badge badge-green">En línea</span>
+        } @else {
+          <span class="badge" style="background-color: #e0e0e0; color: #666;">Desconectado</span>
+        }
       </div>
       <div class="device-stats">
         <div class="dstat" style="grid-column: span 3; text-align: left; padding: 10px; background: rgba(46, 134, 171, 0.05); border-radius: 8px;">
@@ -42,7 +45,6 @@
         }
       </div>
     </div>
-    }
 
     <!-- Pulsera de Salud (Exactamente como la imagen requerida) -->
     <div class="card device-card">
