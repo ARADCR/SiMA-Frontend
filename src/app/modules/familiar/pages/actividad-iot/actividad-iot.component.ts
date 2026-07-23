@@ -5,6 +5,8 @@ import { AlertaService } from '../../../../core/services/alerta.service';
 import { AdultoMayorService } from '../../../../core/services/adulto-mayor.service';
 import { AiService, AnalisisIotIAResponse } from '../../../../core/services/ai.service';
 import { LecturaPulseraService } from '../../../../core/services/lectura-pulsera.service';
+import { RegistroTomaService } from '../../../../core/services/registro-toma.service';
+import { DispositivoIotService } from '../../../../core/services/dispositivo-iot.service';
 import { LecturaPulsera } from '../../../../core/models/lectura-pulsera.model';
 import { Subscription, interval, forkJoin, of } from 'rxjs';
 import { catchError } from 'rxjs/operators';
@@ -26,6 +28,8 @@ export class ActividadIotComponent implements OnInit, OnDestroy {
   private adultoMayorService = inject(AdultoMayorService);
   private aiService = inject(AiService);
   private lecturaPulseraService = inject(LecturaPulseraService);
+  private registroTomaService = inject(RegistroTomaService);
+  private dispositivoIotService = inject(DispositivoIotService);
   private subs: Subscription = new Subscription();
 
   // Pacientes / Adultos Mayores
@@ -60,16 +64,9 @@ export class ActividadIotComponent implements OnInit, OnDestroy {
     scales: { x: { display: true }, y: { display: true } }
   };
 
-  // Pastillero (Estático a solicitud)
-  compartimentos = [
-    { id: 1, nombre: 'Metformina',    hora: '08:00', estado: 'tomado' },
-    { id: 2, nombre: 'Atorvastatina', hora: '08:00', estado: 'tomado' },
-    { id: 3, nombre: 'Metformina',    hora: '14:00', estado: 'pendiente' },
-    { id: 4, nombre: 'Enalapril',     hora: '08:00', estado: 'tomado' },
-    { id: 5, nombre: 'Vitamina D',    hora: '12:00', estado: 'omitido' },
-    { id: 6, nombre: 'Calcio',        hora: '20:00', estado: 'pendiente' },
-    { id: 7, nombre: 'Metformina',    hora: '20:00', estado: 'pendiente' },
-  ];
+  // Pastillero (Dinámico)
+  compartimentos = signal<{ id: number, nombre: string, hora: string, estado: string }[]>([]);
+  pastilleroConectado = signal<boolean>(false);
   bateriaPastillero = signal<number>(78);
 
   eventos = signal<Evento[]>([
@@ -97,12 +94,13 @@ export class ActividadIotComponent implements OnInit, OnDestroy {
       })
     );
 
-    // Polling automático de lecturas de la pulsera en tiempo real cada 3 segundos sin refrescar la página
+    // Polling automático de lecturas y estados en tiempo real cada 3 segundos
     this.subs.add(
       interval(3000).subscribe(() => {
         const id = this.idAdultoSeleccionado();
         if (id) {
           this.cargarLecturasPulsera(id, true);
+          this.cargarEstadoDispositivos(id);
         }
       })
     );
@@ -136,6 +134,45 @@ export class ActividadIotComponent implements OnInit, OnDestroy {
     }
     this.cargarAnalisisIot(idAdulto);
     this.cargarLecturasPulsera(idAdulto);
+    this.cargarPastillero(idAdulto);
+    this.cargarEstadoDispositivos(idAdulto);
+  }
+
+  cargarEstadoDispositivos(idAdulto: number) {
+    this.dispositivoIotService.listarPorAdulto(idAdulto).subscribe({
+      next: (res) => {
+        if (res.data) {
+          const pastillero = res.data.find(d => d.tipoDispositivo === 'pastillero_esp32');
+          if (pastillero) {
+            this.pastilleroConectado.set(pastillero.online === true);
+          } else {
+            this.pastilleroConectado.set(false);
+          }
+        }
+      },
+      error: (e) => console.error("Error al verificar dispositivos", e)
+    });
+  }
+
+  cargarPastillero(idAdulto: number) {
+    this.registroTomaService.getTomasDelDia(idAdulto).subscribe({
+      next: (tomas) => {
+        const compDin = tomas.map(t => {
+          let h = '00:00';
+          if (t.horario && t.horario.horaProgramada) {
+            h = t.horario.horaProgramada.substring(0, 5);
+          }
+          return {
+            id: t.horario?.medicamento?.compartimento || 1,
+            nombre: t.horario?.medicamento?.nombre || 'Medicina',
+            hora: h,
+            estado: t.estado || 'pendiente'
+          };
+        });
+        this.compartimentos.set(compDin);
+      },
+      error: (e) => console.error("Error al cargar pastillero", e)
+    });
   }
 
   cargarLecturasPulsera(idAdulto: number, silencioso: boolean = false) {

@@ -5,6 +5,18 @@ import { environment } from '../../../environments/environment';
 import { RespuestaApi } from '../models/respuesta-api.model';
 import { DispositivoIot, DispositivoIotRequest } from '../models/dispositivo-iot.model';
 
+export interface DispositivoIotResponse {
+  idDispositivo: number;
+  identificadorFisico: string;
+  tipoDispositivo: string;
+  idAdulto: number | null;
+  nombreAdulto: string | null;
+  activo: boolean;
+  fechaRegistro: string;
+  ultimaConexion?: string;
+  online?: boolean;
+}
+
 @Injectable({
   providedIn: 'root'
 })

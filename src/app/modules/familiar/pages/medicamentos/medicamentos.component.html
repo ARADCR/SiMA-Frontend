@@ -166,6 +166,16 @@
               }
             </select>
           </div>
+          
+          <div class="form-group">
+            <label for="m-compartimento">Compartimento <span class="required">*</span></label>
+            <select id="m-compartimento" formControlName="compartimento">
+              <option [value]="1">Compartimento 1</option>
+              <option [value]="2">Compartimento 2</option>
+              <option [value]="3">Compartimento 3</option>
+              <option [value]="4">Compartimento 4</option>
+            </select>
+          </div>
         </div>
 
         <div class="form-group" [class.error]="form.get('horarios')?.invalid && form.get('horarios')?.touched">

@@ -11,6 +11,7 @@ export interface RegistroTomaResponse {
       idMedicamento: number;
       nombre: string;
       dosis: string;
+      compartimento?: number;
     };
   };
   estado: 'pendiente' | 'tomado' | 'omitido' | 'confirmado_manual';

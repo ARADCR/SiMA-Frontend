@@ -8,6 +8,8 @@ export interface DispositivoIot {
   nombreAdulto: string | null;
   activo: boolean;
   fechaRegistro: string;
+  ultimaConexion?: string;
+  online?: boolean;
 }
 
 export interface DispositivoIotRequest {

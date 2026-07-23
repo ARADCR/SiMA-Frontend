@@ -94,6 +94,7 @@ export class MedicamentosComponent implements OnInit {
       principioActivo:[''],
       dosis:          ['', Validators.required],
       frecuencia:     ['diario', Validators.required],
+      compartimento:  [1, Validators.required],
       horarios:       this.fb.array([], this.horariosValidator()),
       fechaInicio:    [new Date().toISOString().substring(0, 10), Validators.required],
       fechaFin:       [''],
@@ -141,7 +142,7 @@ export class MedicamentosComponent implements OnInit {
 
   // ─── Modal ────────────────────────────────────────────────────────────────
   openCreate(): void {
-    this.form.reset({ frecuencia: 'diario', fechaInicio: new Date().toISOString().substring(0, 10),
+    this.form.reset({ frecuencia: 'diario', compartimento: 1, fechaInicio: new Date().toISOString().substring(0, 10),
                       adultoMayorId: this.adultoActual()?.idAdulto ?? '' });
     this.horariosArray.clear();
     this.addHorario();
@@ -158,7 +159,7 @@ export class MedicamentosComponent implements OnInit {
 
     this.form.patchValue({
       nombre: m.nombre, principioActivo: (m as any).principioActivo ?? '',
-      dosis: m.dosis, frecuencia: freq,
+      dosis: m.dosis, frecuencia: freq, compartimento: (m as any).compartimento ?? 1,
       fechaInicio: m.creadoEn ? m.creadoEn.substring(0, 10) : new Date().toISOString().substring(0, 10),
       fechaFin: (m as any).fechaFin ?? '',
       instrucciones: m.observaciones ?? '',
@@ -186,8 +187,7 @@ export class MedicamentosComponent implements OnInit {
     const val = this.form.value;
 
     const horasToma = (val.horarios || [])
-      .map((h: string) => parseInt(h.split(':')[0], 10))
-      .filter((n: number) => !isNaN(n));
+      .filter((h: string) => h && h.includes(':'));
 
     let freqHoras = 24;
     if (val.frecuencia === 'semanal') freqHoras = 168;
@@ -198,8 +198,9 @@ export class MedicamentosComponent implements OnInit {
       nombre: val.nombre,
       dosis: val.dosis,
       frecuenciaHoras: freqHoras,
+      compartimento: Number(val.compartimento),
       observaciones: val.instrucciones || undefined,
-      horarios: horasToma.length ? horasToma.map((h: number) => ({ horaProgramada: `${h.toString().padStart(2, '0')}:00` })) : [],
+      horarios: horasToma.length ? horasToma.map((h: string) => ({ horaProgramada: h.length === 5 ? `${h}:00` : h })) : [],
       principioActivo: val.principioActivo || undefined,
       fechaFin: val.fechaFin || undefined,
       stockActual: val.stockActual || null,
