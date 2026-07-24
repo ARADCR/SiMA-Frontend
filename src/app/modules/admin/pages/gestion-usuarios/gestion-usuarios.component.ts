@@ -20,6 +20,7 @@ interface UsuarioForm {
   confirmPassword: string;
   idRol: number;
   wechatOpenid: string;
+  telegramChatId: string;
 }
 
 @Component({
@@ -47,7 +48,7 @@ export class GestionUsuariosComponent implements OnInit {
   form = signal<UsuarioForm>({
     nombre: '', apellido: '', correo: '',
     password: '', confirmPassword: '',
-    idRol: 2, wechatOpenid: ''
+    idRol: 2, wechatOpenid: '', telegramChatId: ''
   });
 
   usuarios = signal<Usuario[]>([]);
@@ -115,7 +116,7 @@ export class GestionUsuariosComponent implements OnInit {
     this.form.set({
       nombre: '', apellido: '', correo: '',
       password: '', confirmPassword: '',
-      idRol: 2, wechatOpenid: ''
+      idRol: 2, wechatOpenid: '', telegramChatId: ''
     });
     this.selectedUser.set(null);
     this.modalMode.set('crear');
@@ -129,7 +130,8 @@ export class GestionUsuariosComponent implements OnInit {
       password: '',
       confirmPassword: '',
       idRol: u.idRol,
-      wechatOpenid: u.wechatOpenid ?? ''
+      wechatOpenid: u.wechatOpenid ?? '',
+      telegramChatId: (u as any).telegramChatId ?? ''
     });
     this.selectedUser.set(u);
     this.modalMode.set('editar');
@@ -153,7 +155,8 @@ export class GestionUsuariosComponent implements OnInit {
         correo: f.correo,
         password: f.password,
         idRol: f.idRol,
-        wechatOpenid: f.wechatOpenid || null
+        wechatOpenid: f.wechatOpenid || null,
+        telegramChatId: f.telegramChatId || null
       };
       this.isLoading.set(true);
       this.usuarioService.create(dto).subscribe({
@@ -177,7 +180,8 @@ export class GestionUsuariosComponent implements OnInit {
         correo: f.correo,
         password: f.password || null,
         idRol: f.idRol,
-        wechatOpenid: f.wechatOpenid || null
+        wechatOpenid: f.wechatOpenid || null,
+        telegramChatId: f.telegramChatId || null
       };
       this.isLoading.set(true);
       this.usuarioService.update(u.idUsuario, dto).subscribe({

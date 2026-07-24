@@ -6,9 +6,9 @@ import { ApiService } from './api.service';
 export interface DatosContactoCuidador {
   correo: string;
   telefono?: string | null;
-  ciudad?: string | null;
   tarifaHora?: number | null;
   disponibilidad?: string | null;
+  telegramChatId?: string | null;
 }
 
 export interface CuidadorStats {
@@ -23,9 +23,9 @@ export interface DatosContactoCuidadorResponse {
   apellido: string;
   correo: string;
   telefono: string | null;
-  ciudad: string | null;
   tarifaHora: number | null;
   disponibilidad: string | null;
+  telegramChatId: string | null;
 }
 
 export interface ResenaResponse {
