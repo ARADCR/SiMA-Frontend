@@ -25,6 +25,7 @@ export interface Usuario {
   activo: boolean;
   creadoEn?: string;
   ultimoAcceso?: string | null;
+  telegramChatId?: string | null;
 }
 
 /** Coincide con UsuarioCreateRequest del backend */
@@ -35,6 +36,7 @@ export interface UsuarioCreate {
   password: string;
   idRol: number;
   wechatOpenid?: string | null;
+  telegramChatId?: string | null;
 }
 
 /** Coincide con UsuarioUpdateRequest del backend */
@@ -45,6 +47,7 @@ export interface UsuarioUpdate {
   password?: string | null;
   idRol?: number | null;
   wechatOpenid?: string | null;
+  telegramChatId?: string | null;
 }
 
 export interface CredencialesLogin {

@@ -68,6 +68,7 @@ export class PerfilCuidadorComponent implements OnInit {
   disponibilidad = signal<string | null>(null);
   telegramChatId = signal<string | null>(null);
 
+
   formCorreo = '';
   formTelefono: string | null = null;
   formCiudad: string | null = null;
@@ -109,7 +110,7 @@ export class PerfilCuidadorComponent implements OnInit {
 
     this.cuidadorPerfilService.obtenerResenas().subscribe({
       next: (data) => this.resenas.set(data),
-      error: () => {}
+      error: () => { }
     });
 
     this.vinculacionService.getPendientes().subscribe({
@@ -118,7 +119,7 @@ export class PerfilCuidadorComponent implements OnInit {
           this.solicitudes.set(res.data);
         }
       },
-      error: () => {}
+      error: () => { }
     });
 
     this.cargarCredenciales();
@@ -127,7 +128,7 @@ export class PerfilCuidadorComponent implements OnInit {
   private cargarCredenciales(): void {
     this.cuidadorPerfilService.obtenerCredenciales().subscribe({
       next: (data) => this.credenciales.set(data),
-      error: () => {}
+      error: () => { }
     });
   }
 
@@ -138,7 +139,7 @@ export class PerfilCuidadorComponent implements OnInit {
         this.perfilApellido.set(datos.apellido || '');
         this.correo.set(datos.correo);
         this.telefono.set(datos.telefono);
-        this.ciudad.set(datos.ciudad);
+        // this.ciudad.set(datos.ciudad);
         this.tarifaHora.set(datos.tarifaHora);
         this.disponibilidad.set(datos.disponibilidad);
         this.telegramChatId.set(datos.telegramChatId || null);
@@ -156,7 +157,7 @@ export class PerfilCuidadorComponent implements OnInit {
     this.formTelegramChatId = this.telegramChatId();
     this.contactoError.set(null);
     this.editandoContacto.set(true);
-    
+
     // Smooth scroll to the form
     setTimeout(() => {
       const formEl = document.querySelector('.info-section.full-width');
@@ -185,7 +186,7 @@ export class PerfilCuidadorComponent implements OnInit {
       next: (respuesta) => {
         this.correo.set(respuesta.correo);
         this.telefono.set(respuesta.telefono);
-        this.ciudad.set(respuesta.ciudad);
+        //this.ciudad.set(respuesta.ciudad);
         this.tarifaHora.set(respuesta.tarifaHora);
         this.disponibilidad.set(respuesta.disponibilidad);
         this.telegramChatId.set(respuesta.telegramChatId || null);

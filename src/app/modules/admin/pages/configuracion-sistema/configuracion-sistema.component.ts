@@ -1,7 +1,7 @@
 import { Component, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { ApiService } from '../../../core/services/api.service';
+import { ApiService } from '../../../../core/services/api.service';
 
 interface Suscripcion { id: number; familiar: string; adulto: string; habilitado: boolean; ultimaNotif: string; }
 
@@ -15,24 +15,24 @@ interface Suscripcion { id: number; familiar: string; adulto: string; habilitado
 export class ConfiguracionSistemaComponent {
   toleranciaMed = signal(30);
   reintentosMed = signal(3);
-  umbralCaidas  = signal(2.5);
-  freqVerif     = signal(15);
-  telegramChatId  = signal('');
+  umbralCaidas = signal(2.5);
+  freqVerif = signal(15);
+  telegramChatId = signal('');
   telegramConectado = signal(false);
   isTestingTelegram = signal(false);
 
-  wechatAppId   = signal('wx_sima2026prod01');
-  wechatSecret  = signal('••••••••••••••••');
+  wechatAppId = signal('wx_sima2026prod01');
+  wechatSecret = signal('••••••••••••••••');
   wechatConectado = signal(true);
   toast = signal<string | null>(null);
 
-  constructor(private apiService: ApiService) {}
+  constructor(private apiService: ApiService) { }
 
   suscripciones: Suscripcion[] = [
-    { id: 1, familiar: 'Ana García',      adulto: 'Elena Rodríguez', habilitado: true,  ultimaNotif: 'Hace 3 horas' },
-    { id: 2, familiar: 'Pedro García',    adulto: 'Elena Rodríguez', habilitado: true,  ultimaNotif: 'Hace 1 día' },
-    { id: 3, familiar: 'Marta Jiménez',   adulto: 'José Rodríguez',  habilitado: false, ultimaNotif: 'Hace 5 días' },
-    { id: 4, familiar: 'Roberto López',   adulto: 'Rosa Martínez',   habilitado: true,  ultimaNotif: 'Hace 2 horas' },
+    { id: 1, familiar: 'Ana García', adulto: 'Elena Rodríguez', habilitado: true, ultimaNotif: 'Hace 3 horas' },
+    { id: 2, familiar: 'Pedro García', adulto: 'Elena Rodríguez', habilitado: true, ultimaNotif: 'Hace 1 día' },
+    { id: 3, familiar: 'Marta Jiménez', adulto: 'José Rodríguez', habilitado: false, ultimaNotif: 'Hace 5 días' },
+    { id: 4, familiar: 'Roberto López', adulto: 'Rosa Martínez', habilitado: true, ultimaNotif: 'Hace 2 horas' },
   ];
 
   probarTelegram(): void {
@@ -41,7 +41,7 @@ export class ConfiguracionSistemaComponent {
       this.showToast('Por favor ingresa un Chat ID para probar la conexión');
       return;
     }
-    
+
     this.isTestingTelegram.set(true);
     this.apiService.post<string>('/configuracion/telegram/test', { chatId }).subscribe({
       next: () => {
@@ -49,7 +49,7 @@ export class ConfiguracionSistemaComponent {
         this.showToast('Conexión con Telegram verificada correctamente');
         this.isTestingTelegram.set(false);
       },
-      error: (err) => {
+      error: (err: { mensaje?: string }) => {
         this.telegramConectado.set(false);
         this.showToast(err.mensaje || 'Error al probar conexión con Telegram');
         this.isTestingTelegram.set(false);
