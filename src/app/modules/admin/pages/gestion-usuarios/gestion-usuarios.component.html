@@ -6,7 +6,9 @@
       <p class="page-sub">Administración / Usuarios</p>
     </div>
     <button class="btn-primary" (click)="openCreate()">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z" />
+      </svg>
       Crear usuario
     </button>
   </div>
@@ -14,19 +16,16 @@
   <div class="toolbar">
     <div class="search-wrap">
       <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-        <path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>
+        <path
+          d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z" />
       </svg>
-      <input
-        class="search-input"
-        type="text"
-        placeholder="Buscar por nombre o correo..."
-        [ngModel]="filtroTexto()"
+      <input class="search-input" type="text" placeholder="Buscar por nombre o correo..." [ngModel]="filtroTexto()"
         (ngModelChange)="filtroTexto.set($event)" />
     </div>
     <select class="filter-select" [ngModel]="filtroRol()" (ngModelChange)="filtroRol.set($event)">
       <option value="">Todos los roles</option>
       @for (r of rolesDisponibles; track r.idRol) {
-        <option [value]="r.nombreRol">{{ r.nombreRol }}</option>
+      <option [value]="r.nombreRol">{{ r.nombreRol }}</option>
       }
     </select>
     <select class="filter-select" [ngModel]="filtroEstado()" (ngModelChange)="filtroEstado.set($event)">
@@ -45,6 +44,7 @@
             <th>Usuario</th>
             <th>Correo</th>
             <th>Rol</th>
+            <th class="th-center">Telegram</th>
             <th class="th-center">WeChat</th>
             <th>Registro</th>
             <th>Último acceso</th>
@@ -54,50 +54,67 @@
         </thead>
         <tbody>
           @if (isLoading()) {
-            <tr><td colspan="9" style="text-align:center;padding:2rem;color:#9CABB8">Cargando usuarios…</td></tr>
+          <tr>
+            <td colspan="9" style="text-align:center;padding:2rem;color:#9CABB8">Cargando usuarios…</td>
+          </tr>
           } @else if (usuariosFiltrados().length === 0) {
-            <tr><td colspan="9" style="text-align:center;padding:2rem;color:#9CABB8">No se encontraron usuarios.</td></tr>
+          <tr>
+            <td colspan="9" style="text-align:center;padding:2rem;color:#9CABB8">No se encontraron usuarios.</td>
+          </tr>
           } @else {
-            @for (u of usuariosFiltrados(); track u.idUsuario; let i = $index) {
-              <tr class="table-row">
-                <td class="td-num">{{ i + 1 }}</td>
-                <td>
-                  <div class="user-cell">
-                    <div class="avatar" [style.background]="avatarBg(u)">{{ iniciales(u) }}</div>
-                    <span class="user-name">{{ u.nombre }} {{ u.apellido }}</span>
-                  </div>
-                </td>
-                <td class="td-muted">{{ u.correo }}</td>
-                <td>
-                  <span class="badge" [style.background]="rolBadge(u.nombreRol).bg" [style.color]="rolBadge(u.nombreRol).color">{{ u.nombreRol }}</span>
-                </td>
-                <td class="td-center">
-                  @if (u.wechatOpenid) {
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="#52B788"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
-                  } @else {
-                    <span style="color:#9CABB8">—</span>
-                  }
-                </td>
-                <td class="td-muted">{{ u.creadoEn | date:'dd/MM/yyyy' }}</td>
-                <td class="td-muted">{{ u.ultimoAcceso ? (u.ultimoAcceso | date:'dd/MM/yyyy') : 'Nunca' }}</td>
-                <td class="td-center">
-                  <button
-                    class="toggle-btn"
-                    [class.active]="u.activo"
-                    (click)="abrirModalEstado(u)"
-                    [attr.aria-label]="u.activo ? 'Desactivar' : 'Activar'">
-                    <span class="toggle-dot"></span>
-                  </button>
-                </td>
-                <td class="td-right">
-                  <div class="action-btns">
-                    <button class="icon-btn" title="Editar" (click)="openEdit(u)" [disabled]="!u.activo">
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            }
+          @for (u of usuariosFiltrados(); track u.idUsuario; let i = $index) {
+          <tr class="table-row">
+            <td class="td-num">{{ i + 1 }}</td>
+            <td>
+              <div class="user-cell">
+                <div class="avatar" [style.background]="avatarBg(u)">{{ iniciales(u) }}</div>
+                <span class="user-name">{{ u.nombre }} {{ u.apellido }}</span>
+              </div>
+            </td>
+            <td class="td-muted">{{ u.correo }}</td>
+            <td>
+              <span class="badge" [style.background]="rolBadge(u.nombreRol).bg"
+                [style.color]="rolBadge(u.nombreRol).color">{{ u.nombreRol }}</span>
+            </td>
+            <td class="td-center">
+              @if (u.telegramChatId) {
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="#1976D2">
+                <path
+                  d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69a.2.2 0 00-.05-.18c-.06-.05-.14-.03-.21-.02-.09.02-1.49.95-4.22 2.79-.4.27-.76.41-1.08.4-.36-.01-1.04-.2-1.55-.37-.63-.2-1.12-.31-1.08-.66.02-.18.27-.36.74-.55 2.92-1.27 4.86-2.11 5.83-2.51 2.78-1.16 3.35-1.36 3.73-1.36.08 0 .27.02.39.12.1.08.13.19.14.27-.01.06.01.24 0 .38z" />
+              </svg>
+              } @else {
+              <span style="color:#9CABB8">—</span>
+              }
+            </td>
+            <td class="td-center">
+              @if (u.wechatOpenid) {
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="#52B788">
+                <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" />
+              </svg>
+              } @else {
+              <span style="color:#9CABB8">—</span>
+              }
+            </td>
+            <td class="td-muted">{{ u.creadoEn | date:'dd/MM/yyyy' }}</td>
+            <td class="td-muted">{{ u.ultimoAcceso ? (u.ultimoAcceso | date:'dd/MM/yyyy') : 'Nunca' }}</td>
+            <td class="td-center">
+              <button class="toggle-btn" [class.active]="u.activo" (click)="abrirModalEstado(u)"
+                [attr.aria-label]="u.activo ? 'Desactivar' : 'Activar'">
+                <span class="toggle-dot"></span>
+              </button>
+            </td>
+            <td class="td-right">
+              <div class="action-btns">
+                <button class="icon-btn" title="Editar" (click)="openEdit(u)" [disabled]="!u.activo">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                    <path
+                      d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z" />
+                  </svg>
+                </button>
+              </div>
+            </td>
+          </tr>
+          }
           }
         </tbody>
       </table>
@@ -111,104 +128,132 @@
 </div>
 
 @if (modalMode()) {
-  <div class="modal-overlay" (click)="closeModal()">
-    <div class="modal" (click)="$event.stopPropagation()" role="dialog">
-      <div class="modal-header">
-        <h2>{{ modalMode() === 'crear' ? 'Nueva cuenta' : 'Editar usuario' }}</h2>
-        <button class="modal-close" (click)="closeModal()" aria-label="Cerrar">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
-        </button>
+<div class="modal-overlay" (click)="closeModal()">
+  <div class="modal" (click)="$event.stopPropagation()" role="dialog">
+    <div class="modal-header">
+      <h2>{{ modalMode() === 'crear' ? 'Nueva cuenta' : 'Editar usuario' }}</h2>
+      <button class="modal-close" (click)="closeModal()" aria-label="Cerrar">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+          <path
+            d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" />
+        </svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div class="form-row">
+        <div class="form-group">
+          <label>Nombre</label>
+          <input type="text" placeholder="Juan" [ngModel]="form().nombre" (ngModelChange)="setField('nombre', $event)">
+        </div>
+        <div class="form-group">
+          <label>Apellido</label>
+          <input type="text" placeholder="Pérez" [ngModel]="form().apellido"
+            (ngModelChange)="setField('apellido', $event)">
+        </div>
       </div>
-      <div class="modal-body">
-        <div class="form-row">
-          <div class="form-group">
-            <label>Nombre</label>
-            <input type="text" placeholder="Juan" [ngModel]="form().nombre" (ngModelChange)="setField('nombre', $event)">
-          </div>
-          <div class="form-group">
-            <label>Apellido</label>
-            <input type="text" placeholder="Pérez" [ngModel]="form().apellido" (ngModelChange)="setField('apellido', $event)">
-          </div>
+      <div class="form-group">
+        <label>Correo electrónico</label>
+        <input type="email" placeholder="correo@ejemplo.com" [ngModel]="form().correo"
+          (ngModelChange)="setField('correo', $event)">
+      </div>
+      <div class="form-group">
+        <label>Rol</label>
+        <select [ngModel]="form().idRol" (ngModelChange)="setField('idRol', +$event)">
+          @for (r of rolesDisponibles; track r.idRol) {
+          <option [value]="r.idRol">{{ r.nombreRol }}</option>
+          }
+        </select>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Contraseña @if (modalMode() === 'editar') { <span class="optional">(opcional)</span> }</label>
+          <input type="password" placeholder="••••••••" [ngModel]="form().password"
+            (ngModelChange)="setField('password', $event)">
         </div>
         <div class="form-group">
-          <label>Correo electrónico</label>
-          <input type="email" placeholder="correo@ejemplo.com" [ngModel]="form().correo" (ngModelChange)="setField('correo', $event)">
+          <label>Confirmar contraseña</label>
+          <input type="password" placeholder="••••••••" [ngModel]="form().confirmPassword"
+            (ngModelChange)="setField('confirmPassword', $event)">
         </div>
+      </div>
+      <div class="form-row">
         <div class="form-group">
-          <label>Rol</label>
-          <select [ngModel]="form().idRol" (ngModelChange)="setField('idRol', +$event)">
-            @for (r of rolesDisponibles; track r.idRol) {
-              <option [value]="r.idRol">{{ r.nombreRol }}</option>
-            }
-          </select>
-        </div>
-        <div class="form-row">
-          <div class="form-group">
-            <label>Contraseña @if (modalMode() === 'editar') { <span class="optional">(opcional)</span> }</label>
-            <input type="password" placeholder="••••••••" [ngModel]="form().password" (ngModelChange)="setField('password', $event)">
-          </div>
-          <div class="form-group">
-            <label>Confirmar contraseña</label>
-            <input type="password" placeholder="••••••••" [ngModel]="form().confirmPassword" (ngModelChange)="setField('confirmPassword', $event)">
-          </div>
+          <label>Chat ID de Telegram <span class="optional">(recomendado)</span></label>
+          <input type="text" placeholder="123456789" class="mono-input" [ngModel]="form().telegramChatId"
+            (ngModelChange)="setField('telegramChatId', $event)">
+          <span class="field-hint">Usado para notificaciones push en tiempo real.</span>
         </div>
         <div class="form-group">
           <label>OpenID de WeChat <span class="optional">(opcional)</span></label>
-          <input type="text" placeholder="wx_openid_xxxxx" class="mono-input" [ngModel]="form().wechatOpenid" (ngModelChange)="setField('wechatOpenid', $event)">
-          <span class="field-hint">Vincular WeChat permite recibir notificaciones de alertas y recordatorios.</span>
+          <input type="text" placeholder="wx_openid_xxxxx" class="mono-input" [ngModel]="form().wechatOpenid"
+            (ngModelChange)="setField('wechatOpenid', $event)">
         </div>
       </div>
-      <div class="modal-footer">
-        <button class="btn-secondary" (click)="closeModal()">Cancelar</button>
-        <button class="btn-primary" (click)="guardar()">{{ modalMode() === 'crear' ? 'Crear usuario' : 'Guardar cambios' }}</button>
-      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" (click)="closeModal()">Cancelar</button>
+      <button class="btn-primary" (click)="guardar()">{{ modalMode() === 'crear' ? 'Crear usuario' : 'Guardar cambios'
+        }}</button>
     </div>
   </div>
+</div>
 }
 
 @if (showDeleteModal) {
-  <div class="modal-overlay" (click)="cerrarModalEstado()">
-    <div class="modal modal--sm" (click)="$event.stopPropagation()" role="dialog" aria-modal="true" style="text-align: center;">
-      <div class="modal-body" style="padding: 32px 24px 16px;">
-        <div class="delete-icon-wrap" [style.background]="usuarioParaEliminar?.activo ? '#FEF2F2' : '#DCFCE7'" [style.color]="usuarioParaEliminar?.activo ? '#EF4444' : '#16A34A'">
-          @if (usuarioParaEliminar?.activo) {
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
-              <line x1="12" y1="9" x2="12" y2="13"></line>
-              <line x1="12" y1="17" x2="12.01" y2="17"></line>
-            </svg>
-          } @else {
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
-              <polyline points="22 4 12 14.01 9 11.01"></polyline>
-            </svg>
-          }
-        </div>
-        <h3 class="delete-title">{{ usuarioParaEliminar?.activo ? 'Desactivar Cuenta' : 'Reactivar Cuenta' }}</h3>
-        <p class="delete-msg">
-          ¿Estás seguro de que deseas {{ usuarioParaEliminar?.activo ? 'desactivar' : 'reactivar' }} la cuenta de
-          <strong>{{ usuarioParaEliminar?.nombre }} {{ usuarioParaEliminar?.apellido }}</strong>?
-        </p>
-        <p class="delete-sub">{{ usuarioParaEliminar?.activo ? 'El historial del usuario se conservará pero no podrá ingresar a la plataforma.' : 'El usuario recuperará el acceso a la plataforma con sus credenciales actuales.' }}</p>
+<div class="modal-overlay" (click)="cerrarModalEstado()">
+  <div class="modal modal--sm" (click)="$event.stopPropagation()" role="dialog" aria-modal="true"
+    style="text-align: center;">
+    <div class="modal-body" style="padding: 32px 24px 16px;">
+      <div class="delete-icon-wrap" [style.background]="usuarioParaEliminar?.activo ? '#FEF2F2' : '#DCFCE7'"
+        [style.color]="usuarioParaEliminar?.activo ? '#EF4444' : '#16A34A'">
+        @if (usuarioParaEliminar?.activo) {
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+          stroke-linecap="round" stroke-linejoin="round">
+          <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+          <line x1="12" y1="9" x2="12" y2="13"></line>
+          <line x1="12" y1="17" x2="12.01" y2="17"></line>
+        </svg>
+        } @else {
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+          stroke-linecap="round" stroke-linejoin="round">
+          <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+          <polyline points="22 4 12 14.01 9 11.01"></polyline>
+        </svg>
+        }
       </div>
-      <div class="modal-footer modal-footer--center">
-        <button class="btn-secondary" (click)="cerrarModalEstado()">Cancelar</button>
-        <button class="btn-danger" (click)="confirmarEstado()" [disabled]="eliminando" [style.background]="usuarioParaEliminar?.activo ? '#EF4444' : '#16A34A'" id="btn-confirmar-estado">
-          <span class="spinner" *ngIf="eliminando"></span>
-          {{ eliminando ? 'Procesando...' : (usuarioParaEliminar?.activo ? 'Sí, desactivar' : 'Sí, reactivar') }}
-        </button>
-      </div>
+      <h3 class="delete-title">{{ usuarioParaEliminar?.activo ? 'Desactivar Cuenta' : 'Reactivar Cuenta' }}</h3>
+      <p class="delete-msg">
+        ¿Estás seguro de que deseas {{ usuarioParaEliminar?.activo ? 'desactivar' : 'reactivar' }} la cuenta de
+        <strong>{{ usuarioParaEliminar?.nombre }} {{ usuarioParaEliminar?.apellido }}</strong>?
+      </p>
+      <p class="delete-sub">{{ usuarioParaEliminar?.activo ? 'El historial del usuario se conservará pero no podrá
+        ingresar a la plataforma.' : 'El usuario recuperará el acceso a la plataforma con sus credenciales actuales.' }}
+      </p>
+    </div>
+    <div class="modal-footer modal-footer--center">
+      <button class="btn-secondary" (click)="cerrarModalEstado()">Cancelar</button>
+      <button class="btn-danger" (click)="confirmarEstado()" [disabled]="eliminando"
+        [style.background]="usuarioParaEliminar?.activo ? '#EF4444' : '#16A34A'" id="btn-confirmar-estado">
+        <span class="spinner" *ngIf="eliminando"></span>
+        {{ eliminando ? 'Procesando...' : (usuarioParaEliminar?.activo ? 'Sí, desactivar' : 'Sí, reactivar') }}
+      </button>
     </div>
   </div>
+</div>
 }
 
 @if (toast()) {
-  <div class="toast" [class.toast-success]="toast()!.type === 'success'" [class.toast-error]="toast()!.type === 'error'" role="alert">
-    @if (toast()!.type === 'success') {
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
-    } @else {
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
-    }
-    {{ toast()!.msg }}
-  </div>
+<div class="toast" [class.toast-success]="toast()!.type === 'success'" [class.toast-error]="toast()!.type === 'error'"
+  role="alert">
+  @if (toast()!.type === 'success') {
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+    <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" />
+  </svg>
+  } @else {
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z" />
+  </svg>
+  }
+  {{ toast()!.msg }}
+</div>
 }

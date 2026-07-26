@@ -20,6 +20,7 @@ interface UsuarioForm {
   confirmPassword: string;
   idRol: number;
   wechatOpenid: string;
+  telegramChatId: string;
 }
 
 @Component({
@@ -34,12 +35,12 @@ export class GestionUsuariosComponent implements OnInit {
   readonly rolesDisponibles = ROLES_DISPONIBLES;
 
   filtroTexto = signal('');
-  filtroRol   = signal<NombreRol | ''>('');
+  filtroRol = signal<NombreRol | ''>('');
   filtroEstado = signal<'activo' | 'inactivo' | ''>('');
-  modalMode   = signal<ModalMode>(null);
+  modalMode = signal<ModalMode>(null);
   selectedUser = signal<Usuario | null>(null);
-  isLoading   = signal(false);
-  toast       = signal<{ msg: string; type: 'success' | 'error' } | null>(null);
+  isLoading = signal(false);
+  toast = signal<{ msg: string; type: 'success' | 'error' } | null>(null);
   showDeleteModal = false;
   usuarioParaEliminar: Usuario | null = null;
   eliminando = false;
@@ -47,7 +48,7 @@ export class GestionUsuariosComponent implements OnInit {
   form = signal<UsuarioForm>({
     nombre: '', apellido: '', correo: '',
     password: '', confirmPassword: '',
-    idRol: 2, wechatOpenid: ''
+    idRol: 2, wechatOpenid: '', telegramChatId: ''
   });
 
   usuarios = signal<Usuario[]>([]);
@@ -67,7 +68,7 @@ export class GestionUsuariosComponent implements OnInit {
     });
   });
 
-  constructor(private usuarioService: UsuarioService) {}
+  constructor(private usuarioService: UsuarioService) { }
 
   ngOnInit(): void {
     this.cargarUsuarios();
@@ -94,8 +95,8 @@ export class GestionUsuariosComponent implements OnInit {
   avatarBg(u: Usuario): string {
     const map: Record<NombreRol, string> = {
       Administrador: '#2E86AB',
-      Familiar:      '#52B788',
-      Cuidador:      '#F4A261',
+      Familiar: '#52B788',
+      Cuidador: '#F4A261',
       'Adulto Mayor': '#8338EC'
     };
     return map[u.nombreRol] ?? '#9CABB8';
@@ -104,8 +105,8 @@ export class GestionUsuariosComponent implements OnInit {
   rolBadge(rol: NombreRol): { bg: string; color: string } {
     const map: Record<NombreRol, { bg: string; color: string }> = {
       Administrador: { bg: '#EBF5FB', color: '#1E5F7A' },
-      Familiar:      { bg: '#D8F3DC', color: '#1A7A4A' },
-      Cuidador:      { bg: '#FEF3E2', color: '#B47B12' },
+      Familiar: { bg: '#D8F3DC', color: '#1A7A4A' },
+      Cuidador: { bg: '#FEF3E2', color: '#B47B12' },
       'Adulto Mayor': { bg: '#F3E8FF', color: '#6B21A8' }
     };
     return map[rol] ?? { bg: '#F0F0F0', color: '#555' };
@@ -115,7 +116,7 @@ export class GestionUsuariosComponent implements OnInit {
     this.form.set({
       nombre: '', apellido: '', correo: '',
       password: '', confirmPassword: '',
-      idRol: 2, wechatOpenid: ''
+      idRol: 2, wechatOpenid: '', telegramChatId: ''
     });
     this.selectedUser.set(null);
     this.modalMode.set('crear');
@@ -129,7 +130,8 @@ export class GestionUsuariosComponent implements OnInit {
       password: '',
       confirmPassword: '',
       idRol: u.idRol,
-      wechatOpenid: u.wechatOpenid ?? ''
+      wechatOpenid: u.wechatOpenid ?? '',
+      telegramChatId: u.telegramChatId ?? ''
     });
     this.selectedUser.set(u);
     this.modalMode.set('editar');
@@ -153,7 +155,8 @@ export class GestionUsuariosComponent implements OnInit {
         correo: f.correo,
         password: f.password,
         idRol: f.idRol,
-        wechatOpenid: f.wechatOpenid || null
+        wechatOpenid: f.wechatOpenid || null,
+        telegramChatId: f.telegramChatId || null
       };
       this.isLoading.set(true);
       this.usuarioService.create(dto).subscribe({
@@ -177,7 +180,8 @@ export class GestionUsuariosComponent implements OnInit {
         correo: f.correo,
         password: f.password || null,
         idRol: f.idRol,
-        wechatOpenid: f.wechatOpenid || null
+        wechatOpenid: f.wechatOpenid || null,
+        telegramChatId: f.telegramChatId || null
       };
       this.isLoading.set(true);
       this.usuarioService.update(u.idUsuario, dto).subscribe({

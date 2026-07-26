@@ -66,12 +66,15 @@ export class PerfilCuidadorComponent implements OnInit {
   ciudad = signal<string | null>(null);
   tarifaHora = signal<number | null>(null);
   disponibilidad = signal<string | null>(null);
+  telegramChatId = signal<string | null>(null);
+
 
   formCorreo = '';
   formTelefono: string | null = null;
   formCiudad: string | null = null;
   formTarifaHora: number | null = null;
   formDisponibilidad: string | null = null;
+  formTelegramChatId: string | null = null;
 
   // Credenciales
   credenciales = signal<CredencialResponse[]>([]);
@@ -107,7 +110,7 @@ export class PerfilCuidadorComponent implements OnInit {
 
     this.cuidadorPerfilService.obtenerResenas().subscribe({
       next: (data) => this.resenas.set(data),
-      error: () => {}
+      error: () => { }
     });
 
     this.vinculacionService.getPendientes().subscribe({
@@ -116,7 +119,7 @@ export class PerfilCuidadorComponent implements OnInit {
           this.solicitudes.set(res.data);
         }
       },
-      error: () => {}
+      error: () => { }
     });
 
     this.cargarCredenciales();
@@ -125,7 +128,7 @@ export class PerfilCuidadorComponent implements OnInit {
   private cargarCredenciales(): void {
     this.cuidadorPerfilService.obtenerCredenciales().subscribe({
       next: (data) => this.credenciales.set(data),
-      error: () => {}
+      error: () => { }
     });
   }
 
@@ -136,9 +139,10 @@ export class PerfilCuidadorComponent implements OnInit {
         this.perfilApellido.set(datos.apellido || '');
         this.correo.set(datos.correo);
         this.telefono.set(datos.telefono);
-        this.ciudad.set(datos.ciudad);
+        // this.ciudad.set(datos.ciudad);
         this.tarifaHora.set(datos.tarifaHora);
         this.disponibilidad.set(datos.disponibilidad);
+        this.telegramChatId.set(datos.telegramChatId || null);
       },
       error: () => { /* si falla la carga, no se muestran datos de contacto */ }
     });
@@ -150,9 +154,10 @@ export class PerfilCuidadorComponent implements OnInit {
     this.formCiudad = this.ciudad();
     this.formTarifaHora = this.tarifaHora();
     this.formDisponibilidad = this.disponibilidad();
+    this.formTelegramChatId = this.telegramChatId();
     this.contactoError.set(null);
     this.editandoContacto.set(true);
-    
+
     // Smooth scroll to the form
     setTimeout(() => {
       const formEl = document.querySelector('.info-section.full-width');
@@ -171,7 +176,8 @@ export class PerfilCuidadorComponent implements OnInit {
       telefono: this.formTelefono,
       ciudad: this.formCiudad,
       tarifaHora: this.formTarifaHora,
-      disponibilidad: this.formDisponibilidad
+      disponibilidad: this.formDisponibilidad,
+      telegramChatId: this.formTelegramChatId
     };
 
     this.contactoError.set(null);
@@ -180,9 +186,10 @@ export class PerfilCuidadorComponent implements OnInit {
       next: (respuesta) => {
         this.correo.set(respuesta.correo);
         this.telefono.set(respuesta.telefono);
-        this.ciudad.set(respuesta.ciudad);
+        //this.ciudad.set(respuesta.ciudad);
         this.tarifaHora.set(respuesta.tarifaHora);
         this.disponibilidad.set(respuesta.disponibilidad);
+        this.telegramChatId.set(respuesta.telegramChatId || null);
         this.editandoContacto.set(false);
         this.contactoGuardado.set(true);
         setTimeout(() => this.contactoGuardado.set(false), 3000);

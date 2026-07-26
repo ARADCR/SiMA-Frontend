@@ -9,6 +9,7 @@ export interface DatosContactoCuidador {
   ciudad?: string | null;
   tarifaHora?: number | null;
   disponibilidad?: string | null;
+  telegramChatId?: string | null;
 }
 
 export interface CuidadorStats {
@@ -23,9 +24,10 @@ export interface DatosContactoCuidadorResponse {
   apellido: string;
   correo: string;
   telefono: string | null;
-  ciudad: string | null;
+  ciudad?: string | null;
   tarifaHora: number | null;
   disponibilidad: string | null;
+  telegramChatId: string | null;
 }
 
 export interface ResenaResponse {
@@ -59,7 +61,7 @@ export interface CrearCredencialRequest {
 export class CuidadorPerfilService {
   private readonly endpoint = '/cuidador/perfil';
 
-  constructor(private api: ApiService) {}
+  constructor(private api: ApiService) { }
 
   obtenerPerfil(): Observable<DatosContactoCuidadorResponse> {
     return this.api
