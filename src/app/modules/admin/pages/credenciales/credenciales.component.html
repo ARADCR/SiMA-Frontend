@@ -41,38 +41,14 @@
               </div>
               <div class="doc-filename">{{ sel.documento }}</div>
               <div class="doc-divider"></div>
-              <div class="doc-meta">{{ sel.institucion }}</div>
             </div>
-            <button class="btn-ver">Ver documento completo</button>
+            <button class="btn-ver" (click)="verDocumento(sel)">Ver documento completo</button>
           </div>
 
           <div class="doc-form">
-            <div class="ai-notice">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="#F4A261"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/></svg>
-              <span>Datos extraídos automáticamente por Claude AI — verifica antes de aprobar</span>
-            </div>
-
             <div class="form-field">
               <label>Tipo de credencial</label>
               <input [value]="sel.tipo" readonly>
-            </div>
-            <div class="form-field">
-              <label>Institución</label>
-              <input [value]="sel.institucion" readonly>
-            </div>
-            <div class="form-field">
-              <label>Descripción</label>
-              <textarea readonly rows="3">{{ sel.descripcion }}</textarea>
-            </div>
-            <div class="form-grid-2">
-              <div class="form-field">
-                <label>Fecha de emisión</label>
-                <input [value]="sel.fechaEmision" readonly>
-              </div>
-              <div class="form-field">
-                <label>Vigencia</label>
-                <input [value]="sel.vigencia" readonly>
-              </div>
             </div>
             <div class="form-field">
               <label>Comentario del administrador</label>

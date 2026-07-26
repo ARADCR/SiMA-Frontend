@@ -80,11 +80,11 @@ export class PerfilCuidadorComponent implements OnInit {
   credenciales = signal<CredencialResponse[]>([]);
   modalCredencialOpen = signal(false);
   subiendoCredencial = signal(false);
-  credencialPayload: CrearCredencialRequest = {
+  credencialPayload = {
     tipo: 'Certificación',
-    nombre: '',
-    archivoFalsoNombre: ''
+    nombre: ''
   };
+  archivoSeleccionado: File | null = null;
 
   ngOnInit(): void {
     this.aiService.obtenerPerfilCuidador().subscribe({
@@ -251,7 +251,8 @@ export class PerfilCuidadorComponent implements OnInit {
   stars = [1, 2, 3, 4, 5];
 
   abrirModalCredencial(): void {
-    this.credencialPayload = { tipo: 'Certificación', nombre: '', archivoFalsoNombre: '' };
+    this.credencialPayload = { tipo: 'Certificación', nombre: '' };
+    this.archivoSeleccionado = null;
     this.modalCredencialOpen.set(true);
   }
 
@@ -262,15 +263,22 @@ export class PerfilCuidadorComponent implements OnInit {
   onFileSelected(event: any): void {
     const file = event.target.files[0];
     if (file) {
-      this.credencialPayload.archivoFalsoNombre = file.name;
+      this.archivoSeleccionado = file;
     }
   }
 
   subirCredencial(): void {
     if (!this.credencialPayload.nombre.trim()) return;
 
+    const formData = new FormData();
+    formData.append('tipo', this.credencialPayload.tipo);
+    formData.append('nombre', this.credencialPayload.nombre);
+    if (this.archivoSeleccionado) {
+      formData.append('file', this.archivoSeleccionado);
+    }
+
     this.subiendoCredencial.set(true);
-    this.cuidadorPerfilService.subirCredencial(this.credencialPayload).subscribe({
+    this.cuidadorPerfilService.subirCredencial(formData).subscribe({
       next: (nueva) => {
         this.credenciales.update(c => [nueva, ...c]);
         this.subiendoCredencial.set(false);
@@ -312,9 +320,13 @@ export class PerfilCuidadorComponent implements OnInit {
 
   resenas = signal<ResenaResponse[]>([]);
 
-  credBadgeClass(e: string): string { return `badge badge-${e}`; }
+  credBadgeClass(e: string): string { 
+    return `badge badge-${e === 'aprobado' || e === 'verificado' ? 'verificado' : e}`; 
+  }
   credLabel(e: string): string {
-    return e === 'verificado' ? 'Verificado' : e === 'pendiente' ? 'Pendiente' : 'Rechazado';
+    if (e === 'aprobado' || e === 'verificado') return 'Verificado';
+    if (e === 'pendiente') return 'Pendiente';
+    return 'Rechazado';
   }
 
   starFill(s: number, puntos: number): string {

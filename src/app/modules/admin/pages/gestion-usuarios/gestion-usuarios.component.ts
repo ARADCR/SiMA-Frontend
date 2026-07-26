@@ -19,7 +19,6 @@ interface UsuarioForm {
   password: string;
   confirmPassword: string;
   idRol: number;
-  wechatOpenid: string;
   telegramChatId: string;
 }
 
@@ -48,7 +47,7 @@ export class GestionUsuariosComponent implements OnInit {
   form = signal<UsuarioForm>({
     nombre: '', apellido: '', correo: '',
     password: '', confirmPassword: '',
-    idRol: 2, wechatOpenid: '', telegramChatId: ''
+    idRol: 2, telegramChatId: ''
   });
 
   usuarios = signal<Usuario[]>([]);
@@ -116,7 +115,7 @@ export class GestionUsuariosComponent implements OnInit {
     this.form.set({
       nombre: '', apellido: '', correo: '',
       password: '', confirmPassword: '',
-      idRol: 2, wechatOpenid: '', telegramChatId: ''
+      idRol: 2, telegramChatId: ''
     });
     this.selectedUser.set(null);
     this.modalMode.set('crear');
@@ -130,7 +129,6 @@ export class GestionUsuariosComponent implements OnInit {
       password: '',
       confirmPassword: '',
       idRol: u.idRol,
-      wechatOpenid: u.wechatOpenid ?? '',
       telegramChatId: u.telegramChatId ?? ''
     });
     this.selectedUser.set(u);
@@ -155,7 +153,6 @@ export class GestionUsuariosComponent implements OnInit {
         correo: f.correo,
         password: f.password,
         idRol: f.idRol,
-        wechatOpenid: f.wechatOpenid || null,
         telegramChatId: f.telegramChatId || null
       };
       this.isLoading.set(true);
@@ -180,7 +177,6 @@ export class GestionUsuariosComponent implements OnInit {
         correo: f.correo,
         password: f.password || null,
         idRol: f.idRol,
-        wechatOpenid: f.wechatOpenid || null,
         telegramChatId: f.telegramChatId || null
       };
       this.isLoading.set(true);

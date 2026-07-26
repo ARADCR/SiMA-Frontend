@@ -355,9 +355,9 @@
           <div style="border: 2px dashed #E2E8F0; padding: 20px; text-align: center; border-radius: 8px; background: #F7FAFC;">
             <input type="file" id="fileUpload" (change)="onFileSelected($event)" style="display:none" accept=".pdf,.jpg,.jpeg,.png">
             <label for="fileUpload" class="btn btn-secondary" style="margin: 0 auto;">Seleccionar Archivo</label>
-            @if (credencialPayload.archivoFalsoNombre) {
+            @if (archivoSeleccionado) {
               <p style="margin-top: 10px; font-size: 13px; color: #0891B2; font-weight: 600;">
-                Archivo listo: {{ credencialPayload.archivoFalsoNombre }}
+                Archivo listo: {{ archivoSeleccionado.name }}
               </p>
             } @else {
               <p style="margin-top: 10px; font-size: 12px; color: #9CABB8;">
@@ -370,7 +370,7 @@
       </div>
       <div class="modal-footer" style="justify-content: flex-end;">
         <button type="button" class="btn btn-secondary" (click)="cerrarModalCredencial()" [disabled]="subiendoCredencial()">Cancelar</button>
-        <button type="button" class="btn btn-primary" (click)="subirCredencial()" [disabled]="subiendoCredencial() || !credencialPayload.nombre || !credencialPayload.archivoFalsoNombre">
+        <button type="button" class="btn btn-primary" (click)="subirCredencial()" [disabled]="subiendoCredencial() || !credencialPayload.nombre || !archivoSeleccionado">
           {{ subiendoCredencial() ? 'Subiendo...' : 'Guardar y Enviar' }}
         </button>
       </div>

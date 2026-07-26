@@ -93,9 +93,9 @@ export class CuidadorPerfilService {
       .pipe(map(r => r.data));
   }
 
-  subirCredencial(request: CrearCredencialRequest): Observable<CredencialResponse> {
+  subirCredencial(formData: FormData): Observable<CredencialResponse> {
     return this.api
-      .post<CredencialResponse>('/cuidador/credenciales', request)
+      .post<CredencialResponse>('/cuidador/credenciales', formData)
       .pipe(map(r => r.data));
   }
 }

@@ -177,16 +177,11 @@
         </div>
       </div>
       <div class="form-row">
-        <div class="form-group">
+        <div class="form-group" style="width: 100%">
           <label>Chat ID de Telegram <span class="optional">(recomendado)</span></label>
           <input type="text" placeholder="123456789" class="mono-input" [ngModel]="form().telegramChatId"
             (ngModelChange)="setField('telegramChatId', $event)">
           <span class="field-hint">Usado para notificaciones push en tiempo real.</span>
-        </div>
-        <div class="form-group">
-          <label>OpenID de WeChat <span class="optional">(opcional)</span></label>
-          <input type="text" placeholder="wx_openid_xxxxx" class="mono-input" [ngModel]="form().wechatOpenid"
-            (ngModelChange)="setField('wechatOpenid', $event)">
         </div>
       </div>
     </div>

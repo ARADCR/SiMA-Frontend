@@ -87,4 +87,8 @@ export class DashboardService {
   deleteReporte(id: number): Observable<any> {
     return this.http.delete(`${this.apiUrl}/reportes/${id}`);
   }
+
+  sendReporteTelegram(id: number): Observable<any> {
+    return this.http.post(`${this.apiUrl}/reportes/${id}/telegram`, {});
+  }
 }

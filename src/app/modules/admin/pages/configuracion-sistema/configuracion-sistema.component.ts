@@ -21,19 +21,34 @@ export class ConfiguracionSistemaComponent {
   telegramConectado = signal(false);
   isTestingTelegram = signal(false);
 
-  wechatAppId = signal('wx_sima2026prod01');
-  wechatSecret = signal('••••••••••••••••');
-  wechatConectado = signal(true);
   toast = signal<string | null>(null);
+
+  suscripciones = signal<Suscripcion[]>([]);
 
   constructor(private apiService: ApiService) { }
 
-  suscripciones: Suscripcion[] = [
-    { id: 1, familiar: 'Ana García', adulto: 'Elena Rodríguez', habilitado: true, ultimaNotif: 'Hace 3 horas' },
-    { id: 2, familiar: 'Pedro García', adulto: 'Elena Rodríguez', habilitado: true, ultimaNotif: 'Hace 1 día' },
-    { id: 3, familiar: 'Marta Jiménez', adulto: 'José Rodríguez', habilitado: false, ultimaNotif: 'Hace 5 días' },
-    { id: 4, familiar: 'Roberto López', adulto: 'Rosa Martínez', habilitado: true, ultimaNotif: 'Hace 2 horas' },
-  ];
+  ngOnInit(): void {
+    // Cargar perfil admin
+    this.apiService.get<any>('/usuarios/me').subscribe({
+      next: (res) => {
+        if (res.data && res.data.telegramChatId) {
+          this.telegramChatId.set(res.data.telegramChatId);
+          this.telegramConectado.set(true);
+        }
+      },
+      error: () => {}
+    });
+
+    // Cargar suscripciones
+    this.apiService.get<any>('/configuracion/telegram/suscripciones').subscribe({
+      next: (res) => {
+        if (res.data) {
+          this.suscripciones.set(res.data);
+        }
+      },
+      error: () => {}
+    });
+  }
 
   probarTelegram(): void {
     const chatId = this.telegramChatId();
@@ -57,12 +72,20 @@ export class ConfiguracionSistemaComponent {
     });
   }
 
-  probarWechat(): void {
-    this.showToast('Conexión con WeChat verificada correctamente');
-  }
-
   guardar(): void {
-    this.showToast('Configuración guardada correctamente');
+    const chatId = this.telegramChatId();
+    if (chatId) {
+      this.apiService.post<any>('/configuracion/telegram/save', { chatId }).subscribe({
+        next: () => {
+          this.showToast('Configuración guardada correctamente');
+        },
+        error: () => {
+          this.showToast('Error al guardar el Chat ID');
+        }
+      });
+    } else {
+      this.showToast('Configuración guardada correctamente');
+    }
   }
 
   private showToast(msg: string): void {

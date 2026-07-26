@@ -1,6 +1,7 @@
-import { Component, signal } from '@angular/core';
+import { Component, signal, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { ApiService } from '../../../../core/services/api.service';
 
 type EstadoCredencial = 'pendiente' | 'aprobado' | 'rechazado';
 
@@ -12,11 +13,8 @@ interface Credencial {
   tipo: string;
   documento: string;
   fecha: string;
-  institucion: string;
-  descripcion: string;
-  fechaEmision: string;
-  vigencia: string;
   estado: EstadoCredencial;
+  archivoUrl: string;
 }
 
 @Component({
@@ -26,41 +24,27 @@ interface Credencial {
   templateUrl: './credenciales.component.html',
   styleUrls: ['./credenciales.component.scss']
 })
-export class CredencialesComponent {
+export class CredencialesComponent implements OnInit {
+  private apiService = inject(ApiService);
+  
   seleccionado = signal<Credencial | null>(null);
   comentario = signal('');
   toast = signal<{ msg: string; type: 'success' | 'error' } | null>(null);
+  credenciales = signal<Credencial[]>([]);
 
-  credenciales = signal<Credencial[]>([
-    {
-      id: 1, cuidador: 'Carlos Andrade', initials: 'CA', avatarBg: '#2E86AB',
-      tipo: 'Certificación técnica', documento: 'certificacion_conalep_2024.pdf',
-      fecha: '20/06/2026', institucion: 'CONALEP Plantel 12',
-      descripcion: 'Técnico en Enfermería General. Formación de 2 años en cuidados médicos básicos.',
-      fechaEmision: 'Julio 2024', vigencia: 'Permanente', estado: 'pendiente'
-    },
-    {
-      id: 2, cuidador: 'Laura Vega', initials: 'LV', avatarBg: '#52B788',
-      tipo: 'Antecedentes no penales', documento: 'antecedentes_pgjdf.pdf',
-      fecha: '18/06/2026', institucion: 'PGJDF / Fiscalía CDMX',
-      descripcion: 'Carta de antecedentes no penales con vigencia de 90 días.',
-      fechaEmision: 'Junio 2026', vigencia: '90 días', estado: 'pendiente'
-    },
-    {
-      id: 3, cuidador: 'Marco Torres', initials: 'MT', avatarBg: '#F4A261',
-      tipo: 'Identificación oficial', documento: 'ine_marco_torres.pdf',
-      fecha: '15/06/2026', institucion: 'INE México',
-      descripcion: 'Credencial para votar vigente. Identificación con fotografía.',
-      fechaEmision: 'Enero 2022', vigencia: 'Enero 2030', estado: 'aprobado'
-    },
-    {
-      id: 4, cuidador: 'Sofía Ramos', initials: 'SR', avatarBg: '#E76F51',
-      tipo: 'Título universitario', documento: 'titulo_enfermeria.pdf',
-      fecha: '10/06/2026', institucion: 'Universidad Nacional Autónoma',
-      descripcion: 'Licenciatura en Enfermería con especialización en cuidados geriátricos. 4 años de formación.',
-      fechaEmision: 'Junio 2022', vigencia: 'Permanente', estado: 'rechazado'
-    },
-  ]);
+  ngOnInit() {
+    this.cargarCredenciales();
+  }
+
+  cargarCredenciales() {
+    this.apiService.get<any>('/admin/credenciales').subscribe({
+      next: (res) => {
+        if (res.data) {
+          this.credenciales.set(res.data);
+        }
+      }
+    });
+  }
 
   pendientes = () => this.credenciales().filter(c => c.estado === 'pendiente').length;
 
@@ -77,26 +61,41 @@ export class CredencialesComponent {
     return { aprobado: 'Aprobado', pendiente: 'Pendiente', rechazado: 'Rechazado' }[e];
   }
 
+  cambiarEstado(c: Credencial, nuevoEstado: EstadoCredencial, msjExito: string, msjError: string) {
+    this.apiService.post<any>(`/admin/credenciales/${c.id}/estado`, { estado: nuevoEstado }).subscribe({
+      next: () => {
+        this.credenciales.update(list => list.map(x => x.id === c.id ? { ...x, estado: nuevoEstado } : x));
+        this.seleccionado.update(s => s ? { ...s, estado: nuevoEstado } : s);
+        this.showToast(msjExito, 'success');
+      },
+      error: () => {
+        this.showToast(msjError, 'error');
+      }
+    });
+  }
+
   aprobar(c: Credencial): void {
-    this.credenciales.update(list => list.map(x => x.id === c.id ? { ...x, estado: 'aprobado' as const } : x));
-    this.seleccionado.update(s => s ? { ...s, estado: 'aprobado' as const } : s);
-    this.showToast(`Credencial de ${c.cuidador} aprobada`, 'success');
+    this.cambiarEstado(c, 'aprobado', `Credencial de ${c.cuidador} aprobada`, 'Error al aprobar credencial');
   }
 
   rechazar(c: Credencial): void {
-    this.credenciales.update(list => list.map(x => x.id === c.id ? { ...x, estado: 'rechazado' as const } : x));
-    this.seleccionado.update(s => s ? { ...s, estado: 'rechazado' as const } : s);
-    this.showToast(`Credencial de ${c.cuidador} rechazada`, 'error');
+    this.cambiarEstado(c, 'rechazado', `Credencial de ${c.cuidador} rechazada`, 'Error al rechazar credencial');
   }
 
   revertir(c: Credencial): void {
-    this.credenciales.update(list => list.map(x => x.id === c.id ? { ...x, estado: 'pendiente' as const } : x));
-    this.seleccionado.update(s => s ? { ...s, estado: 'pendiente' as const } : s);
-    this.showToast('Documento revertido a pendiente', 'success');
+    this.cambiarEstado(c, 'pendiente', 'Documento revertido a pendiente', 'Error al revertir documento');
   }
 
   private showToast(msg: string, type: 'success' | 'error'): void {
     this.toast.set({ msg, type });
     setTimeout(() => this.toast.set(null), 3500);
+  }
+
+  verDocumento(c: Credencial): void {
+    if (c.archivoUrl && (c.archivoUrl.startsWith('http') || c.archivoUrl.startsWith('blob:') || c.archivoUrl.startsWith('data:'))) {
+      window.open(c.archivoUrl, '_blank');
+    } else {
+      this.showToast('Archivo simulado. En producción se abriría: ' + c.archivoUrl, 'error');
+    }
   }
 }

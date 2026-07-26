@@ -197,6 +197,29 @@ export class ReportesAdminComponent implements OnInit {
     });
   }
 
+  sendingTelegramId = signal<number | null>(null);
+
+  enviarTelegram(id: number): void {
+    this.sendingTelegramId.set(id);
+    this.dashboardService.sendReporteTelegram(id).subscribe({
+      next: () => {
+        this.sendingTelegramId.set(null);
+        this.showToast('Reporte enviado exitosamente por Telegram.', 'success');
+      },
+      error: (err) => {
+        console.error('Error al enviar el reporte por Telegram', err);
+        this.sendingTelegramId.set(null);
+        
+        let errorMsg = 'Error al enviar el reporte por Telegram. Inténtalo de nuevo.';
+        if (err.error && err.error.mensaje) {
+          errorMsg = err.error.mensaje;
+        }
+        
+        this.showToast(errorMsg, 'error');
+      }
+    });
+  }
+
   confirmarEliminar(id: number): void {
     this.reportToDelete.set(id);
     this.showDeleteModal.set(true);
