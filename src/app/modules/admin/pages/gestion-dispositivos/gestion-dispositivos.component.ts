@@ -43,6 +43,15 @@ export class GestionDispositivosComponent implements OnInit {
   
   toastMsg = '';
   toastTipo: 'success' | 'error' | 'info' = 'info';
+  formSubmitted = false;
+
+  get identificadorFisicoInvalido(): boolean {
+    return this.formSubmitted && (!this.identificadorFisico || this.identificadorFisico.trim() === '');
+  }
+
+  get tipoDispositivoInvalido(): boolean {
+    return this.formSubmitted && !this.tipoDispositivo;
+  }
 
   constructor(
     private dispositivoService: DispositivoIotService,
@@ -116,6 +125,7 @@ export class GestionDispositivosComponent implements OnInit {
 
   abrirModalRegistro() {
     this.isEdit = false;
+    this.formSubmitted = false;
     this.modalDispositivoId = null;
     this.identificadorFisico = '';
     this.tipoDispositivo = 'pastillero_esp32';
@@ -127,6 +137,7 @@ export class GestionDispositivosComponent implements OnInit {
 
   abrirModalEdicion(dispositivo: DispositivoIot) {
     this.isEdit = true;
+    this.formSubmitted = false;
     this.modalDispositivoId = dispositivo.idDispositivo;
     this.identificadorFisico = dispositivo.identificadorFisico;
     this.tipoDispositivo = dispositivo.tipoDispositivo;
@@ -148,8 +159,15 @@ export class GestionDispositivosComponent implements OnInit {
   }
 
   guardarDispositivo() {
-    if (!this.identificadorFisico.trim()) {
-      this.mostrarToast('El identificador físico es obligatorio');
+    this.formSubmitted = true;
+
+    if (!this.identificadorFisico || !this.identificadorFisico.trim()) {
+      this.mostrarToast('El identificador físico es obligatorio', 'error');
+      return;
+    }
+
+    if (!this.tipoDispositivo) {
+      this.mostrarToast('El tipo de dispositivo es obligatorio', 'error');
       return;
     }
 
@@ -162,20 +180,20 @@ export class GestionDispositivosComponent implements OnInit {
     if (this.isEdit && this.modalDispositivoId) {
       this.dispositivoService.actualizar(this.modalDispositivoId, req).subscribe({
         next: (res) => {
-          this.mostrarToast(res.message || res.mensaje || 'Dispositivo actualizado exitosamente');
+          this.mostrarToast(res.message || res.mensaje || 'Dispositivo actualizado exitosamente', 'success');
           this.cerrarModal();
           this.cargarDispositivos();
         },
-        error: (err) => this.mostrarToast(err.error?.mensaje || 'Error al actualizar')
+        error: (err) => this.mostrarToast(err.error?.mensaje || 'Error al actualizar', 'error')
       });
     } else {
       this.dispositivoService.registrar(req).subscribe({
         next: (res) => {
-          this.mostrarToast(res.message || res.mensaje || 'Dispositivo registrado exitosamente');
+          this.mostrarToast(res.message || res.mensaje || 'Dispositivo registrado exitosamente', 'success');
           this.cerrarModal();
           this.cargarDispositivos();
         },
-        error: (err) => this.mostrarToast(err.error?.mensaje || 'Error al registrar')
+        error: (err) => this.mostrarToast(err.error?.mensaje || 'Error al registrar', 'error')
       });
     }
   }
@@ -203,18 +221,18 @@ export class GestionDispositivosComponent implements OnInit {
 
   confirmarAsignacion() {
     if (!this.dispositivoParaAsignar || !this.idAdultoAsignar) {
-      this.mostrarToast('Debe seleccionar un paciente');
+      this.mostrarToast('Debe seleccionar un paciente', 'error');
       return;
     }
     
     this.dispositivoService.asignar(this.dispositivoParaAsignar.idDispositivo, this.idAdultoAsignar).subscribe({
       next: (res) => {
-        this.mostrarToast(res.message || res.mensaje || 'Dispositivo asignado exitosamente');
+        this.mostrarToast(res.message || res.mensaje || 'Dispositivo asignado exitosamente', 'success');
         this.cerrarModalAsignar();
         this.cargarDispositivos();
       },
       error: (err) => {
-        this.mostrarToast(err.error?.mensaje || 'Error al asignar');
+        this.mostrarToast(err.error?.mensaje || 'Error al asignar', 'error');
       }
     });
   }
@@ -236,19 +254,20 @@ export class GestionDispositivosComponent implements OnInit {
     
     this.dispositivoService.desasignar(this.dispositivoParaDesasignar.idDispositivo).subscribe({
       next: (res) => {
-        this.mostrarToast(res.message || res.mensaje || 'Dispositivo desasignado exitosamente');
+        this.mostrarToast(res.message || res.mensaje || 'Dispositivo desasignado exitosamente', 'success');
         this.cerrarModalDesasignar();
         this.cargarDispositivos();
       },
       error: (err) => {
-        this.mostrarToast(err.error?.mensaje || 'Error al desasignar');
+        this.mostrarToast(err.error?.mensaje || 'Error al desasignar', 'error');
         this.desasignando = false;
       }
     });
   }
 
-  mostrarToast(msg: string) {
+  mostrarToast(msg: string, tipo: 'success' | 'error' | 'info' = 'info') {
     this.toastMsg = msg;
+    this.toastTipo = tipo;
     setTimeout(() => this.toastMsg = '', 4000);
   }
 }

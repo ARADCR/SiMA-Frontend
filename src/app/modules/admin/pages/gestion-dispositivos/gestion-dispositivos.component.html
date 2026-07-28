@@ -173,14 +173,22 @@
       <button class="close-btn" (click)="cerrarModal()">&times;</button>
     </div>
     <div class="modal-body form-group">
-      <label>Identificador Físico (MAC / UUID)</label>
-      <input type="text" [(ngModel)]="identificadorFisico" placeholder="Ej: 00:1B:44:11:3A:B7">
+      <label>Identificador Físico (MAC / UUID) <span style="color: #EF4444;">*</span></label>
+      <input type="text" [(ngModel)]="identificadorFisico" placeholder="Ej: 00:1B:44:11:3A:B7"
+             [ngStyle]="{'border-color': identificadorFisicoInvalido ? '#EF4444' : ''}">
+      <div *ngIf="identificadorFisicoInvalido" style="color: #EF4444; font-size: 12px; margin-top: -10px; margin-bottom: 10px;">
+        El identificador físico es obligatorio.
+      </div>
       
-      <label>Tipo de Dispositivo</label>
-      <select [(ngModel)]="tipoDispositivo" [disabled]="isEdit">
+      <label>Tipo de Dispositivo <span style="color: #EF4444;">*</span></label>
+      <select [(ngModel)]="tipoDispositivo" [disabled]="isEdit"
+              [ngStyle]="{'border-color': tipoDispositivoInvalido ? '#EF4444' : ''}">
         <option value="pastillero_esp32">Pastillero Inteligente (ESP32)</option>
         <option value="pulsera_inteligente">Pulsera de Signos Vitales</option>
       </select>
+      <div *ngIf="tipoDispositivoInvalido" style="color: #EF4444; font-size: 12px; margin-top: -10px; margin-bottom: 10px;">
+        Debe seleccionar un tipo de dispositivo.
+      </div>
 
       <label>Adulto Mayor (Asignación)</label>
       <select [(ngModel)]="idAdulto">
@@ -197,6 +205,6 @@
   </div>
 </div>
 
-<div class="toast toast-info" *ngIf="toastMsg">
+<div class="toast" [ngClass]="'toast-' + toastTipo" *ngIf="toastMsg">
   {{ toastMsg }}
 </div>
