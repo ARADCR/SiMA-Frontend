@@ -121,19 +121,22 @@
     </div>
     <div class="modal-body">
       <div class="form-row">
-        <div class="form-group">
+        <div class="form-group" [class.has-error]="formErrors.nombre">
           <label>Nombre <span class="required">*</span></label>
-          <input type="text" placeholder="Ej. Elena" [(ngModel)]="form.nombre" id="input-nombre">
+          <input type="text" placeholder="Ej. Elena" [(ngModel)]="form.nombre" id="input-nombre" (blur)="validarFormulario()">
+          <span class="error-msg" *ngIf="formErrors.nombre">{{ formErrors.nombre }}</span>
         </div>
-        <div class="form-group">
+        <div class="form-group" [class.has-error]="formErrors.apellido">
           <label>Apellido <span class="required">*</span></label>
-          <input type="text" placeholder="Ej. Rodríguez" [(ngModel)]="form.apellido" id="input-apellido">
+          <input type="text" placeholder="Ej. Rodríguez" [(ngModel)]="form.apellido" id="input-apellido" (blur)="validarFormulario()">
+          <span class="error-msg" *ngIf="formErrors.apellido">{{ formErrors.apellido }}</span>
         </div>
       </div>
       <div class="form-row">
-        <div class="form-group">
-          <label>Fecha de nacimiento</label>
-          <input type="date" [(ngModel)]="form.fechaNacimiento" id="input-fecha-nac">
+        <div class="form-group" [class.has-error]="formErrors.fechaNacimiento">
+          <label>Fecha de nacimiento <span class="required">*</span></label>
+          <input type="date" [(ngModel)]="form.fechaNacimiento" id="input-fecha-nac" (blur)="validarFormulario()">
+          <span class="error-msg" *ngIf="formErrors.fechaNacimiento">{{ formErrors.fechaNacimiento }}</span>
         </div>
         <div class="form-group">
           <label>Contacto médico</label>

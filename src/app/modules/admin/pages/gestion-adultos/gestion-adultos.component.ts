@@ -29,6 +29,7 @@ export class GestionAdultosComponent implements OnInit {
   isEdit = false;
   editandoId: number | null = null;
   form: AdultoForm = this.formVacio();
+  formErrors: Partial<Record<keyof AdultoForm, string>> = {};
   guardando = false;
 
   // Modal eliminar
@@ -104,6 +105,7 @@ export class GestionAdultosComponent implements OnInit {
     this.isEdit = false;
     this.editandoId = null;
     this.form = this.formVacio();
+    this.formErrors = {};
     this.showModal = true;
   }
 
@@ -117,6 +119,7 @@ export class GestionAdultosComponent implements OnInit {
       condicionesMedicas: a.condicionesMedicas || '',
       contactoMedico: a.contactoMedico || ''
     };
+    this.formErrors = {};
     this.showModal = true;
   }
 
@@ -125,20 +128,54 @@ export class GestionAdultosComponent implements OnInit {
     this.guardando = false;
   }
 
-  guardar(): void {
-    if (!this.form.nombre.trim() || !this.form.apellido.trim()) {
-      this.mostrarToast('Nombre y apellido son obligatorios', 'error');
-      return;
+  validarFormulario(): boolean {
+    const errors: Partial<Record<keyof AdultoForm, string>> = {};
+    let isValid = true;
+
+    if (!this.form.nombre.trim()) { errors.nombre = 'El nombre es obligatorio'; isValid = false; }
+    if (!this.form.apellido.trim()) { errors.apellido = 'El apellido es obligatorio'; isValid = false; }
+    if (!this.form.fechaNacimiento) { 
+      errors.fechaNacimiento = 'La fecha de nacimiento es obligatoria'; 
+      isValid = false; 
+    } else {
+      const nac = new Date(this.form.fechaNacimiento);
+      const hoy = new Date();
+
+      if (nac > hoy) {
+        errors.fechaNacimiento = 'La fecha no puede ser en el futuro';
+        isValid = false;
+      } else {
+        const edad = this.calcularEdad(this.form.fechaNacimiento);
+        if (edad !== null && edad < 50) {
+          errors.fechaNacimiento = 'El adulto mayor debe tener al menos 50 años';
+          isValid = false;
+        } else if (edad !== null && edad > 120) {
+          errors.fechaNacimiento = 'La fecha de nacimiento no es válida (edad mayor a 120 años)';
+          isValid = false;
+        }
+      }
     }
+
+    this.formErrors = errors;
+    
+    if (!isValid) {
+      this.mostrarToast('Por favor, corrige los errores del formulario', 'error');
+    }
+    
+    return isValid;
+  }
+
+  guardar(): void {
+    if (!this.validarFormulario()) return;
     this.guardando = true;
 
     if (this.isEdit && this.editandoId) {
       const dto: AdultoMayorUpdate = {
-        nombre: this.form.nombre,
-        apellido: this.form.apellido,
-        fechaNacimiento: this.form.fechaNacimiento || undefined,
-        condicionesMedicas: this.form.condicionesMedicas || undefined,
-        contactoMedico: this.form.contactoMedico || undefined
+        nombre: this.form.nombre.trim(),
+        apellido: this.form.apellido.trim(),
+        fechaNacimiento: this.form.fechaNacimiento,
+        condicionesMedicas: this.form.condicionesMedicas ? this.form.condicionesMedicas.trim() : '',
+        contactoMedico: this.form.contactoMedico ? this.form.contactoMedico.trim() : ''
       };
       this.adultoService.update(this.editandoId, dto).subscribe({
         next: () => {
@@ -153,11 +190,11 @@ export class GestionAdultosComponent implements OnInit {
       });
     } else {
       const dto: AdultoMayorCreate = {
-        nombre: this.form.nombre,
-        apellido: this.form.apellido,
-        fechaNacimiento: this.form.fechaNacimiento || undefined as any,
-        condicionesMedicas: this.form.condicionesMedicas || undefined,
-        contactoMedico: this.form.contactoMedico || undefined
+        nombre: this.form.nombre.trim(),
+        apellido: this.form.apellido.trim(),
+        fechaNacimiento: this.form.fechaNacimiento,
+        condicionesMedicas: this.form.condicionesMedicas ? this.form.condicionesMedicas.trim() : '',
+        contactoMedico: this.form.contactoMedico ? this.form.contactoMedico.trim() : ''
       };
       this.adultoService.create(dto).subscribe({
         next: () => {
