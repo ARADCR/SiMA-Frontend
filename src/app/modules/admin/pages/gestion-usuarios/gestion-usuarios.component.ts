@@ -50,6 +50,8 @@ export class GestionUsuariosComponent implements OnInit {
     idRol: 2, telegramChatId: ''
   });
 
+  formErrors = signal<Partial<Record<keyof UsuarioForm, string>>>({});
+
   usuarios = signal<Usuario[]>([]);
 
   usuariosFiltrados = computed(() => {
@@ -117,6 +119,7 @@ export class GestionUsuariosComponent implements OnInit {
       password: '', confirmPassword: '',
       idRol: 2, telegramChatId: ''
     });
+    this.formErrors.set({});
     this.selectedUser.set(null);
     this.modalMode.set('crear');
   }
@@ -131,6 +134,7 @@ export class GestionUsuariosComponent implements OnInit {
       idRol: u.idRol,
       telegramChatId: u.telegramChatId ?? ''
     });
+    this.formErrors.set({});
     this.selectedUser.set(u);
     this.modalMode.set('editar');
   }
@@ -141,12 +145,48 @@ export class GestionUsuariosComponent implements OnInit {
 
   closeModal(): void { this.modalMode.set(null); }
 
-  guardar(): void {
+  validarFormulario(): boolean {
     const f = this.form();
-    if (!f.nombre.trim() || !f.apellido.trim() || !f.correo.trim()) return;
+    const errors: Partial<Record<keyof UsuarioForm, string>> = {};
+    let isValid = true;
+
+    if (!f.nombre.trim()) { errors.nombre = 'El nombre es obligatorio'; isValid = false; }
+    if (!f.apellido.trim()) { errors.apellido = 'El apellido es obligatorio'; isValid = false; }
+    
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!f.correo.trim()) { 
+      errors.correo = 'El correo es obligatorio'; 
+      isValid = false; 
+    } else if (!emailRegex.test(f.correo)) {
+      errors.correo = 'Formato de correo inválido';
+      isValid = false;
+    }
 
     if (this.modalMode() === 'crear') {
-      if (!f.password) return;
+      if (!f.password) { errors.password = 'La contraseña es obligatoria'; isValid = false; }
+      else if (f.password.length < 6) { errors.password = 'Mínimo 6 caracteres'; isValid = false; }
+      
+      if (f.password !== f.confirmPassword) { errors.confirmPassword = 'Las contraseñas no coinciden'; isValid = false; }
+    } else if (this.modalMode() === 'editar') {
+      if (f.password && f.password.length < 6) { errors.password = 'Mínimo 6 caracteres'; isValid = false; }
+      if (f.password && f.password !== f.confirmPassword) { errors.confirmPassword = 'Las contraseñas no coinciden'; isValid = false; }
+    }
+
+    this.formErrors.set(errors);
+    
+    if (!isValid) {
+      this.showToast('Por favor, corrige los errores del formulario', 'error');
+    }
+    
+    return isValid;
+  }
+
+  guardar(): void {
+    if (!this.validarFormulario()) return;
+
+    const f = this.form();
+
+    if (this.modalMode() === 'crear') {
       const dto: UsuarioCreate = {
         nombre: f.nombre,
         apellido: f.apellido,

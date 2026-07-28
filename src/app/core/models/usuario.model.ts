@@ -10,7 +10,6 @@ export const ROLES_DISPONIBLES: { idRol: number; nombreRol: NombreRol }[] = [
   { idRol: 1, nombreRol: 'Administrador' },
   { idRol: 2, nombreRol: 'Familiar' },
   { idRol: 3, nombreRol: 'Cuidador' },
-  { idRol: 4, nombreRol: 'Adulto Mayor' },
 ];
 
 /** Coincide con UsuarioResponse del backend */
