@@ -447,9 +447,205 @@
   margin: 0;
 }
 
-@media (max-width: 900px) {
-  .profile-header { flex-wrap: wrap; }
-  .info-grid { grid-template-columns: 1fr; }
+.telegram-banner {
+  background: #E3F2FD;
+  border: 1px solid #90CAF9;
+  padding: 16px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+
+  h3 {
+    margin: 0 0 4px 0;
+    color: #0D47A1;
+    font-size: 15px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  p {
+    margin: 0;
+    font-size: 13px;
+    color: #1565C0;
+  }
+
+  .btn-primary {
+    background: #1976D2;
+    flex-shrink: 0;
+    margin: 0;
+    
+    &:hover {
+      background: #1565C0;
+    }
+  }
+
+  @include r.respond(sm) {
+    flex-direction: column;
+    align-items: stretch;
+    text-align: center;
+
+    h3 {
+      justify-content: center;
+    }
+
+    .btn-primary {
+      width: 100%;
+      justify-content: center;
+    }
+  }
+}
+
+// Media Queries de Responsividad
+@include r.respond(md) {
+  .page {
+    padding: 20px 16px;
+  }
+
+  .profile-header {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    padding: 24px 20px;
+    gap: 20px;
+  }
+
+  .profile-info {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+  }
+
+  .profile-name-row {
+    flex-direction: column;
+    gap: 6px;
+    text-align: center;
+    justify-content: center;
+  }
+
+  .profile-stats {
+    justify-content: center;
+    gap: 12px 20px;
+    width: 100%;
+  }
+
+  .pstat-div {
+    display: none;
+  }
+
+  .btn-outline {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .tabs {
+    overflow-x: auto;
+    white-space: nowrap;
+    padding-bottom: 6px;
+    gap: 8px;
+    
+    &::-webkit-scrollbar {
+      display: none;
+    }
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .tab {
+    padding: 10px 16px;
+    flex-shrink: 0;
+  }
+
+  .info-grid {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+}
+
+@include r.respond(sm) {
+  .tab-panel {
+    padding: 16px;
+  }
+
+  .cred-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+    text-align: center;
+
+    .section-title {
+      margin-bottom: 0;
+    }
+    
+    .btn-primary-sm {
+      justify-content: center;
+      width: 100%;
+    }
+  }
+
+  .cred-row {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 10px;
+    padding: 16px 0;
+
+    .cred-info {
+      width: 100%;
+    }
+
+    .badge {
+      width: 100%;
+      text-align: center;
+      padding: 6px 12px;
+    }
+  }
+
+  .sol-card {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 12px;
+    padding: 20px 0;
+
+    .sol-info {
+      width: 100%;
+    }
+
+    .sol-actions {
+      width: 100%;
+      flex-direction: column;
+      gap: 8px;
+
+      .btn-sm, .btn-outline-sm {
+        width: 100%;
+        text-align: center;
+      }
+    }
+  }
+
+  .resenas-summary {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 12px;
+  }
+}
+
+@include r.respond(xs) {
+  .info-row {
+    flex-direction: column;
+    gap: 4px;
+    padding: 8px 0;
+  }
+
+  .info-lbl {
+    width: auto;
+  }
 }
 
 .perfil-textarea {

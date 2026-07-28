@@ -44,10 +44,15 @@
 .send-btn:disabled { background: #B0CAD8; cursor: not-allowed; }
 
 /* ---- Responsive Enhancements for Chatbot ---- */
-@include r.respond(sm) {
+@include r.respond(md) {
+  .page {
+    height: auto;
+    min-height: calc(100vh - 64px);
+    padding: 16px;
+  }
   .chat-layout {
     grid-template-columns: 1fr;
-    gap: 12px;
+    gap: 16px;
     height: auto;
   }
   .chat-sidebar {
@@ -55,8 +60,28 @@
     overflow-y: visible;
   }
   .messages {
+    padding: 16px;
+    min-height: 400px;
+  }
+  .chat-panel-header {
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 12px;
+    text-align: center;
     padding: 12px;
   }
+  .chat-adulto-select {
+    margin-left: 0;
+    width: 100%;
+  }
+  .powered-badge {
+    margin-left: 0;
+    width: 100%;
+    text-align: center;
+  }
+}
+
+@include r.respond(sm) {
   .input-area {
     flex-direction: column;
     gap: 8px;
@@ -66,6 +91,9 @@
   }
   .send-btn {
     width: 100%;
+  }
+  .messages {
+    min-height: 300px;
   }
 }
 

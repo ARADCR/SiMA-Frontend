@@ -296,9 +296,53 @@
   &:disabled { background: #B0CAD8; cursor: not-allowed; }
 }
 
-@media (max-width: 768px) {
-  .chat-layout { grid-template-columns: 1fr; }
-  .chat-sidebar { display: none; }
+/* ---- Responsive Enhancements for Chatbot ---- */
+@include r.respond(md) {
+  .page {
+    height: auto;
+    min-height: calc(100vh - 64px);
+    padding: 16px;
+  }
+  .chat-layout {
+    grid-template-columns: 1fr;
+    gap: 16px;
+    height: auto;
+  }
+  .chat-sidebar {
+    height: auto;
+    overflow-y: visible;
+  }
+  .messages {
+    padding: 16px;
+    min-height: 400px;
+  }
+  .chat-header {
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 12px;
+    text-align: center;
+    padding: 12px;
+  }
+  .chat-adulto-select {
+    margin-left: 0;
+    width: 100%;
+  }
+}
+
+@include r.respond(sm) {
+  .input-area {
+    flex-direction: column;
+    gap: 8px;
+  }
+  .chat-input {
+    width: 100%;
+  }
+  .send-btn {
+    width: 100%;
+  }
+  .messages {
+    min-height: 300px;
+  }
 }
 
 .chat-adulto-select {

@@ -19,7 +19,8 @@
 
   // Mobile drawer hidden by default
   @include r.respond(md) {
-    width: 100%;
+    width: 280px;
+    max-width: 85%;
     transform: translateX(-100%);
     transition: transform v.$transition-base;
   }
