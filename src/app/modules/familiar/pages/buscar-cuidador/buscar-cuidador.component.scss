@@ -6,9 +6,9 @@
 .title { font-size: 28px; font-weight: 700; color: #1B2B3A; letter-spacing: -0.5px; }
 .sub { font-size: 14px; color: #5C6B7A; margin-top: 4px; }
 .card { background: #fff; border-radius: 12px; box-shadow: 0 2px 12px rgba(0,0,0,0.06); }
-.ai-search-bar { display: flex; align-items: center; gap: 12px; padding: 14px 16px; margin-bottom: 14px; }
+.ai-search-bar { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; padding: 14px 16px; margin-bottom: 14px; }
 .ai-icon { width: 36px; height: 36px; border-radius: 8px; background: linear-gradient(135deg, #2E86AB, #52B788); display: flex; align-items: center; justify-content: center; color: white; flex-shrink: 0; }
-.ai-input { flex: 1; border: none; outline: none; font-size: 14px; color: #1B2B3A; background: transparent; font-family: inherit; }
+.ai-input { flex: 1 1 150px; min-width: 150px; border: none; outline: none; font-size: 14px; color: #1B2B3A; background: transparent; font-family: inherit; }
 .ai-input::placeholder { color: #9CABB8; }
 .btn-primary { display: inline-flex; align-items: center; gap: 7px; padding: 9px 18px; background: #2E86AB; color: white; border: none; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; font-family: inherit; }
 .btn-primary:hover { background: #256E8F; }
@@ -139,4 +139,8 @@
 
 @include r.respond(sm) {
   .main-layout { grid-template-columns: 1fr; }
+  .ai-search-bar { flex-wrap: wrap; }
+  .ai-input { flex: 1 1 150px; }
+  .select-sm { flex: 1 1 100%; }
+  .btn-primary { flex: 1 1 100%; justify-content: center; }
 }
