@@ -97,13 +97,14 @@
         </div>
         <div class="modal-body">
           <div class="form-group">
-            <label class="label">Paciente *</label>
-          <select class="input" [(ngModel)]="nuevaObs.idAdulto" required>
+            <label class="label">Paciente * <span *ngIf="pacienteInvalido" style="color: #EF4444;">(Requerido)</span></label>
+          <select class="input select-input" [(ngModel)]="nuevaObs.idAdulto" required [ngStyle]="{'border-color': pacienteInvalido ? '#EF4444' : ''}">
             <option [ngValue]="null" disabled>Seleccionar paciente...</option>
             @for (a of adultos(); track a.idAdulto) {
               <option [ngValue]="a.idAdulto">{{ a.nombre }} {{ a.apellido }}</option>
             }
           </select>
+          <div *ngIf="pacienteInvalido" style="color: #EF4444; font-size: 12px; margin-top: -2px;">Por favor, selecciona un paciente.</div>
           </div>
           <div class="form-group">
             <label>Nivel de urgencia</label>
@@ -114,10 +115,12 @@
             </select>
           </div>
           <div class="form-group">
-            <label>Observación *</label>
+            <label>Observación * <span *ngIf="observacionInvalida" style="color: #EF4444;">(Requerido)</span></label>
             <textarea class="textarea-input" rows="4" maxlength="1000" required
               placeholder="Describe el estado del paciente, síntomas observados, reacciones a medicamentos..."
-              [(ngModel)]="nuevaObs.texto" (ngModelChange)="onCamposEvaluablesChange()"></textarea>
+              [(ngModel)]="nuevaObs.texto" (ngModelChange)="onCamposEvaluablesChange()"
+              [ngStyle]="{'border-color': observacionInvalida ? '#EF4444' : ''}"></textarea>
+            <div *ngIf="observacionInvalida" style="color: #EF4444; font-size: 12px; margin-top: -2px;">La observación no puede estar vacía.</div>
           </div>
           <div class="vitales-form">
             <div class="vitales-title">Signos vitales (opcional)</div>
@@ -172,7 +175,7 @@
         </div>
         <div class="modal-footer">
           <button class="btn-secondary" (click)="cerrarModal()">Cancelar</button>
-          <button class="btn-primary" [disabled]="guardando()" (click)="guardar()">
+          <button class="btn-primary" [disabled]="guardando() || evaluandoUrgencia()" (click)="guardar()">
             {{ guardando() ? 'Guardando...' : 'Guardar observación' }}
           </button>
         </div>
@@ -181,7 +184,7 @@
   }
 
   @if (toast()) {
-    <div class="toast toast-success">
+    <div class="toast" [class]="'toast-' + toastTipo()">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
         <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
       </svg>

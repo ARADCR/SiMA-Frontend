@@ -48,6 +48,19 @@ export class ConfiguracionSistemaComponent {
       },
       error: () => {}
     });
+
+    // Cargar configuración general
+    this.apiService.get<any>('/configuracion/general').subscribe({
+      next: (res) => {
+        if (res.data) {
+          if (res.data.toleranciaMed) this.toleranciaMed.set(Number(res.data.toleranciaMed));
+          if (res.data.reintentosMed) this.reintentosMed.set(Number(res.data.reintentosMed));
+          if (res.data.umbralCaidas) this.umbralCaidas.set(Number(res.data.umbralCaidas));
+          if (res.data.freqVerif) this.freqVerif.set(Number(res.data.freqVerif));
+        }
+      },
+      error: () => {}
+    });
   }
 
   probarTelegram(): void {
@@ -73,19 +86,29 @@ export class ConfiguracionSistemaComponent {
   }
 
   guardar(): void {
-    const chatId = this.telegramChatId();
-    if (chatId) {
-      this.apiService.post<any>('/configuracion/telegram/save', { chatId }).subscribe({
-        next: () => {
-          this.showToast('Configuración guardada correctamente');
-        },
-        error: () => {
-          this.showToast('Error al guardar el Chat ID');
+    const generalConfig = {
+      toleranciaMed: this.toleranciaMed().toString(),
+      reintentosMed: this.reintentosMed().toString(),
+      umbralCaidas: this.umbralCaidas().toString(),
+      freqVerif: this.freqVerif().toString()
+    };
+
+    // Guardar configuración general
+    this.apiService.post<any>('/configuracion/general', generalConfig).subscribe({
+      next: () => {
+        // Después de guardar general, guardar telegram si hay chatId
+        const chatId = this.telegramChatId();
+        if (chatId) {
+          this.apiService.post<any>('/configuracion/telegram/save', { chatId }).subscribe({
+            next: () => this.showToast('Configuración guardada correctamente'),
+            error: () => this.showToast('Error al guardar el Chat ID de Telegram')
+          });
+        } else {
+          this.showToast('Configuración general guardada correctamente');
         }
-      });
-    } else {
-      this.showToast('Configuración guardada correctamente');
-    }
+      },
+      error: () => this.showToast('Error al guardar configuración general')
+    });
   }
 
   private showToast(msg: string): void {

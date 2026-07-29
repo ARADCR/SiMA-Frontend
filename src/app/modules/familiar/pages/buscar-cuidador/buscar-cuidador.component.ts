@@ -23,9 +23,9 @@ export class BuscarCuidadorComponent implements OnInit {
   buscandoIA = signal(false);
   rankeados  = signal<Map<number, CuidadorRankeado>>(new Map());
   filtroEsp  = signal<string[]>([]);
-  filtroDisp = '';
-  filtroCalif = '0';
-  ordenar    = 'cal';
+  filtroDisp = signal('');
+  filtroCalif = signal('0');
+  ordenar    = signal('cal');
   adultoBusquedaId = signal<number | null>(null);
 
   especialidades = ['Adultos mayores', 'Diabetes', 'Fisioterapia', 'Alzheimer/demencia', 'Rehabilitación', 'Enfermería'];
@@ -78,8 +78,6 @@ export class BuscarCuidadorComponent implements OnInit {
 
     if (rankeados.size > 0) {
       res = res.filter(c => rankeados.has(c.idUsuario));
-      res.sort((a, b) => (rankeados.get(b.idUsuario)?.scoreRelevancia ?? 0) - (rankeados.get(a.idUsuario)?.scoreRelevancia ?? 0));
-      return res;
     }
 
     if (this.filtroEsp().length > 0) {
@@ -87,11 +85,26 @@ export class BuscarCuidadorComponent implements OnInit {
         c.especialidad.toLowerCase().includes(e.toLowerCase())
       ));
     }
-    const min = parseFloat(this.filtroCalif);
+    const min = parseFloat(this.filtroCalif());
     if (min > 0) res = res.filter(c => c.calificacion >= min);
-    if (this.ordenar === 'cal') res.sort((a, b) => b.calificacion - a.calificacion);
-    else if (this.ordenar === 'precio') res.sort((a, b) => parseInt(a.precio.replace(/\D/g, '')) - parseInt(b.precio.replace(/\D/g, '')));
-    else if (this.ordenar === 'exp') res.sort((a, b) => parseInt(b.experiencia) - parseInt(a.experiencia));
+    
+    if (rankeados.size > 0) {
+      res.sort((a, b) => (rankeados.get(b.idUsuario)?.scoreRelevancia ?? 0) - (rankeados.get(a.idUsuario)?.scoreRelevancia ?? 0));
+    } else {
+      const ord = this.ordenar();
+      if (ord === 'cal') {
+        res.sort((a, b) => b.calificacion - a.calificacion);
+      } else if (ord === 'precio') {
+        res.sort((a, b) => {
+          const pa = parseInt(a.precio?.replace(/\D/g, '') || '0');
+          const pb = parseInt(b.precio?.replace(/\D/g, '') || '0');
+          return pa - pb;
+        });
+      } else if (ord === 'exp') {
+        res.sort((a, b) => parseInt(b.experiencia || '0') - parseInt(a.experiencia || '0'));
+      }
+    }
+    
     return res;
   });
 
@@ -125,8 +138,9 @@ export class BuscarCuidadorComponent implements OnInit {
 
   resetFiltros(): void {
     this.filtroEsp.set([]);
-    this.filtroDisp = '';
-    this.filtroCalif = '0';
+    this.filtroDisp.set('');
+    this.filtroCalif.set('0');
+    this.ordenar.set('cal');
     this.iaMensaje.set(null);
     this.busquedaIA = '';
     this.rankeados.set(new Map());

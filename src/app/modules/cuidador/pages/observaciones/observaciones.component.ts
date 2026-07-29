@@ -45,6 +45,15 @@ export class ObservacionesComponent implements OnInit {
   evaluacionIA = signal<EvaluacionUrgenciaResponse | null>(null);
   evaluacionIAError = signal<string | null>(null);
   sugerenciaIaAceptada = signal(false);
+  formSubmitted = false;
+
+  get pacienteInvalido(): boolean {
+    return this.formSubmitted && !this.nuevaObs.idAdulto;
+  }
+
+  get observacionInvalida(): boolean {
+    return this.formSubmitted && !this.nuevaObs.texto.trim();
+  }
 
   ngOnInit() {
     this.cargarDatos();
@@ -127,12 +136,10 @@ export class ObservacionesComponent implements OnInit {
   }
 
   guardar(): void {
-    if (!this.nuevaObs.idAdulto) {
-      this.showToast('Seleccioná un paciente antes de guardar');
-      return;
-    }
-    if (!this.nuevaObs.texto.trim()) {
-      this.showToast('La observación no puede estar vacía');
+    this.formSubmitted = true;
+
+    if (!this.nuevaObs.idAdulto || !this.nuevaObs.texto.trim()) {
+      this.showToast('Por favor, completa todos los campos obligatorios.', 'error');
       return;
     }
 
@@ -151,11 +158,11 @@ export class ObservacionesComponent implements OnInit {
         this.resetFormulario();
         this.modalOpen.set(false);
         this.guardando.set(false);
-        this.showToast('Observación guardada correctamente');
+        this.showToast('Observación guardada correctamente', 'success');
       },
       error: () => {
         this.guardando.set(false);
-        this.showToast('No se pudo guardar la observación');
+        this.showToast('No se pudo guardar la observación', 'error');
       }
     });
   }
@@ -220,6 +227,7 @@ export class ObservacionesComponent implements OnInit {
     this.evaluacionIA.set(null);
     this.evaluacionIAError.set(null);
     this.sugerenciaIaAceptada.set(false);
+    this.formSubmitted = false;
   }
 
   resetFiltros(): void {
@@ -228,8 +236,11 @@ export class ObservacionesComponent implements OnInit {
     this.urgenciaFiltro.set('');
   }
 
-  private showToast(msg: string): void {
+  toastTipo = signal<'success' | 'error'>('success');
+
+  private showToast(msg: string, tipo: 'success' | 'error' = 'success'): void {
     this.toast.set(msg);
+    this.toastTipo.set(tipo);
     setTimeout(() => this.toast.set(null), 3500);
   }
 }

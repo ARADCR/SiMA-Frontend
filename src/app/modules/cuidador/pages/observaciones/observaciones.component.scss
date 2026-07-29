@@ -131,6 +131,8 @@
   background: white;
   cursor: pointer;
   outline: none;
+  width: 100%;
+  box-sizing: border-box;
 
   &:focus { border-color: #2E86AB; }
 }
@@ -349,6 +351,8 @@
   outline: none;
   resize: vertical;
   font-family: inherit;
+  width: 100%;
+  box-sizing: border-box;
 
   &:focus {
     border-color: #2E86AB;
@@ -364,6 +368,8 @@
   color: #1B2B3A;
   outline: none;
   font-family: inherit;
+  width: 100%;
+  box-sizing: border-box;
 
   &:focus {
     border-color: #2E86AB;
@@ -481,6 +487,13 @@
   background: #ECFDF5;
   color: #065F46;
   border: 1px solid #6EE7B7;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.10);
+}
+
+.toast-error {
+  background: #FEF2F2;
+  color: #B91C1C;
+  border: 1px solid #FCA5A5;
   box-shadow: 0 4px 20px rgba(0,0,0,0.10);
 }
 

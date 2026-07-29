@@ -48,7 +48,7 @@
       </div>
       <div class="filter-group">
         <div class="filter-label">Calificación mínima</div>
-        <select class="select-input" [(ngModel)]="filtroCalif">
+        <select class="select-input" [ngModel]="filtroCalif()" (ngModelChange)="filtroCalif.set($event)">
           <option value="0">Cualquiera</option>
           <option value="3">3+ estrellas</option>
           <option value="4">4+ estrellas</option>
@@ -61,7 +61,7 @@
     <div class="results-col">
       <div class="results-header">
         <span style="font-size:14px; color:#5C6B7A">{{ cuidadoresFiltrados().length }} cuidador{{ cuidadoresFiltrados().length !== 1 ? 'es' : '' }} encontrado{{ cuidadoresFiltrados().length !== 1 ? 's' : '' }}</span>
-        <select class="select-sm" [(ngModel)]="ordenar">
+        <select class="select-sm" [ngModel]="ordenar()" (ngModelChange)="ordenar.set($event)">
           <option value="cal">Mayor calificación</option>
           <option value="precio">Menor precio</option>
           <option value="exp">Más experiencia</option>
