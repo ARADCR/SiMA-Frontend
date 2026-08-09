@@ -1,7 +1,7 @@
 export const environment = {
   production: true,
-  apiUrl: 'https://sima-backend-production-fec8.up.railway.app/api',
-  wsUrl: 'wss://sima-backend-production-fec8.up.railway.app',
+  apiUrl: 'http://v5xfrx1xifwhtltmtmfny2rg.157.180.80.139.sslip.io/api',
+  wsUrl: 'ws://v5xfrx1xifwhtltmtmfny2rg.157.180.80.139.sslip.io',
   jwtTokenKey: 'sima_token',
   jwtRefreshKey: 'sima_refresh_token',
   tokenExpiresIn: 3600
