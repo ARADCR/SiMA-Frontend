@@ -1,0 +1,31 @@
+name: CI Frontend
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+      - name: Instalar dependencias
+        run: npm ci
+      - name: Pruebas unitarias
+        run: npm test -- --watch=false --browsers=ChromeHeadless
+      - name: Compilar para producción
+        run: npm run build -- --configuration production

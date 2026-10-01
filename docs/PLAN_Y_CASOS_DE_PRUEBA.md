@@ -19,7 +19,7 @@ Asegurar la calidad de la interfaz gráfica desarrollada en Angular 17, verifica
 
 | ID | Historia/Requisito | Descripción | Tipo | Precondiciones | Pasos | Resultado esperado | Estado |
 |---|---|---|---|---|---|---|---|
-| CP-U01 | Setup inicial | Validar app.component.spec.ts | Unitaria | Ninguna | Ejecutar `ng test` | El test pasa (crea la app, tiene título) | Por ejecutar |
+| CP-U01 | Setup inicial | Validar app.component.spec.ts | Unitaria | Ninguna | Ejecutar `npm test` | El test pasa (crea la app, tiene título) | Por ejecutar |
 | CP-M01 | Autenticación | Cargar pantalla de Login (/auth/login) | Manual - UI | Ninguna | Navegar a `/auth/login` | Muestra formulario de login sin errores | Por ejecutar |
 | CP-M02 | Autenticación | Login exitoso | Manual - UI | Usuario válido en BD | Ingresar datos y enviar | Redirige a dashboard correspondiente | Por ejecutar |
 | CP-M03 | Admin | Cargar Dashboard Admin (/admin) | Manual - UI | Logueado como Admin | Navegar a `/admin` | Muestra panel de control | Por ejecutar |

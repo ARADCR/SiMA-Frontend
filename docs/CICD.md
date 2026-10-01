@@ -2,10 +2,10 @@
 
 ## Integración Continua (ci.yml)
 Se ejecuta automáticamente al realizar pushes o PRs hacia la rama `main`.
-1. Preparación del entorno (Node.js).
+1. Preparación del entorno (Node.js 20).
 2. Instalación de dependencias (`npm ci`).
-3. Ejecución de pruebas unitarias (`npm test`).
-4. Generación y almacenamiento del artefacto (archivos estáticos) validado.
+3. Ejecución de pruebas unitarias (`npm test -- --watch=false --browsers=ChromeHeadless`).
+4. Compilación para producción (`npm run build -- --configuration production`).
 
 ## Liberación (release.yml)
 Se ejecuta exclusivamente cuando se crea y hace push de un tag con formato `v*.*.*`.
