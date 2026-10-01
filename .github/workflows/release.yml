@@ -1,0 +1,33 @@
+name: Release Frontend
+
+on:
+  push:
+    tags: [ 'v*.*.*' ]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+      - name: Instalar dependencias
+        run: npm ci
+      - name: Pruebas unitarias
+        run: npm test -- --watch=false --browsers=ChromeHeadless
+      - name: Compilar para producción
+        run: npm run build -- --configuration production
+      - name: Empaquetar compilación
+        run: |
+          cd dist
+          zip -r "../sima-frontend-${GITHUB_REF_NAME}.zip" .
+      - name: Crear GitHub Release con el paquete
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh release create "$GITHUB_REF_NAME" "sima-frontend-${GITHUB_REF_NAME}.zip" --generate-notes --title "$GITHUB_REF_NAME"
