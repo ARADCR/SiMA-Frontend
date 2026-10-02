@@ -1,47 +1,49 @@
-# Pipeline CI/CD
+# Pipeline CI/CD (Frontend)
 
-## Integración Continua (ci.yml)
-Se ejecuta automáticamente al realizar pushes o PRs hacia la rama `main`.
+## Integración continua (`ci.yml`)
+Se ejecuta en cada push y Pull Request hacia `main`:
 1. Preparación del entorno (Node.js 20).
-2. Instalación de dependencias (`npm ci`).
-3. Ejecución de pruebas unitarias (`npm test -- --watch=false --browsers=ChromeHeadless`).
+2. Instalación de dependencias (`npm ci`). El archivo `.npmrc` con `legacy-peer-deps=true` resuelve el conflicto de dependencias entre Angular 17 y Angular Material 22.
+3. Pruebas unitarias (`npm test -- --watch=false --browsers=ChromeHeadless`).
 4. Compilación para producción (`npm run build -- --configuration production`).
 
-## Liberación (release.yml)
-Se ejecuta exclusivamente cuando se crea y hace push de un tag con formato `v*.*.*`.
-1. Preparación del entorno (Node.js).
-2. Instalación de dependencias.
-3. Compilación para producción (`npm run build`).
-4. Empaquetado en un archivo ZIP.
-5. Creación automática de un "GitHub Release" empaquetando el archivo ZIP y las notas de lanzamiento usando `gh release create`.
+## Liberación (`release.yml`)
+Se ejecuta únicamente al subir un tag con formato `vX.Y.Z`:
+1. Preparación del entorno e instalación de dependencias.
+2. Pruebas unitarias y compilación para producción.
+3. Empaquetado de `dist/` en un archivo `.zip`.
+4. Creación del GitHub Release con el `.zip` y las notas generadas, con `gh release create`.
 
-## Diagrama del Flujo
+El workflow no despliega a ningún servidor ni usa secretos propios: solo el token automático de GitHub para publicar el Release.
+
+## Diagrama del flujo
 
 ```mermaid
 graph TD
-A[Commit / PR a main] -->|ci.yml| B(Instalar dependencias y Probar)
-B --> C[Generar Artefacto validado]
-C --> D[Push de Tag vX.Y.Z]
-D -->|release.yml| E(Crear GitHub Release con ZIP)
-E --> F[Despliegue Manual Estático]
-F --> G((Verificación / Pruebas de humo))
+A[Commit o Pull Request a main] -->|ci.yml| B(Instalar, probar y compilar)
+B --> C[Merge a main]
+C --> D[Tag vX.Y.Z]
+D -->|release.yml| E(GitHub Release con ZIP)
+E --> F[Despliegue a producción]
+F --> G((Pruebas de humo))
 ```
 
-## Puertas de Calidad
-- Pruebas unitarias deben pasar para permitir integración.
-- Proceso de CI exitoso es prerrequisito para un merge.
+## Puertas de calidad
+- Las pruebas unitarias deben pasar.
+- Con la protección de `main` activa, un Pull Request no se fusiona si el CI falla.
 
-## Riesgos
-Defecto conocido (reportado por el equipo): en main, package.json declara @angular/cdk y @angular/material en ^22.0.2 junto con Angular 17.3, versiones no compatibles entre sí; el CI del frontend puede fallar en la instalación o compilación hasta alinear las dependencias a 17.x. La corrección se hará en un PR aparte, con acuerdo del equipo.
+## Riesgo conocido
+Angular Material y CDK 22 con Angular 17.3 generan un conflicto de dependencias par. Se resolvió con `.npmrc` (ver `PLAN_Y_CASOS_DE_PRUEBA.md`). Alinear las versiones queda como mejora, con revisión visual previa.
 
-## DevSecOps
-- Se recomienda implementar y configurar **Dependabot** (ecosistemas: npm, github-actions) y **Secret Scanning** de GitHub. (Configuración manual pendiente).
+## DevSecOps (mejoras futuras)
+- Activar Dependabot (npm y github-actions) y Secret Scanning de GitHub.
+- Revisar las vulnerabilidades que reporta `npm audit` sin aplicar `npm audit fix` a ciegas, porque puede cambiar versiones y romper la aplicación.
 
 ## Métricas DORA
 
-| Métrica | Definición | Cómo se mide | Estado Actual |
+| Métrica | Definición | Cómo se mide | Estado actual |
 |---|---|---|---|
-| **Frecuencia de Despliegue** | Frecuencia de envíos a producción | Historial de despliegues/tags | Por medir |
-| **Tiempo de Entrega (Lead Time)** | Tiempo desde commit hasta despliegue | Tiempos de CI/CD | Por medir |
-| **Tasa de Fallos (CFR)** | Porcentaje de liberaciones que fallan | Tracking de Hotfixes post-despliegue | Por medir |
-| **Tiempo de Recuperación (MTTR)** | Tiempo en recuperar tras falla | Tiempos de rollbacks | Por medir |
+| Frecuencia de despliegue | Frecuencia de envíos a producción | Historial de tags y Releases | Por medir |
+| Tiempo de entrega | Tiempo desde el commit hasta el despliegue | Tiempos de CI/CD | Por medir |
+| Tasa de fallos | Porcentaje de liberaciones que fallan | Hotfixes posteriores al despliegue | Por medir |
+| Tiempo de recuperación | Tiempo en recuperarse tras una falla | Tiempos de rollback | Por 
